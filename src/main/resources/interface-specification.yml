@@ -57,11 +57,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-#  /tenants/{tenantId}/attributes/certified:
-#  /tenants/{tenantId}/attributes/declared:
-#  /tenants/{tenantId}/attributes/verified:
-#    post:
-
   /tenants/{tenantId}:
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'

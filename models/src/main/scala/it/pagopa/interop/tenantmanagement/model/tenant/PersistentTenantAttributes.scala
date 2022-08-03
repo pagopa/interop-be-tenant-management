@@ -4,6 +4,7 @@ import java.time.OffsetDateTime
 import java.util.UUID
 
 object PersistentTenantAttribute
+
 sealed trait PersistentTenantAttribute {
   def id: UUID
   def assignmentTimestamp: OffsetDateTime

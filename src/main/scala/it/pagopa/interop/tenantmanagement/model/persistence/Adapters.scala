@@ -1,17 +1,18 @@
 package it.pagopa.interop.tenantmanagement.model.persistence
 
-import it.pagopa.interop.tenantmanagement.model.{Tenant, TenantAttributes, TenantSeed}
+import it.pagopa.interop.tenantmanagement.model.{Tenant, TenantSeed}
 import it.pagopa.interop.tenantmanagement.model.tenant._
+import it.pagopa.interop.tenantmanagement.model.TenantAttribute
 
 object Adapters {
 
   implicit class PersistentAttributesWrapper(private val p: PersistentTenantAttribute) extends AnyVal {
-    def toAPI: TenantAttributes = ???
+    def toAPI: TenantAttribute = ???
 //      TenantAttributes(certified = p.certified, declared = p.declared, verified = p.verified)
   }
 
   implicit class PersistentAttributesObjectWrapper(private val p: PersistentTenantAttribute.type) extends AnyVal {
-    def fromSeed(attributes: TenantAttributes): PersistentTenantAttribute = ???
+    def fromSeed(attributes: TenantAttribute): PersistentTenantAttribute = ???
 //      PersistentTenantAttributes(
 //        certified = attributes.certified.toList,
 //        declared = attributes.declared.toList,

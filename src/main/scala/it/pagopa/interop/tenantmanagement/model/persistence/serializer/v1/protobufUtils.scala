@@ -1,6 +1,6 @@
 package it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1
 
-import cats.implicits.toTraverseOps
+import cats.implicits._
 import it.pagopa.interop.commons.utils.TypeConversions._
 import it.pagopa.interop.tenantmanagement.model.tenant._
 import it.pagopa.interop.tenatmanagement.model.persistence.serializer.v1.tenant.TenantAttributeV1.Empty
@@ -14,29 +14,25 @@ import it.pagopa.interop.tenatmanagement.model.persistence.serializer.v1.tenant.
 
 object protobufUtils {
 
-  def toPersistentTenant(protobufTenant: TenantV1): Either[Throwable, PersistentTenant] =
-    for {
-      id         <- protobufTenant.id.toUUID.toEither
-      selfcareId <- protobufTenant.selfcareId.toUUID.toEither
-      attributes <- protobufTenant.attributes.traverse(toPersistentTenantAttributes)
-    } yield PersistentTenant(
-      id = id,
-      selfcareId = selfcareId,
-      externalId = null,
-      kind = protobufTenant.kind,
-      attributes = attributes.toList
-    )
+  def toPersistentTenant(protobufTenant: TenantV1): Either[Throwable, PersistentTenant] = for {
+    id         <- protobufTenant.id.toUUID.toEither
+    selfcareId <- protobufTenant.selfcareId.toUUID.toEither
+    attributes <- protobufTenant.attributes.traverse(toPersistentTenantAttributes)
+  } yield PersistentTenant(
+    id = id,
+    selfcareId = selfcareId,
+    externalId = null,
+    kind = protobufTenant.kind,
+    attributes = attributes.toList
+  )
 
-  def toProtobufTenant(persistentTenant: PersistentTenant): Either[Throwable, TenantV1] =
-    Right(
-      TenantV1(
-        id = persistentTenant.id.toString,
-        selfcareId = persistentTenant.selfcareId.toString,
-        externalId = null,
-        kind = persistentTenant.kind,
-        attributes = persistentTenant.attributes.map(toProtobufTenantAttribute)
-      )
-    )
+  def toProtobufTenant(persistentTenant: PersistentTenant): Either[Throwable, TenantV1] = TenantV1(
+    id = persistentTenant.id.toString,
+    selfcareId = persistentTenant.selfcareId.toString,
+    externalId = null,
+    kind = persistentTenant.kind,
+    attributes = persistentTenant.attributes.map(toProtobufTenantAttribute)
+  ).asRight[Throwable]
 
   def toPersistentTenantAttributes(
     protobufTenantAttribute: TenantAttributeV1

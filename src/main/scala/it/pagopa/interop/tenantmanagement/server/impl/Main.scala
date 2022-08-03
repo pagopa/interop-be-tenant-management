@@ -17,6 +17,7 @@ import it.pagopa.interop.tenantmanagement.common.system.ApplicationConfiguration
 
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success}
+import akka.actor.typed.ActorRef
 
 object Main extends App with Dependencies {
 
@@ -38,7 +39,7 @@ object Main extends App with Dependencies {
       val cluster: Cluster = Cluster(context.system)
       ClusterBootstrap.get(actorSystem).start()
 
-      val listener = context.spawn(
+      val listener: ActorRef[ClusterEvent.MemberEvent] = context.spawn(
         Behaviors.receive[ClusterEvent.MemberEvent]((ctx, event) => {
           ctx.log.info("MemberEvent: {}", event)
           Behaviors.same

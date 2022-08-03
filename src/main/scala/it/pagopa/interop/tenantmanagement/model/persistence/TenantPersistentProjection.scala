@@ -27,8 +27,7 @@ class TenantPersistentProjection(dbConfig: DatabaseConfig[JdbcProfile], queueWri
 ) {
 
   def sourceProvider(tag: String): SourceProvider[Offset, EventEnvelope[Event]] =
-    EventSourcedProvider
-      .eventsByTag[Event](system, readJournalPluginId = JdbcReadJournal.Identifier, tag = tag)
+    EventSourcedProvider.eventsByTag[Event](system, readJournalPluginId = JdbcReadJournal.Identifier, tag = tag)
 
   def projection(tag: String): ExactlyOnceProjection[Offset, EventEnvelope[Event]] = SlickProjection.exactlyOnce(
     projectionId = ProjectionId("tenant-projections", tag),

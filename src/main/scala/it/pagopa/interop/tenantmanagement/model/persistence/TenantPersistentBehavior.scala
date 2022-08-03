@@ -25,27 +25,24 @@ object TenantPersistentBehavior {
     command match {
       case CreateTenant(newTenant, replyTo) =>
         val tenant: Option[PersistentTenant] = state.tenants.get(newTenant.id.toString)
-        tenant
-          .fold {
-            Effect
-              .persist(TenantCreated(newTenant))
-              .thenRun((_: State) => replyTo ! StatusReply.Success(newTenant))
-          } { p =>
-            replyTo ! StatusReply.Error[PersistentTenant](TenantAlreadyExists(p.id.toString))
-            Effect.none[TenantCreated, State]
-          }
+        tenant.fold(
+          Effect
+            .persist(TenantCreated(newTenant))
+            .thenRun((_: State) => replyTo ! StatusReply.Success(newTenant))
+        ) { p =>
+          replyTo ! StatusReply.Error[PersistentTenant](TenantAlreadyExists(p.id.toString))
+          Effect.none[TenantCreated, State]
+        }
 
       case GetTenant(tenantId, replyTo) =>
         val tenant: Option[PersistentTenant] = state.tenants.get(tenantId)
-        tenant
-          .fold {
-            replyTo ! StatusReply.Error[PersistentTenant](TenantNotFound(tenantId))
-            Effect.none[Event, State]
-
-          } { p =>
-            replyTo ! StatusReply.Success[PersistentTenant](p)
-            Effect.none[Event, State]
-          }
+        tenant.fold {
+          replyTo ! StatusReply.Error[PersistentTenant](TenantNotFound(tenantId))
+          Effect.none[Event, State]
+        } { p =>
+          replyTo ! StatusReply.Success[PersistentTenant](p)
+          Effect.none[Event, State]
+        }
 
       case Idle =>
         shard ! ClusterSharding.Passivate(context.self)
@@ -71,8 +68,7 @@ object TenantPersistentBehavior {
 
     }
 
-  val TypeKey: EntityTypeKey[Command] =
-    EntityTypeKey[Command]("interop-be-tenant-management-persistence")
+  val TypeKey: EntityTypeKey[Command] = EntityTypeKey[Command]("interop-be-tenant-management-persistence")
 
   def apply(
     shard: ActorRef[ClusterSharding.ShardCommand],
@@ -81,9 +77,7 @@ object TenantPersistentBehavior {
   ): Behavior[Command] = {
     Behaviors.setup { context =>
       context.log.debug(s"Starting Tenant Shard ${persistenceId.id}")
-      val numberOfEvents =
-        context.system.settings.config
-          .getInt("tenant-management.number-of-events-before-snapshot")
+      val numberOfEvents = context.system.settings.config.getInt("tenant-management.number-of-events-before-snapshot")
       EventSourcedBehavior[Command, Event, State](
         persistenceId = persistenceId,
         emptyState = State.empty,
