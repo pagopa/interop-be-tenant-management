@@ -84,7 +84,7 @@ object PersistentSerializationSpec {
     certifier                                        <- Gen.oneOf(true, false)
     (persistentTenantAttributes, tenantAttributesV1) <- persistentTenantAttributesGen
   } yield (
-    PersistentTenant(id = id, certifier = certifier, attributes = persistentTenantAttributes),
+    PersistentTenant(id = id, isCertifier = certifier, attributes = persistentTenantAttributes),
     TenantV1(id = id.toString, certifier = certifier, attributes = tenantAttributesV1)
   )
 

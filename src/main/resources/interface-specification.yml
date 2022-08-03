@@ -57,6 +57,11 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+#  /tenants/{tenantId}/attributes/certified:
+#  /tenants/{tenantId}/attributes/declared:
+#  /tenants/{tenantId}/attributes/verified:
+#    post:
+
   /tenants/{tenantId}:
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
@@ -160,7 +165,7 @@ components:
       required:
         - code
         - detail
-    TenantAttributes:
+    TenantAttribute:
       type: object
       properties:
         certified:
@@ -190,7 +195,9 @@ components:
           type: boolean
           default: false
         attributes:
-          $ref: '#/components/schemas/TenantAttributes'
+          type: array
+          items:
+            $ref: '#/components/schemas/TenantAttribute'
       required:
         - id
         - certifier
@@ -203,7 +210,7 @@ components:
           type: string
           format: uuid
         attributes:
-          $ref: '#/components/schemas/TenantAttributes'
+          $ref: '#/components/schemas/TenantAttribute'
       required:
         - id
         - attributes

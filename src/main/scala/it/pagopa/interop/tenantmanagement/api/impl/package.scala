@@ -17,11 +17,11 @@ import scala.concurrent.duration.Duration
 
 package object impl extends SprayJsonSupport with DefaultJsonProtocol {
 
-  implicit val attributesFormat: RootJsonFormat[TenantAttributes] = jsonFormat3(TenantAttributes)
-  implicit val tenantFormat: RootJsonFormat[Tenant]               = jsonFormat3(Tenant)
-  implicit val tenantSeedFormat: RootJsonFormat[TenantSeed]       = jsonFormat2(TenantSeed)
-  implicit val problemErrorFormat: RootJsonFormat[ProblemError]   = jsonFormat2(ProblemError)
-  implicit val problemFormat: RootJsonFormat[Problem]             = jsonFormat5(Problem)
+  implicit val attributesFormat: RootJsonFormat[TenantAttribute] = jsonFormat3(TenantAttribute)
+  implicit val tenantFormat: RootJsonFormat[Tenant]              = jsonFormat3(Tenant)
+  implicit val tenantSeedFormat: RootJsonFormat[TenantSeed]      = jsonFormat2(TenantSeed)
+  implicit val problemErrorFormat: RootJsonFormat[ProblemError]  = jsonFormat2(ProblemError)
+  implicit val problemFormat: RootJsonFormat[Problem]            = jsonFormat5(Problem)
 
   def slices[A, B <: Command](commander: EntityRef[B], sliceSize: Int)(
     commandGenerator: (Int, Int) => ActorRef[Seq[A]] => B

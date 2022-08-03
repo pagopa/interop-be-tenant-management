@@ -25,11 +25,13 @@ object TenantEventsSerde {
 
   private val tenantCreated: String = "tenant-created"
 
-  private implicit val pasFormat: RootJsonFormat[PersistentTenantAttributes] = jsonFormat3(
-    PersistentTenantAttributes.apply
-  )
+  private implicit val pasFormat: RootJsonFormat[PersistentTenantAttribute]  = ???
+  private implicit val pexFormat: RootJsonFormat[PersistentTenantExternalId] = ???
+//  jsonFormat3(
+//    PersistentTenantAttributes.apply
+//  )
 
-  private implicit val ptFormat: RootJsonFormat[PersistentTenant] = jsonFormat3(PersistentTenant.apply)
+  private implicit val ptFormat: RootJsonFormat[PersistentTenant] = jsonFormat5(PersistentTenant.apply)
 
   private implicit val tcFormat: RootJsonFormat[TenantCreated] = jsonFormat1(TenantCreated.apply)
 

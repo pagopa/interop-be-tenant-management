@@ -12,7 +12,7 @@ class TenantPersistentBehaviorSpec extends ScalaTestWithActorTestKit(SpecConfigu
   val tenantTemplate: PersistentTenant =
     PersistentTenant(
       id = UUID.randomUUID(),
-      certifier = false,
+      isCertifier = false,
       attributes = PersistentTenantAttributes(certified = List.empty, declared = List.empty, verified = List.empty)
     )
 
