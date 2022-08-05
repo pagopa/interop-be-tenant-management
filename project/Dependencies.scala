@@ -143,6 +143,7 @@ object Dependencies {
       scalamock.core              % Test,
       akka.httpTestkit            % Test,
       akka.testkit                % Test,
+      "org.scalameta"            %% "munit"                % "0.7.29" % Test,
       "org.scalameta"            %% "munit-scalacheck"     % "0.7.29" % Test,
       "com.softwaremill.diffx"   %% "diffx-munit"          % "0.7.0"  % Test
     )

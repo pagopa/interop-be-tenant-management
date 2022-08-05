@@ -1,18 +1,23 @@
 {
   "endpoints": [
     {
+      "route": "createTenant",
       "verb": "POST",
       "roles": [
-        "admin", "security", "api"
-      ],
-      "route": "createTenant"
+        "admin",
+        "security",
+        "api"
+      ]
     },
     {
+      "route": "getTenant",
       "verb": "GET",
       "roles": [
-        "admin", "security", "api", "m2m"
-      ],
-      "route": "getTenant"
+        "admin",
+        "security",
+        "api",
+        "m2m"
+      ]
     }
   ]
 }

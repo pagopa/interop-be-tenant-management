@@ -1,38 +1,103 @@
 package it.pagopa.interop.tenantmanagement.model.persistence
 
-import it.pagopa.interop.tenantmanagement.model.{Tenant, TenantSeed}
+import cats.implicits._
 import it.pagopa.interop.tenantmanagement.model.tenant._
-import it.pagopa.interop.tenantmanagement.model.TenantAttribute
+import it.pagopa.interop.tenantmanagement.model._
+import it.pagopa.interop.tenantmanagement.error.InternalErrors
+import java.util.UUID
 
 object Adapters {
 
   implicit class PersistentAttributesWrapper(private val p: PersistentTenantAttribute) extends AnyVal {
-    def toAPI: TenantAttribute = ???
-//      TenantAttributes(certified = p.certified, declared = p.declared, verified = p.verified)
+    def toAPI: TenantAttribute = p match {
+      case a: PersistentCertifiedAttribute =>
+        TenantAttribute(
+          id = a.id,
+          kind = TenantAttributeKind.CERTIFIED,
+          assignmentTimestamp = a.assignmentTimestamp,
+          revocationTimestamp = a.revocationTimestamp,
+          extensionTimestamp = None,
+          expirationTimestamp = None
+        )
+      case a: PersistentDeclaredAttribute  =>
+        TenantAttribute(
+          id = a.id,
+          kind = TenantAttributeKind.DECLARED,
+          assignmentTimestamp = a.assignmentTimestamp,
+          revocationTimestamp = a.revocationTimestamp,
+          extensionTimestamp = None,
+          expirationTimestamp = None
+        )
+      case a: PersistentVerifiedAttribute  =>
+        TenantAttribute(
+          id = a.id,
+          kind = TenantAttributeKind.DECLARED,
+          assignmentTimestamp = a.assignmentTimestamp,
+          revocationTimestamp = a.revocationTimestamp,
+          extensionTimestamp = a.extensionTimestamp,
+          expirationTimestamp = a.expirationTimestamp.some
+        )
+    }
   }
 
   implicit class PersistentAttributesObjectWrapper(private val p: PersistentTenantAttribute.type) extends AnyVal {
-    def fromSeed(attributes: TenantAttribute): PersistentTenantAttribute = ???
-//      PersistentTenantAttributes(
-//        certified = attributes.certified.toList,
-//        declared = attributes.declared.toList,
-//        verified = attributes.verified.toList
-//      )
+    def fromAPI(attributes: TenantAttribute): Either[Throwable, PersistentTenantAttribute] = attributes.kind match {
+      case TenantAttributeKind.CERTIFIED =>
+        PersistentCertifiedAttribute(attributes.id, attributes.assignmentTimestamp, attributes.revocationTimestamp)
+          .asRight[Throwable]
+      case TenantAttributeKind.DECLARED  =>
+        PersistentDeclaredAttribute(attributes.id, attributes.assignmentTimestamp, attributes.revocationTimestamp)
+          .asRight[Throwable]
+      case TenantAttributeKind.VERIFIED  =>
+        attributes.expirationTimestamp
+          .toRight(InternalErrors.InvalidAttribute("verified", "expirationTimestamp"))
+          .map(expirationTimestamp =>
+            PersistentVerifiedAttribute(
+              id = attributes.id,
+              assignmentTimestamp = attributes.assignmentTimestamp,
+              revocationTimestamp = attributes.revocationTimestamp,
+              extensionTimestamp = attributes.extensionTimestamp,
+              expirationTimestamp = expirationTimestamp
+            )
+          )
+    }
+  }
+
+  implicit class PersistentTenantExternalIdWrapper(private val p: PersistentTenantExternalId) extends AnyVal {
+    def toAPI: ExternalId = ExternalId(origin = p.origin, value = p.value)
+  }
+
+  implicit class PersistentTenantExternalIdObjectWrapper(private val p: PersistentTenantExternalId.type)
+      extends AnyVal {
+    def fromAPI(e: ExternalId): PersistentTenantExternalId =
+      PersistentTenantExternalId(origin = e.origin, value = e.value)
   }
 
   implicit class PersistentTenantWrapper(private val p: PersistentTenant) extends AnyVal {
-    def toAPI: Tenant = ???
-//      Tenant(id = p.id, certifier = p.isCertifier, attributes = p.attributes.toAPI)
-
+    def toAPI: Tenant = Tenant(
+      id = p.id,
+      selfcareId = p.selfcareId,
+      kind = p.kind,
+      attributes = p.attributes.map(_.toAPI),
+      externalId = p.externalId.toAPI
+    )
   }
 
   implicit class PersistentTenantObjectWrapper(private val p: PersistentTenant.type) extends AnyVal {
-    def fromSeed(seed: TenantSeed): PersistentTenant = ???
-//      PersistentTenant(
-//        id = seed.id,
-//        isCertifier = false,
-//        attributes = PersistentTenantAttributes.fromSeed(seed.attributes)
-//      )
+    // We'll remove the field "id" from api and use just UUID.randomUUID once
+    // migrated the persistence of all the already created eservices
+    def fromAPI(seed: TenantSeed): Either[Throwable, PersistentTenant] =
+      seed.attributes.toList
+        .traverse(PersistentTenantAttribute.fromAPI)
+        .map(attributes =>
+          PersistentTenant(
+            id = seed.id.getOrElse(UUID.randomUUID()),
+            selfcareId = seed.selfcareId,
+            externalId = PersistentTenantExternalId.fromAPI(seed.externalId),
+            kind = seed.kind,
+            attributes = attributes
+          )
+        )
   }
 
 }

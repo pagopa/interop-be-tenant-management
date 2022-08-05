@@ -1,75 +1,73 @@
 package it.pagopa.interop.tenantmanagement
 
-import akka.actor
-import akka.actor.testkit.typed.scaladsl.{ActorTestKit, ScalaTestWithActorTestKit}
-import akka.actor.typed.ActorSystem
-import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.testkit.typed.scaladsl.ActorTestKit
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity}
 import akka.cluster.typed.{Cluster, Join}
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.server.directives.{AuthenticationDirective, SecurityDirectives}
+import akka.http.scaladsl.server.directives.SecurityDirectives
 import it.pagopa.interop.tenantmanagement.api.TenantApi
 import it.pagopa.interop.tenantmanagement.api.impl.{TenantApiMarshallerImpl, TenantApiServiceImpl}
 import it.pagopa.interop.tenantmanagement.model.persistence.TenantPersistentBehavior
 import it.pagopa.interop.tenantmanagement.server.Controller
 import it.pagopa.interop.tenantmanagement.server.impl.Main.behaviorFactory
-import org.scalatest.wordspec.AnyWordSpecLike
+import akka.http.scaladsl.server.directives.Credentials.{Missing, Provided}
+import it.pagopa.interop.commons.utils.{BEARER, USER_ROLES}
 
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Await, ExecutionContextExecutor, Future}
+import scala.concurrent.Await
+import com.typesafe.config.ConfigFactory
+import munit.FunSuite
+import akka.cluster.sharding.typed.ShardingEnvelope
+import it.pagopa.interop.tenantmanagement.model.persistence.Command
+import akka.actor.typed.ActorSystem
+import akka.actor
 
-/** Local integration test.
-  *
-  * Starts a local cluster sharding and invokes REST operations on the event sourcing entity
-  */
-abstract class BaseIntegrationSpec
-    extends ScalaTestWithActorTestKit(SpecConfiguration.config)
-    with AnyWordSpecLike
-    with SpecConfiguration
-    with SpecHelper {
+class BaseIntegrationSpec extends FunSuite with SpecHelper {
 
-  private var controller: Option[Controller]                                    = None
-  private var bindServer: Option[Future[Http.ServerBinding]]                    = None
-  private val wrappingDirective: AuthenticationDirective[Seq[(String, String)]] =
-    SecurityDirectives.authenticateOAuth2("SecurityRealm", AdminMockAuthenticator)
+  override def munitFixtures = List(actorSystem)
 
-  private val sharding: ClusterSharding = ClusterSharding(system)
+  val actorSystem: Fixture[ActorSystem[_]] = new Fixture[ActorSystem[_]]("actorSystem") {
+    private var bindServer: Http.ServerBinding = null
+    private var actorTestKit: ActorTestKit     = null
+    def apply(): ActorSystem[_]                = actorTestKit.internalSystem
 
-  private val httpSystem: ActorSystem[Any] =
-    ActorSystem(Behaviors.ignore[Any], name = system.name, config = system.settings.config)
+    override def beforeAll(): Unit = {
+      actorTestKit = ActorTestKit(ConfigFactory.load())
+      Cluster(actorTestKit.internalSystem).manager ! Join(Cluster(actorTestKit.internalSystem).selfMember.address)
+      val sharding: ClusterSharding                                    = ClusterSharding(actorTestKit.internalSystem)
+      val persistentEntity: Entity[Command, ShardingEnvelope[Command]] =
+        Entity(TenantPersistentBehavior.TypeKey)(behaviorFactory)
 
-  implicit val executionContext: ExecutionContextExecutor = httpSystem.executionContext
-  implicit val classicSystem: actor.ActorSystem           = httpSystem.classicSystem
+      sharding.init(persistentEntity)
 
-  override def beforeAll(): Unit = {
-    val persistentEntity = Entity(TenantPersistentBehavior.TypeKey)(behaviorFactory())
-
-    Cluster(system).manager ! Join(Cluster(system).selfMember.address)
-    sharding.init(persistentEntity)
-
-    val tenantApi = new TenantApi(
-      TenantApiServiceImpl(system, sharding, persistentEntity),
-      TenantApiMarshallerImpl,
-      wrappingDirective
-    )
-
-    controller = Some(new Controller(tenantApi)(classicSystem))
-
-    controller foreach { controller =>
-      bindServer = Some(
-        Http()
-          .newServerAt("0.0.0.0", 18088)
-          .bind(controller.routes)
+      val tenantApi: TenantApi = new TenantApi(
+        TenantApiServiceImpl(actorTestKit.internalSystem, sharding, persistentEntity),
+        TenantApiMarshallerImpl,
+        SecurityDirectives.authenticateOAuth2(
+          "SecurityRealm",
+          {
+            case Provided(identifier) => Some(Seq(BEARER -> identifier, USER_ROLES -> "admin"))
+            case Missing              => None
+          }
+        )
       )
 
-      Await.result(bindServer.get, 100.seconds)
-    }
-  }
+      implicit val classic: actor.ActorSystem = actorTestKit.internalSystem.classicSystem
+      val controller: Controller              = new Controller(tenantApi)
 
-  override def afterAll(): Unit = {
-    bindServer.foreach(_.foreach(_.unbind()))
-    ActorTestKit.shutdown(httpSystem, 5.seconds)
-    super.afterAll()
+      bindServer = Await.result(
+        Http()
+          .newServerAt("0.0.0.0", 18088)
+          .bind(controller.routes),
+        100.seconds
+      )
+    }
+
+    override def afterAll(): Unit = {
+      bindServer.unbind()
+      ActorTestKit.shutdown(actorTestKit.internalSystem, 5.seconds)
+      super.afterAll()
+    }
   }
 
 }

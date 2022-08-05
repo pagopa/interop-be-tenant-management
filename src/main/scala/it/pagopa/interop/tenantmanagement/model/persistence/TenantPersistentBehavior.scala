@@ -19,8 +19,7 @@ object TenantPersistentBehavior {
     shard: ActorRef[ClusterSharding.ShardCommand],
     context: ActorContext[Command]
   ): (State, Command) => Effect[Event, State] = { (state, command) =>
-    val idleTimeout =
-      context.system.settings.config.getDuration("tenant-management.idle-timeout")
+    val idleTimeout = context.system.settings.config.getDuration("tenant-management.idle-timeout")
     context.setReceiveTimeout(idleTimeout.get(ChronoUnit.SECONDS) seconds, Idle)
     command match {
       case CreateTenant(newTenant, replyTo) =>
@@ -28,13 +27,19 @@ object TenantPersistentBehavior {
         tenant.fold(
           Effect
             .persist(TenantCreated(newTenant))
-            .thenRun((_: State) => replyTo ! StatusReply.Success(newTenant))
+            .thenRun { (s: State) =>
+              println(s"State after creation is $s")
+              println(s"CREATED tenant $newTenant")
+              replyTo ! StatusReply.Success(newTenant)
+            }
         ) { p =>
           replyTo ! StatusReply.Error[PersistentTenant](TenantAlreadyExists(p.id.toString))
           Effect.none[TenantCreated, State]
         }
 
       case GetTenant(tenantId, replyTo) =>
+        println(s"ASKING FOR tenant $tenantId")
+        println(s"Tenants ${state.tenants}")
         val tenant: Option[PersistentTenant] = state.tenants.get(tenantId)
         tenant.fold {
           replyTo ! StatusReply.Error[PersistentTenant](TenantNotFound(tenantId))
@@ -62,10 +67,9 @@ object TenantPersistentBehavior {
     .persist(eventBuilder(tenant))
     .thenRun((_: State) => replyTo ! StatusReply.Success(tenant))
 
-  val eventHandler: (State, Event) => State = (state, event) =>
+  private val eventHandler: (State, Event) => State = (state, event) =>
     event match {
       case TenantCreated(tenant) => state.addTenant(tenant)
-
     }
 
   val TypeKey: EntityTypeKey[Command] = EntityTypeKey[Command]("interop-be-tenant-management-persistence")
@@ -74,19 +78,17 @@ object TenantPersistentBehavior {
     shard: ActorRef[ClusterSharding.ShardCommand],
     persistenceId: PersistenceId,
     persistenceTag: String
-  ): Behavior[Command] = {
-    Behaviors.setup { context =>
-      context.log.debug(s"Starting Tenant Shard ${persistenceId.id}")
-      val numberOfEvents = context.system.settings.config.getInt("tenant-management.number-of-events-before-snapshot")
-      EventSourcedBehavior[Command, Event, State](
-        persistenceId = persistenceId,
-        emptyState = State.empty,
-        commandHandler = commandHandler(shard, context),
-        eventHandler = eventHandler
-      ).withRetention(RetentionCriteria.snapshotEvery(numberOfEvents = numberOfEvents, keepNSnapshots = 1))
-        .withTagger(_ => Set(persistenceTag))
-        .onPersistFailure(SupervisorStrategy.restartWithBackoff(200 millis, 5 seconds, 0.1))
-    }
+  ): Behavior[Command] = Behaviors.setup { context =>
+    context.log.debug(s"Starting Tenant Shard ${persistenceId.id}")
+    val numberOfEvents = context.system.settings.config.getInt("tenant-management.number-of-events-before-snapshot")
+    EventSourcedBehavior[Command, Event, State](
+      persistenceId = persistenceId,
+      emptyState = State.empty,
+      commandHandler = commandHandler(shard, context),
+      eventHandler = eventHandler
+    ).withRetention(RetentionCriteria.snapshotEvery(numberOfEvents = numberOfEvents, keepNSnapshots = 1))
+      .withTagger(_ => Set(persistenceTag))
+      .onPersistFailure(SupervisorStrategy.restartWithBackoff(200 millis, 5 seconds, 0.1))
   }
 
 }

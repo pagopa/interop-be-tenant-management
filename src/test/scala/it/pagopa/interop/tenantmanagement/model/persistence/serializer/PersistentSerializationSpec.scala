@@ -4,18 +4,17 @@ import cats.implicits._
 import com.softwaremill.diffx.Diff
 import com.softwaremill.diffx.generic.auto._
 import com.softwaremill.diffx.munit.DiffxAssertions
+import it.pagopa.interop.tenantmanagement.model.tenant._
 import it.pagopa.interop.tenantmanagement.model.persistence._
 import it.pagopa.interop.tenantmanagement.model.persistence.serializer.PersistentSerializationSpec._
 import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.events._
 import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.state._
-import it.pagopa.interop.tenantmanagement.model.tenant._
-import it.pagopa.interop.tenatmanagement.model.persistence.serializer.v1.tenant.{TenantAttributesV1, TenantV1}
+import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.tenant._
 import munit.ScalaCheckSuite
 import org.scalacheck.Gen
 import org.scalacheck.Prop.forAll
 
 import java.time.{OffsetDateTime, ZoneOffset}
-import java.util.UUID
 import scala.reflect.runtime.universe.{TypeTag, typeOf}
 
 class PersistentSerializationSpec extends ScalaCheckSuite with DiffxAssertions {
@@ -70,23 +69,66 @@ object PersistentSerializationSpec {
     x <- Gen.listOfN(n, g)
   } yield x
 
-  val persistentTenantAttributesGen: Gen[(PersistentTenantAttributes, TenantAttributesV1)] = for {
-    certified <- listOf(UUID.randomUUID().toString)
-    declared  <- listOf(UUID.randomUUID().toString)
-    verified  <- listOf(UUID.randomUUID().toString)
+  val externalIdGen: Gen[(PersistentTenantExternalId, ExternalIdV1)] = for {
+    origin <- stringGen
+    value  <- stringGen
+  } yield (PersistentTenantExternalId(origin, value), ExternalIdV1(origin, value))
+
+  val certifiedAttributeGen: Gen[(PersistentCertifiedAttribute, CertifiedAttributeV1)] = for {
+    id                                    <- Gen.uuid
+    (assignmentTimestamp, assignmentLong) <- offsetDatetimeGen
+    (revocationTimestamp, revocationLong) <- Gen.option(offsetDatetimeGen).map(_.separate)
   } yield (
-    PersistentTenantAttributes(certified = certified, declared = declared, verified = verified),
-    TenantAttributesV1(certified = certified, declared = declared, verified = verified)
+    PersistentCertifiedAttribute(id, assignmentTimestamp, revocationTimestamp),
+    CertifiedAttributeV1(id.toString(), assignmentLong, revocationLong)
   )
 
-  val persistentTenantGen: Gen[(PersistentTenant, TenantV1)] = for {
-    id                                               <- Gen.uuid
-    certifier                                        <- Gen.oneOf(true, false)
-    (persistentTenantAttributes, tenantAttributesV1) <- persistentTenantAttributesGen
+  val declaredAttributeGen: Gen[(PersistentDeclaredAttribute, DeclaredAttributeV1)] = for {
+    id                                    <- Gen.uuid
+    (assignmentTimestamp, assignmentLong) <- offsetDatetimeGen
+    (revocationTimestamp, revocationLong) <- Gen.option(offsetDatetimeGen).map(_.separate)
   } yield (
-    PersistentTenant(id = id, isCertifier = certifier, attributes = persistentTenantAttributes),
-    TenantV1(id = id.toString, certifier = certifier, attributes = tenantAttributesV1)
+    PersistentDeclaredAttribute(id, assignmentTimestamp, revocationTimestamp),
+    DeclaredAttributeV1(id.toString(), assignmentLong, revocationLong)
   )
+
+  val verifiedAttributeGen: Gen[(PersistentVerifiedAttribute, VerifiedAttributeV1)] = for {
+    id                                    <- Gen.uuid
+    (assignmentTimestamp, assignmentLong) <- offsetDatetimeGen
+    (revocationTimestamp, revocationLong) <- Gen.option(offsetDatetimeGen).map(_.separate)
+    (expirationTimestamp, expirationLong) <- offsetDatetimeGen
+    (extentionTimestamp, extentionLong)   <- Gen.option(offsetDatetimeGen).map(_.separate)
+  } yield (
+    PersistentVerifiedAttribute(
+      id = id,
+      assignmentTimestamp = assignmentTimestamp,
+      revocationTimestamp = revocationTimestamp,
+      extensionTimestamp = extentionTimestamp,
+      expirationTimestamp = expirationTimestamp
+    ),
+    VerifiedAttributeV1(
+      id = id.toString(),
+      assignmentTimestamp = assignmentLong,
+      revocationTimestamp = revocationLong,
+      expirationTimestamp = expirationLong,
+      extensionTimestamp = extentionLong
+    )
+  )
+
+  val attributeGen: Gen[(PersistentTenantAttribute, TenantAttributeV1)] =
+    Gen.oneOf(declaredAttributeGen, verifiedAttributeGen, certifiedAttributeGen)
+
+  val persistentTenantGen: Gen[(PersistentTenant, TenantV1)] =
+    for {
+      id                                               <- Gen.uuid
+      selfcareId                                       <- Gen.uuid
+      (externalId, externalIdV1)                       <- externalIdGen
+      kind                                             <- Gen.oneOf(true, false)
+      (persistentTenantAttributes, tenantAttributesV1) <- listOf(attributeGen).map(_.separate)
+    } yield (
+      PersistentTenant(id, selfcareId, externalId, kind, persistentTenantAttributes),
+      TenantV1(id.toString(), selfcareId.toString(), externalIdV1, kind, tenantAttributesV1)
+    )
 
   val stateGen: Gen[(State, StateV1)] = listOf(persistentTenantGen).map(_.separate).map { case (ps, psv1) =>
     val state   = State(ps.map(p => p.id.toString -> p).toMap)

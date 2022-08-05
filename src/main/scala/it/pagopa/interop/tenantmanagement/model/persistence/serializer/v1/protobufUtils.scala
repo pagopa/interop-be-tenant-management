@@ -3,36 +3,44 @@ package it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1
 import cats.implicits._
 import it.pagopa.interop.commons.utils.TypeConversions._
 import it.pagopa.interop.tenantmanagement.model.tenant._
-import it.pagopa.interop.tenatmanagement.model.persistence.serializer.v1.tenant.TenantAttributeV1.Empty
-import it.pagopa.interop.tenatmanagement.model.persistence.serializer.v1.tenant.{
-  CertifiedAttributeV1,
-  DeclaredAttributeV1,
-  TenantAttributeV1,
-  TenantV1,
-  VerifiedAttributeV1
-}
+import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.tenant.TenantAttributeV1.Empty
+import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.tenant._
 
 object protobufUtils {
 
+  def toPersistentTenantExternalId(
+    protobufTenantExternalId: ExternalIdV1
+  ): Either[Throwable, PersistentTenantExternalId] =
+    PersistentTenantExternalId(protobufTenantExternalId.origin, protobufTenantExternalId.value).asRight[Throwable]
+
+  def toProtobufTenantExternalId(
+    protobufTenantExternalId: PersistentTenantExternalId
+  ): Either[Throwable, ExternalIdV1] =
+    ExternalIdV1(protobufTenantExternalId.origin, protobufTenantExternalId.value).asRight[Throwable]
+
   def toPersistentTenant(protobufTenant: TenantV1): Either[Throwable, PersistentTenant] = for {
     id         <- protobufTenant.id.toUUID.toEither
+    externalId <- toPersistentTenantExternalId(protobufTenant.externalId)
     selfcareId <- protobufTenant.selfcareId.toUUID.toEither
     attributes <- protobufTenant.attributes.traverse(toPersistentTenantAttributes)
   } yield PersistentTenant(
     id = id,
     selfcareId = selfcareId,
-    externalId = null,
+    externalId = externalId,
     kind = protobufTenant.kind,
     attributes = attributes.toList
   )
 
-  def toProtobufTenant(persistentTenant: PersistentTenant): Either[Throwable, TenantV1] = TenantV1(
-    id = persistentTenant.id.toString,
-    selfcareId = persistentTenant.selfcareId.toString,
-    externalId = null,
-    kind = persistentTenant.kind,
-    attributes = persistentTenant.attributes.map(toProtobufTenantAttribute)
-  ).asRight[Throwable]
+  def toProtobufTenant(persistentTenant: PersistentTenant): Either[Throwable, TenantV1] =
+    toProtobufTenantExternalId(persistentTenant.externalId).map(externalId =>
+      TenantV1(
+        id = persistentTenant.id.toString,
+        selfcareId = persistentTenant.selfcareId.toString,
+        externalId = externalId,
+        kind = persistentTenant.kind,
+        attributes = persistentTenant.attributes.map(toProtobufTenantAttribute)
+      )
+    )
 
   def toPersistentTenantAttributes(
     protobufTenantAttribute: TenantAttributeV1
@@ -71,7 +79,6 @@ object protobufUtils {
         extensionTimestamp = ext,
         expirationTimestamp = exp
       )
-
   }
 
   def toProtobufTenantAttribute(persistentTenantAttribute: PersistentTenantAttribute): TenantAttributeV1 =

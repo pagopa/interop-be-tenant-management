@@ -39,16 +39,15 @@ trait Dependencies {
 
   val uuidSupplier: UUIDSupplier = new UUIDSupplierImpl
 
-  def behaviorFactory(): EntityContext[Command] => Behavior[Command] =
-    entityContext =>
-      TenantPersistentBehavior(
-        entityContext.shard,
-        PersistenceId(entityContext.entityTypeKey.name, entityContext.entityId),
-        projectionTag(math.abs(entityContext.entityId.hashCode % numberOfProjectionTags))
-      )
+  val behaviorFactory: EntityContext[Command] => Behavior[Command] = entityContext =>
+    TenantPersistentBehavior(
+      entityContext.shard,
+      PersistenceId(entityContext.entityTypeKey.name, entityContext.entityId),
+      projectionTag(math.abs(entityContext.entityId.hashCode % numberOfProjectionTags))
+    )
 
   val tenantPersistenceEntity: Entity[Command, ShardingEnvelope[Command]] =
-    Entity(TenantPersistentBehavior.TypeKey)(behaviorFactory())
+    Entity(TenantPersistentBehavior.TypeKey)(behaviorFactory)
 
   def initProjections(
     blockingEc: ExecutionContextExecutor
@@ -56,8 +55,7 @@ trait Dependencies {
     val queueWriter: QueueWriter =
       QueueWriter.get(ApplicationConfiguration.queueUrl)(TenantEventsSerde.tenantToJson)(blockingEc)
 
-    val dbConfig: DatabaseConfig[JdbcProfile] =
-      DatabaseConfig.forConfig("akka-persistence-jdbc.shared-databases.slick")
+    val dbConfig: DatabaseConfig[JdbcProfile] = DatabaseConfig.forConfig("akka-persistence-jdbc.shared-databases.slick")
 
     val tenantPersistentProjection = new TenantPersistentProjection(dbConfig, queueWriter)
 

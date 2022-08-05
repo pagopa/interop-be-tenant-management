@@ -163,22 +163,34 @@ components:
     TenantAttribute:
       type: object
       properties:
-        certified:
-          type: array
-          items:
-            type: string
-        declared:
-          type: array
-          items:
-            type: string
-        verified:
-          type: array
-          items:
-            type: string
+        id:
+          type: string
+          format: uuid
+        kind:
+          type: string
+          $ref: '#/components/schemas/TenantAttributeKind'
+        assignmentTimestamp:
+          type: string
+          format: date-time
+        revocationTimestamp:
+          type: string
+          format: date-time
+        extensionTimestamp:
+          type: string
+          format: date-time
+        expirationTimestamp:
+          type: string
+          format: date-time
       required:
-        - certified
-        - declared
-        - verified
+        - id
+        - kind
+        - assignmentTimestamp
+    TenantAttributeKind:
+      type: string
+      enum:
+        - CERTIFIED
+        - DECLARED
+        - VERIFIED
     Tenant:
       description: Tenant model
       type: object
@@ -186,7 +198,11 @@ components:
         id:
           type: string
           format: uuid
-        certifier:
+        selfcareId:
+          type: string
+        externalId:
+          $ref: '#/components/schemas/ExternalId'
+        kind:
           type: boolean
           default: false
         attributes:
@@ -196,7 +212,19 @@ components:
       required:
         - id
         - certifier
+        - selfcareId
+        - externalId
+        - kind
         - attributes
+    ExternalId:
+      properties:
+        origin:
+          type: string
+        value:
+          type: string
+      required:
+        - origin
+        - value
     TenantSeed:
       description: Tenant Seed model
       type: object
@@ -204,10 +232,22 @@ components:
         id:
           type: string
           format: uuid
+        selfcareId:
+          type: string
+          format: uuid
+        externalId:
+          $ref: '#/components/schemas/ExternalId'
+        kind:
+          type: boolean
+          default: false
         attributes:
-          $ref: '#/components/schemas/TenantAttribute'
+          type: array
+          items:
+            $ref: '#/components/schemas/TenantAttribute'
       required:
-        - id
+        - selfcareId
+        - externalId
+        - kind
         - attributes
   securitySchemes:
     bearerAuth:

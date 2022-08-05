@@ -93,11 +93,8 @@ lazy val models = project
     Docker / publish    := {},
     publishTo           := {
       val nexus = s"https://${System.getenv("MAVEN_REPO")}/nexus/repository/"
-
-      if (isSnapshot.value)
-        Some("snapshots" at nexus + "maven-snapshots/")
-      else
-        Some("releases" at nexus + "maven-releases/")
+      if (isSnapshot.value) Some("snapshots" at nexus + "maven-snapshots/")
+      else Some("releases" at nexus + "maven-releases/")
     }
   )
 
@@ -112,11 +109,8 @@ lazy val client = project
     Docker / publish    := {},
     publishTo           := {
       val nexus = s"https://${System.getenv("MAVEN_REPO")}/nexus/repository/"
-
-      if (isSnapshot.value)
-        Some("snapshots" at nexus + "maven-snapshots/")
-      else
-        Some("releases" at nexus + "maven-releases/")
+      if (isSnapshot.value) Some("snapshots" at nexus + "maven-snapshots/")
+      else Some("releases" at nexus + "maven-releases/")
     }
   )
 
