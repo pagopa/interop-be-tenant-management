@@ -4,7 +4,7 @@ import java.util.UUID
 
 final case class PersistentTenant(
   id: UUID,
-  selfcareId: UUID,
+  selfcareId: String,
   externalId: PersistentTenantExternalId,
   kind: Boolean,
   attributes: List[PersistentTenantAttribute]

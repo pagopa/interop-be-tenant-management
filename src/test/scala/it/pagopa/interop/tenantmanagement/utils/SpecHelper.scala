@@ -1,5 +1,6 @@
-package it.pagopa.interop.tenantmanagement
+package it.pagopa.interop.tenantmanagement.utils
 
+import cats.implicits._
 import akka.actor.typed.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
@@ -16,6 +17,7 @@ import akka.http.scaladsl.model.headers._
 import it.pagopa.interop.tenantmanagement.api.impl._
 
 import java.net.InetAddress
+import java.time.OffsetDateTime
 
 trait SpecHelper {
 
@@ -26,6 +28,36 @@ trait SpecHelper {
     RawHeader("X-Correlation-Id", "test-id"),
     `X-Forwarded-For`(RemoteAddress(InetAddress.getByName("127.0.0.1")))
   )
+
+  def randomTenantAndSeed: (Tenant, TenantSeed) = {
+    val tenantId: UUID         = UUID.randomUUID()
+    val selfcareId: String     = UUID.randomUUID().toString()
+    val externalId: ExternalId = ExternalId("IPA", "pippo")
+
+    val attribute: TenantAttribute = TenantAttribute(
+      id = UUID.randomUUID(),
+      kind = TenantAttributeKind.CERTIFIED,
+      assignmentTimestamp = OffsetDateTime.now()
+    )
+
+    val tenantSeed: TenantSeed = TenantSeed(
+      id = tenantId.some,
+      selfcareId = selfcareId,
+      externalId = externalId,
+      kind = true,
+      attributes = attribute :: Nil
+    )
+
+    val tenant: Tenant = Tenant(
+      id = tenantId,
+      selfcareId = selfcareId.toString,
+      externalId = externalId,
+      kind = true,
+      attributes = attribute :: Nil
+    )
+
+    (tenant, tenantSeed)
+  }
 
   def createTenant(seed: TenantSeed)(implicit actorSystem: ActorSystem[_]): Future[Tenant] = {
     implicit val ec: ExecutionContext = actorSystem.executionContext

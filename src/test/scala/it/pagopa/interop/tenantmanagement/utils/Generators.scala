@@ -1,55 +1,16 @@
-package it.pagopa.interop.tenantmanagement.model.persistence.serializer
+package it.pagopa.interop.tenantmanagement.utils
 
-import cats.implicits._
-import com.softwaremill.diffx.Diff
-import com.softwaremill.diffx.generic.auto._
-import com.softwaremill.diffx.munit.DiffxAssertions
 import it.pagopa.interop.tenantmanagement.model.tenant._
 import it.pagopa.interop.tenantmanagement.model.persistence._
-import it.pagopa.interop.tenantmanagement.model.persistence.serializer.PersistentSerializationSpec._
-import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.events._
 import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.state._
+import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.events._
 import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.tenant._
-import munit.ScalaCheckSuite
+
+import cats.implicits._
 import org.scalacheck.Gen
-import org.scalacheck.Prop.forAll
-
 import java.time.{OffsetDateTime, ZoneOffset}
-import scala.reflect.runtime.universe.{TypeTag, typeOf}
 
-class PersistentSerializationSpec extends ScalaCheckSuite with DiffxAssertions {
-
-  serdeCheck[State, StateV1](stateGen, _.sorted)
-  deserCheck[State, StateV1](stateGen)
-  serdeCheck[TenantCreated, TenantCreatedV1](tenantCreatedGen)
-  deserCheck[TenantCreated, TenantCreatedV1](tenantCreatedGen)
-
-  // TODO move me in commons
-  def serdeCheck[A: TypeTag, B](gen: Gen[(A, B)], adapter: B => B = identity[B](_))(implicit
-    e: PersistEventSerializer[A, B],
-    loc: munit.Location,
-    d: => Diff[Either[Throwable, B]]
-  ): Unit = property(s"${typeOf[A].typeSymbol.name.toString} is correctly serialized") {
-    forAll(gen) { case (state, stateV1) =>
-      implicit val diffX: Diff[Either[Throwable, B]] = d
-      assertEqual(PersistEventSerializer.to[A, B](state).map(adapter), Right(stateV1).map(adapter))
-    }
-  }
-
-  // TODO move me in commons
-  def deserCheck[A, B: TypeTag](
-    gen: Gen[(A, B)]
-  )(implicit e: PersistEventDeserializer[B, A], loc: munit.Location, d: => Diff[Either[Throwable, A]]): Unit =
-    property(s"${typeOf[B].typeSymbol.name.toString} is correctly deserialized") {
-      forAll(gen) { case (state, stateV1) =>
-        // * This is declared lazy in the signature to avoid a MethodTooBigException
-        implicit val diffX: Diff[Either[Throwable, A]] = d
-        assertEqual(PersistEventDeserializer.from[B, A](stateV1), Right(state))
-      }
-    }
-}
-
-object PersistentSerializationSpec {
+object Generators {
 
   val stringGen: Gen[String] = for {
     n <- Gen.chooseNum(4, 100)
@@ -118,17 +79,16 @@ object PersistentSerializationSpec {
   val attributeGen: Gen[(PersistentTenantAttribute, TenantAttributeV1)] =
     Gen.oneOf(declaredAttributeGen, verifiedAttributeGen, certifiedAttributeGen)
 
-  val persistentTenantGen: Gen[(PersistentTenant, TenantV1)] =
-    for {
-      id                                               <- Gen.uuid
-      selfcareId                                       <- Gen.uuid
-      (externalId, externalIdV1)                       <- externalIdGen
-      kind                                             <- Gen.oneOf(true, false)
-      (persistentTenantAttributes, tenantAttributesV1) <- listOf(attributeGen).map(_.separate)
-    } yield (
-      PersistentTenant(id, selfcareId, externalId, kind, persistentTenantAttributes),
-      TenantV1(id.toString(), selfcareId.toString(), externalIdV1, kind, tenantAttributesV1)
-    )
+  val persistentTenantGen: Gen[(PersistentTenant, TenantV1)] = for {
+    id                                               <- Gen.uuid
+    selfcareId                                       <- stringGen
+    (externalId, externalIdV1)                       <- externalIdGen
+    kind                                             <- Gen.oneOf(true, false)
+    (persistentTenantAttributes, tenantAttributesV1) <- listOf(attributeGen).map(_.separate)
+  } yield (
+    PersistentTenant(id, selfcareId, externalId, kind, persistentTenantAttributes),
+    TenantV1(id.toString(), selfcareId.toString(), externalIdV1, kind, tenantAttributesV1)
+  )
 
   val stateGen: Gen[(State, StateV1)] = listOf(persistentTenantGen).map(_.separate).map { case (ps, psv1) =>
     val state   = State(ps.map(p => p.id.toString -> p).toMap)

@@ -1,4 +1,4 @@
-package it.pagopa.interop.tenantmanagement.util
+package it.pagopa.interop.tenantmanagement.utils
 
 import akka.http.scaladsl.client.RequestBuilding.{Delete, Get, Post, Put}
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport

@@ -21,11 +21,10 @@ object protobufUtils {
   def toPersistentTenant(protobufTenant: TenantV1): Either[Throwable, PersistentTenant] = for {
     id         <- protobufTenant.id.toUUID.toEither
     externalId <- toPersistentTenantExternalId(protobufTenant.externalId)
-    selfcareId <- protobufTenant.selfcareId.toUUID.toEither
     attributes <- protobufTenant.attributes.traverse(toPersistentTenantAttributes)
   } yield PersistentTenant(
     id = id,
-    selfcareId = selfcareId,
+    selfcareId = protobufTenant.selfcareId,
     externalId = externalId,
     kind = protobufTenant.kind,
     attributes = attributes.toList

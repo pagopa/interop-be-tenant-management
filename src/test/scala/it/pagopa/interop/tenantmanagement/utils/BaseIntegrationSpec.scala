@@ -1,4 +1,4 @@
-package it.pagopa.interop.tenantmanagement
+package it.pagopa.interop.tenantmanagement.utils
 
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity}
