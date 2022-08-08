@@ -12,9 +12,7 @@ import it.pagopa.interop.tenantmanagement.model._
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 import akka.http.scaladsl.unmarshalling.Unmarshaller
-import akka.http.scaladsl.marshalling.ToEntityMarshaller
 import akka.http.scaladsl.model.headers._
-import akka.http.scaladsl.unmarshalling.FromEntityUnmarshaller
 import it.pagopa.interop.tenantmanagement.api.impl._
 
 import java.net.InetAddress
@@ -28,10 +26,6 @@ trait SpecHelper {
     RawHeader("X-Correlation-Id", "test-id"),
     `X-Forwarded-For`(RemoteAddress(InetAddress.getByName("127.0.0.1")))
   )
-
-  implicit def toEntityMarshallerTokenSeed: ToEntityMarshaller[TenantSeed]    = sprayJsonMarshaller[TenantSeed]
-  implicit def fromEntityUnmarshallerTenant: FromEntityUnmarshaller[Tenant]   = sprayJsonUnmarshaller[Tenant]
-  implicit def fromEntityUnmarshallerProblem: FromEntityUnmarshaller[Problem] = sprayJsonUnmarshaller[Problem]
 
   def createTenant(seed: TenantSeed)(implicit actorSystem: ActorSystem[_]): Future[Tenant] = {
     implicit val ec: ExecutionContext = actorSystem.executionContext
@@ -68,7 +62,7 @@ trait SpecHelper {
     )
   )
 
-  def makeFailingRequest[T](url: String, verb: HttpMethod, data: T)(implicit
+  def makeFailingRequest[T](verb: HttpMethod, url: String, data: T)(implicit
     actorSystem: ActorSystem[_],
     marshaller: Marshaller[T, MessageEntity]
   ): Future[Problem] = {
@@ -80,6 +74,6 @@ trait SpecHelper {
     } yield problem
   }
 
-  def makeFailingRequest(url: String, verb: HttpMethod)(implicit actorSystem: ActorSystem[_]): Future[Problem] =
-    makeFailingRequest(url, verb, "")
+  def makeFailingGet(url: String)(implicit actorSystem: ActorSystem[_]): Future[Problem] =
+    makeFailingRequest(HttpMethods.GET, url, "")
 }

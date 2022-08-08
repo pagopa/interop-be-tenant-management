@@ -27,19 +27,13 @@ object TenantPersistentBehavior {
         tenant.fold(
           Effect
             .persist(TenantCreated(newTenant))
-            .thenRun { (s: State) =>
-              println(s"State after creation is $s")
-              println(s"CREATED tenant $newTenant")
-              replyTo ! StatusReply.Success(newTenant)
-            }
+            .thenRun { (_: State) => replyTo ! StatusReply.Success(newTenant) }
         ) { p =>
           replyTo ! StatusReply.Error[PersistentTenant](TenantAlreadyExists(p.id.toString))
           Effect.none[TenantCreated, State]
         }
 
       case GetTenant(tenantId, replyTo) =>
-        println(s"ASKING FOR tenant $tenantId")
-        println(s"Tenants ${state.tenants}")
         val tenant: Option[PersistentTenant] = state.tenants.get(tenantId)
         tenant.fold {
           replyTo ! StatusReply.Error[PersistentTenant](TenantNotFound(tenantId))

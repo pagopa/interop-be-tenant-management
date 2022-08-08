@@ -2,19 +2,20 @@ package it.pagopa.interop.tenantmanagement.provider
 
 import cats.implicits._
 import akka.actor.typed.ActorSystem
-import akka.http.scaladsl.model.HttpMethods
+import akka.http.scaladsl.model.HttpMethods._
 import it.pagopa.interop.tenantmanagement._
 import it.pagopa.interop.tenantmanagement.model._
 import java.util.UUID
 import scala.concurrent.Future
 import java.time.OffsetDateTime
 import scala.concurrent.ExecutionContext
+import it.pagopa.interop.tenantmanagement.api.impl._
 
 class TenantSpec extends BaseIntegrationSpec {
 
   test("Creation of a new tenant must succeed") {
     implicit val system: ActorSystem[_] = actorSystem()
-    implicit val ec: ExecutionContext   = system.executionContext
+    implicit val ecs: ExecutionContext  = system.executionContext
     val tenantId: UUID                  = UUID.randomUUID()
     val selfcareId: UUID                = UUID.randomUUID()
     val externalId: ExternalId          = ExternalId("IPA", "pippo")
@@ -37,7 +38,7 @@ class TenantSpec extends BaseIntegrationSpec {
 
     val expected: Tenant = Tenant(
       id = tenantId,
-      selfcareId = selfcareId,
+      selfcareId = selfcareId.toString,
       externalId = externalId,
       kind = true,
       attributes = attribute :: Nil
@@ -68,7 +69,7 @@ class TenantSpec extends BaseIntegrationSpec {
     )
 
     val response: Future[Problem] =
-      createTenant(tenantSeed) >> makeFailingRequest(s"tenants", HttpMethods.POST, tenantSeed)
+      createTenant(tenantSeed) >> makeFailingRequest(POST, "tenants", tenantSeed)
 
     response.map { result =>
       assertEquals(result.status, 409)
@@ -101,7 +102,7 @@ class TenantSpec extends BaseIntegrationSpec {
 
     val expected: Tenant = Tenant(
       id = tenantId,
-      selfcareId = selfcareId,
+      selfcareId = selfcareId.toString,
       externalId = externalId,
       kind = true,
       attributes = attribute :: Nil
@@ -114,7 +115,7 @@ class TenantSpec extends BaseIntegrationSpec {
     implicit val system: ActorSystem[_] = actorSystem()
     implicit val ec: ExecutionContext   = system.executionContext
     val tenantId: UUID                  = UUID.randomUUID()
-    val response: Future[Problem]       = makeFailingRequest(s"tenants/${tenantId.toString}", HttpMethods.GET)
+    val response: Future[Problem]       = makeFailingGet(s"tenants/${tenantId.toString}")
 
     response.map { result =>
       assertEquals(result.status, 404)

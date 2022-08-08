@@ -76,7 +76,7 @@ object Adapters {
   implicit class PersistentTenantWrapper(private val p: PersistentTenant) extends AnyVal {
     def toAPI: Tenant = Tenant(
       id = p.id,
-      selfcareId = p.selfcareId,
+      selfcareId = p.selfcareId.toString,
       kind = p.kind,
       attributes = p.attributes.map(_.toAPI),
       externalId = p.externalId.toAPI

@@ -9,8 +9,7 @@ import it.pagopa.interop.tenantmanagement.api.impl.TenantApiServiceImpl
 import it.pagopa.interop.tenantmanagement.model.persistence.Command
 import it.pagopa.interop.tenantmanagement.model.{TenantSeed}
 import it.pagopa.interop.tenantmanagement.server.impl.Main.tenantPersistenceEntity
-import it.pagopa.interop.tenantmanagement.util.{AuthorizedRoutes, ClusteredScalatestRouteTest}
-import org.scalatest.wordspec.AnyWordSpecLike
+import it.pagopa.interop.tenantmanagement.util.{AuthorizedRoutes, ClusteredMUnitRouteTest}
 
 import java.util.UUID
 import it.pagopa.interop.tenantmanagement.model.ExternalId
@@ -18,36 +17,32 @@ import java.time.OffsetDateTime
 import it.pagopa.interop.tenantmanagement.model.TenantAttribute
 import it.pagopa.interop.tenantmanagement.model.TenantAttributeKind
 
-class TenantApiServiceAuthzSpec extends AnyWordSpecLike with ClusteredScalatestRouteTest {
+class TenantApiServiceAuthzSpec extends ClusteredMUnitRouteTest {
   override val testPersistentEntity: Entity[Command, ShardingEnvelope[Command]] = tenantPersistenceEntity
 
   val service: TenantApiService = TenantApiServiceImpl(testKit.system, testAkkaSharding, testPersistentEntity)
 
-  "Tenant api operation authorization spec" should {
-
-    "accept authorized roles for createTenant" in {
-      val endpoint = AuthorizedRoutes.endpoints("createTenant")
-      val fakeSeed = TenantSeed(
-        id = UUID.randomUUID().some,
-        selfcareId = UUID.randomUUID(),
-        externalId = ExternalId("IPA", "pippo"),
-        kind = true,
-        attributes = List(
-          TenantAttribute(
-            id = UUID.randomUUID(),
-            kind = TenantAttributeKind.CERTIFIED,
-            assignmentTimestamp = OffsetDateTime.now()
-          )
+  test("Tenant api operation authorization spec should accept authorized roles for createTenant") {
+    val endpoint = AuthorizedRoutes.endpoints("createTenant")
+    val fakeSeed = TenantSeed(
+      id = UUID.randomUUID().some,
+      selfcareId = UUID.randomUUID(),
+      externalId = ExternalId("IPA", "pippo"),
+      kind = true,
+      attributes = List(
+        TenantAttribute(
+          id = UUID.randomUUID(),
+          kind = TenantAttributeKind.CERTIFIED,
+          assignmentTimestamp = OffsetDateTime.now()
         )
       )
-      validateAuthorization(endpoint, { implicit c: Seq[(String, String)] => service.createTenant(fakeSeed) })
-    }
+    )
+    validateAuthorization(endpoint, { implicit c: Seq[(String, String)] => service.createTenant(fakeSeed) })
+  }
 
-    "accept authorized roles for getTenant" in {
-      val endpoint = AuthorizedRoutes.endpoints("getTenant")
-      validateAuthorization(endpoint, { implicit c: Seq[(String, String)] => service.getTenant("fakeSeed") })
-    }
-
+  test("Tenant api operation authorization spec should accept authorized roles for getTenant") {
+    val endpoint = AuthorizedRoutes.endpoints("getTenant")
+    validateAuthorization(endpoint, { implicit c: Seq[(String, String)] => service.getTenant("fakeSeed") })
   }
 
 }

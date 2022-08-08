@@ -117,7 +117,9 @@ lazy val client = project
 lazy val root = (project in file("."))
   .settings(
     name                        := "interop-be-tenant-management",
-    Test / parallelExecution    := false,
+    Test / parallelExecution    := true,
+    Test / fork                 := true,
+    Test / javaOptions += "-Dconfig.file=src/test/resources/application-test.conf",
     scalafmtOnCompile           := true,
     libraryDependencies         := Dependencies.Jars.`server`,
     dockerBuildOptions ++= Seq("--network=host"),
@@ -135,6 +137,3 @@ lazy val root = (project in file("."))
   .dependsOn(generated, models)
   .enablePlugins(JavaAppPackaging)
   .setupBuildInfo
-
-Test / fork := true
-Test / javaOptions += "-Dconfig.file=src/test/resources/application-test.conf"

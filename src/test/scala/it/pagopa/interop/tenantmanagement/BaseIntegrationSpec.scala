@@ -13,6 +13,7 @@ import it.pagopa.interop.tenantmanagement.server.impl.Main.behaviorFactory
 import akka.http.scaladsl.server.directives.Credentials.{Missing, Provided}
 import it.pagopa.interop.commons.utils.{BEARER, USER_ROLES}
 
+import com.typesafe.scalalogging.Logger
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.Await
 import com.typesafe.config.ConfigFactory
@@ -22,7 +23,7 @@ import it.pagopa.interop.tenantmanagement.model.persistence.Command
 import akka.actor.typed.ActorSystem
 import akka.actor
 
-class BaseIntegrationSpec extends FunSuite with SpecHelper {
+abstract class BaseIntegrationSpec extends FunSuite with SpecHelper {
 
   override def munitFixtures = List(actorSystem)
 
@@ -32,6 +33,7 @@ class BaseIntegrationSpec extends FunSuite with SpecHelper {
     def apply(): ActorSystem[_]                = actorTestKit.internalSystem
 
     override def beforeAll(): Unit = {
+      Logger(this.getClass()) // * A logger should be created before the one in akka to avoid the "replay" message
       actorTestKit = ActorTestKit(ConfigFactory.load())
       Cluster(actorTestKit.internalSystem).manager ! Join(Cluster(actorTestKit.internalSystem).selfMember.address)
       val sharding: ClusterSharding                                    = ClusterSharding(actorTestKit.internalSystem)
@@ -69,5 +71,4 @@ class BaseIntegrationSpec extends FunSuite with SpecHelper {
       super.afterAll()
     }
   }
-
 }

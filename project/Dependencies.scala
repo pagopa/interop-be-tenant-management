@@ -79,16 +79,6 @@ object Dependencies {
     lazy val jdbc      = namespace % "postgresql" % postgresVersion
   }
 
-  private[this] object scalatest {
-    lazy val namespace = "org.scalatest"
-    lazy val core      = namespace %% "scalatest" % scalatestVersion
-  }
-
-  private[this] object scalamock {
-    lazy val namespace = "org.scalamock"
-    lazy val core      = namespace %% "scalamock" % scalaMockVersion
-  }
-
   private[this] object cats {
     lazy val namespace = "org.typelevel"
     lazy val core      = namespace %% "cats-core" % catsVersion
@@ -139,8 +129,6 @@ object Dependencies {
       postgres.jdbc               % Compile,
       scalaprotobuf.core          % Compile,
       scalaprotobuf.core          % Protobuf,
-      scalatest.core              % Test,
-      scalamock.core              % Test,
       akka.httpTestkit            % Test,
       akka.testkit                % Test,
       "org.scalameta"            %% "munit"                % "0.7.29" % Test,
