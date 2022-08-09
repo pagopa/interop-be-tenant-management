@@ -13,6 +13,8 @@ message TenantV1 {
   required ExternalIdV1 externalId = 3;
   repeated TenantKindV1 kinds = 4;
   repeated TenantAttributeV1 attributes = 5;
+  required int64 createdAt = 6;
+  optional int64 updatedAt = 7;
 }
 
 enum TenantKindV1 {

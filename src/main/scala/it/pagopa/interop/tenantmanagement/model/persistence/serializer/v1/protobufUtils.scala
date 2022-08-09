@@ -5,6 +5,7 @@ import it.pagopa.interop.commons.utils.TypeConversions._
 import it.pagopa.interop.tenantmanagement.model.tenant._
 import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.tenant.TenantAttributeV1.Empty
 import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.tenant._
+import it.pagopa.interop.commons.utils.TypeConversions.LongOps
 
 object protobufUtils {
 
@@ -36,24 +37,29 @@ object protobufUtils {
     externalId <- toPersistentTenantExternalId(protobufTenant.externalId)
     attributes <- protobufTenant.attributes.traverse(toPersistentTenantAttributes)
     kinds      <- protobufTenant.kinds.toList.traverse(toPersistentTenantKind)
+    createdAt  <- protobufTenant.createdAt.toOffsetDateTime.toEither
+    updatedAt  <- protobufTenant.updatedAt.traverse(_.toOffsetDateTime.toEither)
   } yield PersistentTenant(
     id = id,
     selfcareId = protobufTenant.selfcareId,
     externalId = externalId,
     kinds = kinds,
-    attributes = attributes.toList
+    attributes = attributes.toList,
+    createdAt = createdAt,
+    updatedAt = updatedAt
   )
 
-  def toProtobufTenant(persistentTenant: PersistentTenant): Either[Throwable, TenantV1] =
-    toProtobufTenantExternalId(persistentTenant.externalId).map(externalId =>
-      TenantV1(
-        id = persistentTenant.id.toString,
-        selfcareId = persistentTenant.selfcareId.toString,
-        externalId = externalId,
-        kinds = persistentTenant.kinds.map(toProtobufTenantKind),
-        attributes = persistentTenant.attributes.map(toProtobufTenantAttribute)
-      )
-    )
+  def toProtobufTenant(persistentTenant: PersistentTenant): Either[Throwable, TenantV1] = for {
+    externalId <- toProtobufTenantExternalId(persistentTenant.externalId)
+  } yield TenantV1(
+    id = persistentTenant.id.toString,
+    selfcareId = persistentTenant.selfcareId.toString,
+    externalId = externalId,
+    kinds = persistentTenant.kinds.map(toProtobufTenantKind),
+    attributes = persistentTenant.attributes.map(toProtobufTenantAttribute),
+    createdAt = persistentTenant.createdAt.toMillis,
+    updatedAt = persistentTenant.updatedAt.map(_.toMillis)
+  )
 
   def toPersistentTenantAttributes(
     protobufTenantAttribute: TenantAttributeV1

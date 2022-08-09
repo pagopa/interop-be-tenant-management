@@ -20,6 +20,7 @@ import it.pagopa.interop.tenantmanagement.model.persistence._
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenant
 import it.pagopa.interop.tenantmanagement.model._
 import it.pagopa.interop.commons.utils.TypeConversions.EitherOps
+import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
@@ -30,7 +31,8 @@ import scala.concurrent.ExecutionContextExecutor
 final case class TenantApiServiceImpl(
   system: ActorSystem[_],
   sharding: ClusterSharding,
-  entity: Entity[Command, ShardingEnvelope[Command]]
+  entity: Entity[Command, ShardingEnvelope[Command]],
+  offsetDateTimeSupplier: OffsetDateTimeSupplier
 ) extends TenantApiService {
 
   private val logger                            = Logger.takingImplicit[ContextFieldsToLog](this.getClass())
@@ -54,7 +56,7 @@ final case class TenantApiServiceImpl(
   ): Route = authorize(ADMIN_ROLE, API_ROLE, SECURITY_ROLE, M2M_ROLE) {
 
     val result: Future[PersistentTenant] = for {
-      tenant        <- PersistentTenant.fromAPI(tenantSeed).toFuture
+      tenant        <- PersistentTenant.fromAPI(tenantSeed, offsetDateTimeSupplier).toFuture
       actorResponse <- commander(tenant.id.toString).askWithStatus(ref => CreateTenant(tenant, ref))
     } yield actorResponse
 

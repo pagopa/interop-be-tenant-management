@@ -29,7 +29,7 @@ trait SpecHelper {
     `X-Forwarded-For`(RemoteAddress(InetAddress.getByName("127.0.0.1")))
   )
 
-  def randomTenantAndSeed: (Tenant, TenantSeed) = {
+  def randomTenantAndSeed(offsetDateTime: OffsetDateTime): (Tenant, TenantSeed) = {
     val tenantId: UUID         = UUID.randomUUID()
     val selfcareId: String     = UUID.randomUUID().toString()
     val externalId: ExternalId = ExternalId("IPA", "pippo")
@@ -53,7 +53,9 @@ trait SpecHelper {
       selfcareId = selfcareId.toString,
       externalId = externalId,
       kinds = TenantKind.CERTIFIER :: Nil,
-      attributes = attribute :: Nil
+      attributes = attribute :: Nil,
+      createdAt = offsetDateTime,
+      updatedAt = None
     )
 
     (tenant, tenantSeed)

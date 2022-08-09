@@ -22,53 +22,63 @@ import akka.cluster.sharding.typed.ShardingEnvelope
 import it.pagopa.interop.tenantmanagement.model.persistence.Command
 import akka.actor.typed.ActorSystem
 import akka.actor
+import java.time.OffsetDateTime
+import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
 
 abstract class BaseIntegrationSpec extends FunSuite with SpecHelper {
 
-  override def munitFixtures = List(actorSystem)
+  override def munitFixtures = List(suiteState)
 
-  val actorSystem: Fixture[ActorSystem[_]] = new Fixture[ActorSystem[_]]("actorSystem") {
-    private var bindServer: Http.ServerBinding = null
-    private var actorTestKit: ActorTestKit     = null
-    def apply(): ActorSystem[_]                = actorTestKit.internalSystem
+  val suiteState: Fixture[(ActorSystem[_], OffsetDateTime)] =
+    new Fixture[(ActorSystem[_], OffsetDateTime)]("actorSystem") {
+      private var bindServer: Http.ServerBinding    = null
+      private var actorTestKit: ActorTestKit        = null
+      private var mockedTime: OffsetDateTime        = null
+      def apply(): (ActorSystem[_], OffsetDateTime) = (actorTestKit.internalSystem, mockedTime)
 
-    override def beforeAll(): Unit = {
-      Logger(this.getClass()) // * A logger should be created before the one in akka to avoid the "replay" message
-      actorTestKit = ActorTestKit(ConfigFactory.load())
-      Cluster(actorTestKit.internalSystem).manager ! Join(Cluster(actorTestKit.internalSystem).selfMember.address)
-      val sharding: ClusterSharding                                    = ClusterSharding(actorTestKit.internalSystem)
-      val persistentEntity: Entity[Command, ShardingEnvelope[Command]] =
-        Entity(TenantPersistentBehavior.TypeKey)(behaviorFactory)
+      override def beforeAll(): Unit = {
+        Logger(this.getClass()) // * A logger should be created before the one in akka to avoid the "replay" message
+        actorTestKit = ActorTestKit(ConfigFactory.load())
+        Cluster(actorTestKit.internalSystem).manager ! Join(Cluster(actorTestKit.internalSystem).selfMember.address)
+        val sharding: ClusterSharding                                    = ClusterSharding(actorTestKit.internalSystem)
+        val persistentEntity: Entity[Command, ShardingEnvelope[Command]] =
+          Entity(TenantPersistentBehavior.TypeKey)(behaviorFactory)
 
-      sharding.init(persistentEntity)
+        sharding.init(persistentEntity)
 
-      val tenantApi: TenantApi = new TenantApi(
-        TenantApiServiceImpl(actorTestKit.internalSystem, sharding, persistentEntity),
-        TenantApiMarshallerImpl,
-        SecurityDirectives.authenticateOAuth2(
-          "SecurityRealm",
-          {
-            case Provided(identifier) => Some(Seq(BEARER -> identifier, USER_ROLES -> "admin"))
-            case Missing              => None
-          }
+        mockedTime = OffsetDateTime.now()
+
+        val offsetDateTimeSupplier: OffsetDateTimeSupplier = new OffsetDateTimeSupplier {
+          def get: OffsetDateTime = mockedTime
+        }
+
+        val tenantApi: TenantApi = new TenantApi(
+          TenantApiServiceImpl(actorTestKit.internalSystem, sharding, persistentEntity, offsetDateTimeSupplier),
+          TenantApiMarshallerImpl,
+          SecurityDirectives.authenticateOAuth2(
+            "SecurityRealm",
+            {
+              case Provided(identifier) => Some(Seq(BEARER -> identifier, USER_ROLES -> "admin"))
+              case Missing              => None
+            }
+          )
         )
-      )
 
-      implicit val classic: actor.ActorSystem = actorTestKit.internalSystem.classicSystem
-      val controller: Controller              = new Controller(tenantApi)
+        implicit val classic: actor.ActorSystem = actorTestKit.internalSystem.classicSystem
+        val controller: Controller              = new Controller(tenantApi)
 
-      bindServer = Await.result(
-        Http()
-          .newServerAt("0.0.0.0", 18088)
-          .bind(controller.routes),
-        100.seconds
-      )
+        bindServer = Await.result(
+          Http()
+            .newServerAt("0.0.0.0", 18088)
+            .bind(controller.routes),
+          100.seconds
+        )
+      }
+
+      override def afterAll(): Unit = {
+        bindServer.unbind()
+        ActorTestKit.shutdown(actorTestKit.internalSystem, 5.seconds)
+        super.afterAll()
+      }
     }
-
-    override def afterAll(): Unit = {
-      bindServer.unbind()
-      ActorTestKit.shutdown(actorTestKit.internalSystem, 5.seconds)
-      super.afterAll()
-    }
-  }
 }

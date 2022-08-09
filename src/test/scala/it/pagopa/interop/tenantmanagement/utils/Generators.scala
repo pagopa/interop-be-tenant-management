@@ -90,9 +90,11 @@ object Generators {
     (externalId, externalIdV1)                       <- externalIdGen
     (kinds, kindsV1)                                 <- listOf(tenantKindGen).map(_.separate)
     (persistentTenantAttributes, tenantAttributesV1) <- listOf(attributeGen).map(_.separate)
+    (createdAt, createdAtV1)                         <- offsetDatetimeGen
+    (updatedAt, updatedAtV1)                         <- Gen.option(offsetDatetimeGen).map(_.separate)
   } yield (
-    PersistentTenant(id, selfcareId, externalId, kinds, persistentTenantAttributes),
-    TenantV1(id.toString(), selfcareId.toString(), externalIdV1, kindsV1, tenantAttributesV1)
+    PersistentTenant(id, selfcareId, externalId, kinds, persistentTenantAttributes, createdAt, updatedAt),
+    TenantV1(id.toString(), selfcareId.toString(), externalIdV1, kindsV1, tenantAttributesV1, createdAtV1, updatedAtV1)
   )
 
   val stateGen: Gen[(State, StateV1)] = listOf(tenantGen).map(_.separate).map { case (ps, psv1) =>

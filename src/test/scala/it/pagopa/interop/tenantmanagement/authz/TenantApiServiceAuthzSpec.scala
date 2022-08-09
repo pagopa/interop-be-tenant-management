@@ -17,11 +17,17 @@ import it.pagopa.interop.tenantmanagement.model.ExternalId
 import java.time.OffsetDateTime
 import it.pagopa.interop.tenantmanagement.model.TenantAttribute
 import it.pagopa.interop.tenantmanagement.model.TenantAttributeKind
+import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
 
 class TenantApiServiceAuthzSpec extends ClusteredMUnitRouteTest {
   override val testPersistentEntity: Entity[Command, ShardingEnvelope[Command]] = tenantPersistenceEntity
 
-  val service: TenantApiService = TenantApiServiceImpl(testKit.system, testAkkaSharding, testPersistentEntity)
+  val iCallConstructorsBecauseOOPIsNeverDead = new OffsetDateTimeSupplier {
+    def get: OffsetDateTime = OffsetDateTime.now()
+  }
+
+  val service: TenantApiService =
+    TenantApiServiceImpl(testKit.system, testAkkaSharding, testPersistentEntity, iCallConstructorsBecauseOOPIsNeverDead)
 
   test("Tenant api operation authorization spec should accept authorized roles for createTenant") {
 

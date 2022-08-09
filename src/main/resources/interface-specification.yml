@@ -214,6 +214,12 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/TenantAttribute'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
       required:
         - id
         - certifier
@@ -221,6 +227,7 @@ components:
         - externalId
         - kinds
         - attributes
+        - createdAt
     ExternalId:
       properties:
         origin:

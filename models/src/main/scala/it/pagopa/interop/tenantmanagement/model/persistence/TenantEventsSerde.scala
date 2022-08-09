@@ -75,7 +75,7 @@ object TenantEventsSerde {
       }
     }
 
-  private implicit val ptFormat: RootJsonFormat[PersistentTenant] = jsonFormat5(PersistentTenant.apply)
+  private implicit val ptFormat: RootJsonFormat[PersistentTenant] = jsonFormat7(PersistentTenant.apply)
   private implicit val tcFormat: RootJsonFormat[TenantCreated]    = jsonFormat1(TenantCreated.apply)
 
 }

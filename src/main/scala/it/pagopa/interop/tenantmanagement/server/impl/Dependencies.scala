@@ -34,6 +34,8 @@ import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
+import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
+import it.pagopa.interop.commons.utils.service.impl.OffsetDateTimeSupplierImpl
 
 trait Dependencies {
 
@@ -84,9 +86,12 @@ trait Dependencies {
     complete(error.status, error)(TenantApiMarshallerImpl.toEntityMarshallerProblem)
   }
 
+  // Mother forgive me for this
+  val oopIsNeverDead: OffsetDateTimeSupplier = OffsetDateTimeSupplierImpl
+
   def tenantApi(sharding: ClusterSharding, jwtReader: JWTReader)(implicit actorSystem: ActorSystem[_]) =
     new TenantApi(
-      TenantApiServiceImpl(actorSystem, sharding, tenantPersistenceEntity),
+      TenantApiServiceImpl(actorSystem, sharding, tenantPersistenceEntity, oopIsNeverDead),
       TenantApiMarshallerImpl,
       jwtReader.OAuth2JWTValidatorAsContexts
     )

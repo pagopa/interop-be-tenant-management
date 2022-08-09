@@ -6,6 +6,7 @@ import it.pagopa.interop.tenantmanagement.model._
 import it.pagopa.interop.tenantmanagement.error.InternalErrors
 import java.util.UUID
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantKind._
+import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
 
 object Adapters {
 
@@ -80,14 +81,16 @@ object Adapters {
       selfcareId = p.selfcareId.toString,
       kinds = p.kinds.map(_.toAPI),
       attributes = p.attributes.map(_.toAPI),
-      externalId = p.externalId.toAPI
+      externalId = p.externalId.toAPI,
+      createdAt = p.createdAt,
+      updatedAt = p.updatedAt
     )
   }
 
   implicit class PersistentTenantObjectWrapper(private val p: PersistentTenant.type) extends AnyVal {
     // We'll remove the field "id" from api and use just UUID.randomUUID once
     // migrated the persistence of all the already created eservices
-    def fromAPI(seed: TenantSeed): Either[Throwable, PersistentTenant] =
+    def fromAPI(seed: TenantSeed, supplier: OffsetDateTimeSupplier): Either[Throwable, PersistentTenant] =
       seed.attributes.toList
         .traverse(PersistentTenantAttribute.fromAPI)
         .map(attributes =>
@@ -96,7 +99,9 @@ object Adapters {
             selfcareId = seed.selfcareId,
             externalId = PersistentTenantExternalId.fromAPI(seed.externalId),
             kinds = seed.kinds.map(PersistentTenantKind.fromAPI).toList,
-            attributes = attributes
+            attributes = attributes,
+            createdAt = supplier.get,
+            updatedAt = None
           )
         )
   }
