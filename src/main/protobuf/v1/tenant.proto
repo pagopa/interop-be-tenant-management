@@ -11,8 +11,13 @@ message TenantV1 {
   required string id = 1;
   required string selfcareId = 2;
   required ExternalIdV1 externalId = 3;
-  required bool kind = 4;
+  repeated TenantKindV1 kinds = 4;
   repeated TenantAttributeV1 attributes = 5;
+}
+
+enum TenantKindV1 {
+  STANDARD = 1;
+  CERTIFIER = 2;
 }
 
 message ExternalIdV1 {

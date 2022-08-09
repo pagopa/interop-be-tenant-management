@@ -28,7 +28,7 @@ import it.pagopa.interop.tenantmanagement.model.persistence.{
   Command,
   TenantEventsSerde,
   TenantPersistentBehavior,
-  TenantPersistentProjection
+  TenantNotificationsProjection
 }
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
@@ -57,12 +57,12 @@ trait Dependencies {
 
     val dbConfig: DatabaseConfig[JdbcProfile] = DatabaseConfig.forConfig("akka-persistence-jdbc.shared-databases.slick")
 
-    val tenantPersistentProjection = new TenantPersistentProjection(dbConfig, queueWriter)
+    val tenantNotificationsProjection = new TenantNotificationsProjection(dbConfig, queueWriter)
 
     ShardedDaemonProcess(actorSystem).init[ProjectionBehavior.Command](
-      name = "tenant-projections",
+      name = "tenant-notification-projections",
       numberOfInstances = numberOfProjectionTags,
-      behaviorFactory = (i: Int) => ProjectionBehavior(tenantPersistentProjection.projection(projectionTag(i))),
+      behaviorFactory = (i: Int) => ProjectionBehavior(tenantNotificationsProjection.projection(projectionTag(i))),
       stopMessage = ProjectionBehavior.Stop
     )
   }

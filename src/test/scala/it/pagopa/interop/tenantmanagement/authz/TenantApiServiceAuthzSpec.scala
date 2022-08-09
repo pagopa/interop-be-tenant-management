@@ -29,7 +29,7 @@ class TenantApiServiceAuthzSpec extends ClusteredMUnitRouteTest {
       id = UUID.randomUUID().some,
       selfcareId = UUID.randomUUID().toString(),
       externalId = ExternalId("IPA", "pippo"),
-      kind = true,
+      kinds = Nil,
       attributes = List(
         TenantAttribute(
           id = UUID.randomUUID(),

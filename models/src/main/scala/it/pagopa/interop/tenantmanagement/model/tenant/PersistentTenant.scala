@@ -6,6 +6,6 @@ final case class PersistentTenant(
   id: UUID,
   selfcareId: String,
   externalId: PersistentTenantExternalId,
-  kind: Boolean,
+  kinds: List[PersistentTenantKind],
   attributes: List[PersistentTenantAttribute]
 )

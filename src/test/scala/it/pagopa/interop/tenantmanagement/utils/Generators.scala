@@ -79,18 +79,23 @@ object Generators {
   val attributeGen: Gen[(PersistentTenantAttribute, TenantAttributeV1)] =
     Gen.oneOf(declaredAttributeGen, verifiedAttributeGen, certifiedAttributeGen)
 
-  val persistentTenantGen: Gen[(PersistentTenant, TenantV1)] = for {
+  val tenantKindGen: Gen[(PersistentTenantKind, TenantKindV1)] = Gen.oneOf(
+    (PersistentTenantKind.CERTIFIER, TenantKindV1.CERTIFIER),
+    (PersistentTenantKind.STANDARD, TenantKindV1.STANDARD)
+  )
+
+  val tenantGen: Gen[(PersistentTenant, TenantV1)] = for {
     id                                               <- Gen.uuid
     selfcareId                                       <- stringGen
     (externalId, externalIdV1)                       <- externalIdGen
-    kind                                             <- Gen.oneOf(true, false)
+    (kinds, kindsV1)                                 <- listOf(tenantKindGen).map(_.separate)
     (persistentTenantAttributes, tenantAttributesV1) <- listOf(attributeGen).map(_.separate)
   } yield (
-    PersistentTenant(id, selfcareId, externalId, kind, persistentTenantAttributes),
-    TenantV1(id.toString(), selfcareId.toString(), externalIdV1, kind, tenantAttributesV1)
+    PersistentTenant(id, selfcareId, externalId, kinds, persistentTenantAttributes),
+    TenantV1(id.toString(), selfcareId.toString(), externalIdV1, kindsV1, tenantAttributesV1)
   )
 
-  val stateGen: Gen[(State, StateV1)] = listOf(persistentTenantGen).map(_.separate).map { case (ps, psv1) =>
+  val stateGen: Gen[(State, StateV1)] = listOf(tenantGen).map(_.separate).map { case (ps, psv1) =>
     val state   = State(ps.map(p => p.id.toString -> p).toMap)
     val stateV1 = StateV1(psv1.map(pV1 => TenantsV1(pV1.id, pV1)))
     (state, stateV1)
@@ -100,7 +105,7 @@ object Generators {
     def sorted: StateV1 = stateV1.copy(stateV1.tenants.sortBy(_.key))
   }
 
-  val tenantCreatedGen: Gen[(TenantCreated, TenantCreatedV1)] = persistentTenantGen.map { case (a, b) =>
+  val tenantCreatedGen: Gen[(TenantCreated, TenantCreatedV1)] = tenantGen.map { case (a, b) =>
     (TenantCreated(a), TenantCreatedV1(b))
   }
 

@@ -44,7 +44,7 @@ trait SpecHelper {
       id = tenantId.some,
       selfcareId = selfcareId,
       externalId = externalId,
-      kind = true,
+      kinds = TenantKind.CERTIFIER :: Nil,
       attributes = attribute :: Nil
     )
 
@@ -52,7 +52,7 @@ trait SpecHelper {
       id = tenantId,
       selfcareId = selfcareId.toString,
       externalId = externalId,
-      kind = true,
+      kinds = TenantKind.CERTIFIER :: Nil,
       attributes = attribute :: Nil
     )
 

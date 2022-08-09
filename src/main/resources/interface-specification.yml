@@ -32,7 +32,6 @@ paths:
       summary: Create a new tenant
       operationId: createTenant
       requestBody:
-        description: A Tenant seed
         content:
           application/json:
             schema:
@@ -191,6 +190,11 @@ components:
         - CERTIFIED
         - DECLARED
         - VERIFIED
+    TenantKind:
+      type: string
+      enum:
+        - CERTIFIER
+        - STANDARD
     Tenant:
       description: Tenant model
       type: object
@@ -202,9 +206,10 @@ components:
           type: string
         externalId:
           $ref: '#/components/schemas/ExternalId'
-        kind:
-          type: boolean
-          default: false
+        kinds:
+          type: array
+          items:
+            $ref: '#/components/schemas/TenantKind'
         attributes:
           type: array
           items:
@@ -214,7 +219,7 @@ components:
         - certifier
         - selfcareId
         - externalId
-        - kind
+        - kinds
         - attributes
     ExternalId:
       properties:
@@ -236,9 +241,10 @@ components:
           type: string
         externalId:
           $ref: '#/components/schemas/ExternalId'
-        kind:
-          type: boolean
-          default: false
+        kinds:
+          type: array
+          items:
+            $ref: '#/components/schemas/TenantKind'
         attributes:
           type: array
           items:
@@ -246,7 +252,7 @@ components:
       required:
         - selfcareId
         - externalId
-        - kind
+        - kinds
         - attributes
   securitySchemes:
     bearerAuth:

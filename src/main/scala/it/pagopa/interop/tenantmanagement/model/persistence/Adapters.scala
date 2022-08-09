@@ -5,6 +5,7 @@ import it.pagopa.interop.tenantmanagement.model.tenant._
 import it.pagopa.interop.tenantmanagement.model._
 import it.pagopa.interop.tenantmanagement.error.InternalErrors
 import java.util.UUID
+import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantKind._
 
 object Adapters {
 
@@ -31,7 +32,7 @@ object Adapters {
       case a: PersistentVerifiedAttribute  =>
         TenantAttribute(
           id = a.id,
-          kind = TenantAttributeKind.DECLARED,
+          kind = TenantAttributeKind.VERIFIED,
           assignmentTimestamp = a.assignmentTimestamp,
           revocationTimestamp = a.revocationTimestamp,
           extensionTimestamp = a.extensionTimestamp,
@@ -77,7 +78,7 @@ object Adapters {
     def toAPI: Tenant = Tenant(
       id = p.id,
       selfcareId = p.selfcareId.toString,
-      kind = p.kind,
+      kinds = p.kinds.map(_.toAPI),
       attributes = p.attributes.map(_.toAPI),
       externalId = p.externalId.toAPI
     )
@@ -94,10 +95,24 @@ object Adapters {
             id = seed.id.getOrElse(UUID.randomUUID()),
             selfcareId = seed.selfcareId,
             externalId = PersistentTenantExternalId.fromAPI(seed.externalId),
-            kind = seed.kind,
+            kinds = seed.kinds.map(PersistentTenantKind.fromAPI).toList,
             attributes = attributes
           )
         )
+  }
+
+  implicit class PersistentTenantKindWrapper(private val p: PersistentTenantKind) extends AnyVal {
+    def toAPI: TenantKind = p match {
+      case CERTIFIER => TenantKind.CERTIFIER
+      case STANDARD  => TenantKind.STANDARD
+    }
+  }
+
+  implicit class PersistentTenantKindObjectWrapper(private val p: PersistentTenantKind.type) extends AnyVal {
+    def fromAPI(p: TenantKind): PersistentTenantKind = p match {
+      case TenantKind.CERTIFIER => CERTIFIER
+      case TenantKind.STANDARD  => STANDARD
+    }
   }
 
 }

@@ -62,6 +62,19 @@ object TenantEventsSerde {
     PersistentTenantExternalId.apply
   )
 
+  implicit val ptkFormat: RootJsonFormat[PersistentTenantKind] =
+    new RootJsonFormat[PersistentTenantKind] {
+      override def read(json: JsValue): PersistentTenantKind = json match {
+        case JsString("Standard")  => PersistentTenantKind.STANDARD
+        case JsString("Certifier") => PersistentTenantKind.CERTIFIER
+        case x => throw new DeserializationException(s"Unable to deserialize PersistentTenantKind: unmapped kind $x")
+      }
+      override def write(obj: PersistentTenantKind): JsValue = obj match {
+        case PersistentTenantKind.STANDARD  => JsString("Standard")
+        case PersistentTenantKind.CERTIFIER => JsString("Certifier")
+      }
+    }
+
   private implicit val ptFormat: RootJsonFormat[PersistentTenant] = jsonFormat5(PersistentTenant.apply)
   private implicit val tcFormat: RootJsonFormat[TenantCreated]    = jsonFormat1(TenantCreated.apply)
 

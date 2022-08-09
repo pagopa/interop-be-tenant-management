@@ -8,6 +8,19 @@ import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.tenant
 
 object protobufUtils {
 
+  def toPersistentTenantKind(protobufTenantKind: TenantKindV1): Either[Throwable, PersistentTenantKind] =
+    protobufTenantKind match {
+      case TenantKindV1.STANDARD            => PersistentTenantKind.STANDARD.asRight[Throwable]
+      case TenantKindV1.CERTIFIER           => PersistentTenantKind.CERTIFIER.asRight[Throwable]
+      case TenantKindV1.Unrecognized(value) =>
+        new RuntimeException(s"Unable to deserialize tenant kind value $value").asLeft[PersistentTenantKind]
+    }
+
+  def toProtobufTenantKind(persistentTenantKind: PersistentTenantKind): TenantKindV1 = persistentTenantKind match {
+    case PersistentTenantKind.STANDARD  => TenantKindV1.STANDARD
+    case PersistentTenantKind.CERTIFIER => TenantKindV1.CERTIFIER
+  }
+
   def toPersistentTenantExternalId(
     protobufTenantExternalId: ExternalIdV1
   ): Either[Throwable, PersistentTenantExternalId] =
@@ -22,11 +35,12 @@ object protobufUtils {
     id         <- protobufTenant.id.toUUID.toEither
     externalId <- toPersistentTenantExternalId(protobufTenant.externalId)
     attributes <- protobufTenant.attributes.traverse(toPersistentTenantAttributes)
+    kinds      <- protobufTenant.kinds.toList.traverse(toPersistentTenantKind)
   } yield PersistentTenant(
     id = id,
     selfcareId = protobufTenant.selfcareId,
     externalId = externalId,
-    kind = protobufTenant.kind,
+    kinds = kinds,
     attributes = attributes.toList
   )
 
@@ -36,7 +50,7 @@ object protobufUtils {
         id = persistentTenant.id.toString,
         selfcareId = persistentTenant.selfcareId.toString,
         externalId = externalId,
-        kind = persistentTenant.kind,
+        kinds = persistentTenant.kinds.map(toProtobufTenantKind),
         attributes = persistentTenant.attributes.map(toProtobufTenantAttribute)
       )
     )

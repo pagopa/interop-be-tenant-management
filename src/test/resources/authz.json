@@ -6,7 +6,8 @@
       "roles": [
         "admin",
         "security",
-        "api"
+        "api",
+        "m2m"
       ]
     },
     {
