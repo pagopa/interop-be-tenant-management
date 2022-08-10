@@ -5,9 +5,9 @@ import java.time.OffsetDateTime
 
 final case class PersistentTenant(
   id: UUID,
-  selfcareId: String,
+  selfcareId: Option[String],
   externalId: PersistentTenantExternalId,
-  kinds: List[PersistentTenantKind],
+  features: List[PersistentTenantFeature],
   attributes: List[PersistentTenantAttribute],
   createdAt: OffsetDateTime,
   updatedAt: Option[OffsetDateTime]

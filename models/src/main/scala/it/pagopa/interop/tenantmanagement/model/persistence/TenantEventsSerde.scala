@@ -21,9 +21,12 @@ object TenantEventsSerde {
   def getKind(e: Event): String = e match { case TenantCreated(_) => tenantCreated }
 
   private implicit val pasFormat: RootJsonFormat[PersistentTenantAttribute] = {
-    val pcaFormat: RootJsonFormat[PersistentCertifiedAttribute] = jsonFormat3(PersistentCertifiedAttribute.apply)
-    val pdaFormat: RootJsonFormat[PersistentDeclaredAttribute]  = jsonFormat3(PersistentDeclaredAttribute.apply)
-    val pvaFormat: RootJsonFormat[PersistentVerifiedAttribute]  = jsonFormat5(PersistentVerifiedAttribute.apply)
+    implicit val ptvFormat: RootJsonFormat[PersistentTenantVerifier]     = jsonFormat5(PersistentTenantVerifier.apply)
+    implicit val pcaFormat: RootJsonFormat[PersistentCertifiedAttribute] = jsonFormat3(
+      PersistentCertifiedAttribute.apply
+    )
+    implicit val pdaFormat: RootJsonFormat[PersistentDeclaredAttribute] = jsonFormat3(PersistentDeclaredAttribute.apply)
+    implicit val pvaFormat: RootJsonFormat[PersistentVerifiedAttribute] = jsonFormat4(PersistentVerifiedAttribute.apply)
 
     new RootJsonFormat[PersistentTenantAttribute] {
       override def read(json: JsValue): PersistentTenantAttribute = {
@@ -39,9 +42,9 @@ object TenantEventsSerde {
         val restOfTheFields: JsObject    = JsObject(fields - "kind")
 
         kind match {
-          case "certified" => restOfTheFields.convertTo[PersistentCertifiedAttribute](pcaFormat)
-          case "declared"  => restOfTheFields.convertTo[PersistentDeclaredAttribute](pdaFormat)
-          case "verified"  => restOfTheFields.convertTo[PersistentVerifiedAttribute](pvaFormat)
+          case "CERTIFIED" => restOfTheFields.convertTo[PersistentCertifiedAttribute]
+          case "DECLARED"  => restOfTheFields.convertTo[PersistentDeclaredAttribute]
+          case "VERIFIED"  => restOfTheFields.convertTo[PersistentVerifiedAttribute]
           case x           =>
             throw new DeserializationException(s"Unable to deserialize PersistentTenantAttribute: unmapped kind $x")
         }
@@ -49,11 +52,11 @@ object TenantEventsSerde {
 
       override def write(obj: PersistentTenantAttribute): JsValue = obj match {
         case x: PersistentCertifiedAttribute =>
-          JsObject(pcaFormat.write(x).asJsObject.fields + ("kind" -> JsString("certified")))
+          JsObject(pcaFormat.write(x).asJsObject.fields + ("kind" -> JsString("CERTIFIED")))
         case x: PersistentDeclaredAttribute  =>
-          JsObject(pdaFormat.write(x).asJsObject.fields + ("kind" -> JsString("declared")))
+          JsObject(pdaFormat.write(x).asJsObject.fields + ("kind" -> JsString("DECLARED")))
         case x: PersistentVerifiedAttribute  =>
-          JsObject(pvaFormat.write(x).asJsObject.fields + ("kind" -> JsString("verified")))
+          JsObject(pvaFormat.write(x).asJsObject.fields + ("kind" -> JsString("VERIFIED")))
       }
     }
   }
@@ -62,16 +65,29 @@ object TenantEventsSerde {
     PersistentTenantExternalId.apply
   )
 
+  implicit val pvsFormat: RootJsonFormat[PersistentVerificationStrictness] =
+    new RootJsonFormat[PersistentVerificationStrictness] {
+      override def read(json: JsValue): PersistentVerificationStrictness = json match {
+        case JsString("STRICT")   => PersistentVerificationStrictness.STRICT
+        case JsString("STANDARD") => PersistentVerificationStrictness.STANDARD
+        case x => throw new DeserializationException(s"Unable to deserialize PersistentTenantKind: unmapped kind $x")
+      }
+      override def write(obj: PersistentVerificationStrictness): JsValue = obj match {
+        case PersistentVerificationStrictness.STRICT   => JsString("STRICT")
+        case PersistentVerificationStrictness.STANDARD => JsString("STANDARD")
+      }
+    }
+
   implicit val ptkFormat: RootJsonFormat[PersistentTenantKind] =
     new RootJsonFormat[PersistentTenantKind] {
       override def read(json: JsValue): PersistentTenantKind = json match {
-        case JsString("Standard")  => PersistentTenantKind.STANDARD
-        case JsString("Certifier") => PersistentTenantKind.CERTIFIER
+        case JsString("Standard")  => PersistentTenantKind.Standard
+        case JsString("Certifier") => PersistentTenantKind.Certifier()
         case x => throw new DeserializationException(s"Unable to deserialize PersistentTenantKind: unmapped kind $x")
       }
       override def write(obj: PersistentTenantKind): JsValue = obj match {
-        case PersistentTenantKind.STANDARD  => JsString("Standard")
-        case PersistentTenantKind.CERTIFIER => JsString("Certifier")
+        case PersistentTenantKind.Standard  => JsString("Standard")
+        case PersistentTenantKind.Certifier => JsString("Certifier")
       }
     }
 

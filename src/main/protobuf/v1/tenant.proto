@@ -4,22 +4,42 @@ import "scalapb/scalapb.proto";
 
 option (scalapb.options) = {
   package_name: "it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1"
-  no_default_values_in_constructor : true
+  no_default_values_in_constructor : true,
+  collection_type: "List",
+  preserve_unknown_fields: false
 };
 
 message TenantV1 {
   required string id = 1;
-  required string selfcareId = 2;
+  optional string selfcareId = 2;
   required ExternalIdV1 externalId = 3;
-  repeated TenantKindV1 kinds = 4;
+  repeated TenantFeaturesV1 features = 4;
   repeated TenantAttributeV1 attributes = 5;
   required int64 createdAt = 6;
   optional int64 updatedAt = 7;
 }
 
-enum TenantKindV1 {
+message TenantFeaturesV1 {
+  oneof sealed_value {
+    CertifierV1 certifier = 1;
+  }
+}
+
+message CertifierV1 {
+  required string certifierId = 1;
+}
+
+enum VerificationStrictnessV1 {
   STANDARD = 1;
-  CERTIFIER = 2;
+  STRICT   = 2;
+}
+
+message TenantVerifierV1 {
+  required string id = 1;
+  required int64 verificationDate = 2;
+  optional int64 expirationDate = 3;
+  optional int64 extentionDate = 4;
+  optional int64 revocationDate = 5;
 }
 
 message ExternalIdV1 {
@@ -42,9 +62,9 @@ message DeclaredAttributeV1 {
 message VerifiedAttributeV1 {
   required string id = 1;
   required int64 assignmentTimestamp = 2;
-  optional int64 revocationTimestamp = 3;
-  required int64 expirationTimestamp = 4;
-  optional int64 extensionTimestamp = 5;
+  required VerificationStrictnessV1 strictness = 3;
+  repeated TenantVerifierV1 verifiedBy = 4;
+  repeated TenantVerifierV1 revokedBy = 5;
 }
 
 message TenantAttributeV1 {

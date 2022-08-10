@@ -8,7 +8,6 @@ object PersistentTenantAttribute
 sealed trait PersistentTenantAttribute {
   def id: UUID
   def assignmentTimestamp: OffsetDateTime
-  def revocationTimestamp: Option[OffsetDateTime]
 }
 
 final case class PersistentCertifiedAttribute(
@@ -26,7 +25,7 @@ final case class PersistentDeclaredAttribute(
 final case class PersistentVerifiedAttribute(
   id: UUID,
   assignmentTimestamp: OffsetDateTime,
-  revocationTimestamp: Option[OffsetDateTime],
-  extensionTimestamp: Option[OffsetDateTime],
-  expirationTimestamp: OffsetDateTime
+  strictness: PersistentVerificationStrictness,
+  verifiedBy: List[PersistentTenantVerifier],
+  revokedBy: List[PersistentTenantVerifier]
 ) extends PersistentTenantAttribute

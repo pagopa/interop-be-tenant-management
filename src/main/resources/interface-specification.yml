@@ -174,12 +174,16 @@ components:
         revocationTimestamp:
           type: string
           format: date-time
-        extensionTimestamp:
-          type: string
-          format: date-time
-        expirationTimestamp:
-          type: string
-          format: date-time
+        strictness:
+          $ref: '#/components/schemas/VerificationStrictness'
+        verifiedBy:
+          type: array
+          items:
+            $ref: '#/components/schemas/TenantVerifier'
+        revokedBy:
+          type: array
+          items:
+            $ref: '#/components/schemas/TenantVerifier'
       required:
         - id
         - kind
@@ -190,11 +194,45 @@ components:
         - CERTIFIED
         - DECLARED
         - VERIFIED
-    TenantKind:
+    VerificationStrictness:
       type: string
       enum:
-        - CERTIFIER
+        - STRICT
         - STANDARD
+    TenantFeature:
+      type: object
+      properties:
+        certifier:
+          $ref: '#/components/schemas/Certifier'
+    Certifier:
+      description: Certifier Tenant Feature
+      type: object
+      properties:
+        certifierId:
+          type: string
+      required:
+        - certifierId
+    TenantVerifier:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        verificationDate:
+          type: string
+          format: date-time
+        expirationDate:
+          type: string
+          format: date-time
+        extentionDate:
+          type: string
+          format: date-time
+        revocationDate:
+          type: string
+          format: date-time
+      required:
+        - id
+        - verificationDate
     Tenant:
       description: Tenant model
       type: object
@@ -206,10 +244,10 @@ components:
           type: string
         externalId:
           $ref: '#/components/schemas/ExternalId'
-        kinds:
+        features:
           type: array
           items:
-            $ref: '#/components/schemas/TenantKind'
+            $ref: '#/components/schemas/TenantFeature'
         attributes:
           type: array
           items:
@@ -223,7 +261,6 @@ components:
       required:
         - id
         - certifier
-        - selfcareId
         - externalId
         - kinds
         - attributes
@@ -244,8 +281,6 @@ components:
         id:
           type: string
           format: uuid
-        selfcareId:
-          type: string
         externalId:
           $ref: '#/components/schemas/ExternalId'
         kinds:
@@ -257,7 +292,6 @@ components:
           items:
             $ref: '#/components/schemas/TenantAttribute'
       required:
-        - selfcareId
         - externalId
         - kinds
         - attributes
