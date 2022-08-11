@@ -27,6 +27,8 @@ import scala.util.{Failure, Success}
 import akka.util.Timeout
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContextExecutor
+import cats.implicits._
+import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantExternalId
 
 final case class TenantApiServiceImpl(
   system: ActorSystem[_],
@@ -48,6 +50,9 @@ final case class TenantApiServiceImpl(
 
   private def commander(id: String): EntityRef[Command] =
     sharding.entityRefFor(TenantPersistentBehavior.TypeKey, getShard(id, settings.numberOfShards))
+
+  private def commanders: List[EntityRef[Command]] =
+    (0 until settings.numberOfShards).map(_.toString).toList.map(commander)
 
   override def createTenant(tenantSeed: TenantSeed)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
@@ -86,11 +91,63 @@ final case class TenantApiServiceImpl(
     onComplete(result) {
       case Success(tenant)             => getTenant200(tenant.toAPI)
       case Failure(ex: TenantNotFound) =>
-        logger.error(s"Error while adding the tenant $tenantId", ex)
+        logger.error(s"Error while getting the tenant $tenantId", ex)
         getTenant404(problemOf(StatusCodes.NotFound, GetTenantNotFound))
       case Failure(ex)                 =>
-        logger.error(s"Error while adding the tenant $tenantId", ex)
+        logger.error(s"Error while getting the tenant $tenantId", ex)
         complete(problemOf(StatusCodes.InternalServerError, GenericError(ex.getMessage)))
     }
   }
+
+  override def getTenantByExternalId(origin: String, code: String)(implicit
+    toEntityMarshallerProblem: ToEntityMarshaller[Problem],
+    toEntityMarshallerTenant: ToEntityMarshaller[Tenant],
+    contexts: Seq[(String, String)]
+  ): Route = authorize(ADMIN_ROLE, API_ROLE, M2M_ROLE, SECURITY_ROLE) {
+
+    val externalId: ExternalId                   = ExternalId(origin, code)
+    val result: Future[Option[PersistentTenant]] = findFirstTenantWithExtenalId(externalId)
+
+    onComplete(result) {
+      case Success(Some(tenant))           => getTenantByExternalId200(tenant.toAPI)
+      case Success(None)                   =>
+        logger.info(s"Tenant with externalId $externalId not found")
+        getTenant404(problemOf(StatusCodes.NotFound, GetTenantNotFound))
+      case Failure(NonUniqueTenantMapping) =>
+        complete(problemOf(StatusCodes.InternalServerError, GenericError("Internal server error")))
+      case Failure(ex)                     =>
+        logger.error(s"Error while getting the tenant with externalId $externalId", ex)
+        complete(problemOf(StatusCodes.InternalServerError, GenericError(ex.getMessage)))
+    }
+  }
+
+  private def findFirstTenantWithExtenalId(
+    externalId: ExternalId
+  )(implicit contexts: Seq[(String, String)]): Future[Option[PersistentTenant]] =
+    findFirstTenant(_.externalId == PersistentTenantExternalId.fromAPI(externalId)).flatMap {
+      case Nil           => Future.successful(none[PersistentTenant])
+      case tenant :: Nil => Future.successful(tenant.some)
+      case ts            =>
+        logger.error(s"MORE THAN ONE TENANT CORRESPONDING TO $externalId :\n ${ts.mkString("\n")}")
+        Future.failed(NonUniqueTenantMapping)
+    }
+
+  private def findFirstTenant(matchCriteria: PersistentTenant => Boolean): Future[List[PersistentTenant]] =
+    commanders.traverseFilter(findFirstInShard(_, matchCriteria))
+
+  private def findFirstInShard(
+    commander: EntityRef[Command],
+    matchCriteria: PersistentTenant => Boolean
+  ): Future[Option[PersistentTenant]] = {
+    val commandIterator = Command.getTenantsCommandIterator(100)
+
+    // It's stack safe since every submission to an Execution context resets the stack, creating a trampoline effect
+    def loop: Future[Option[PersistentTenant]] = commander.askWithStatus(commandIterator.next()).flatMap { slice =>
+      if (slice.isEmpty) Future.successful(None)
+      else slice.find(matchCriteria).map(_.some).map(Future.successful).getOrElse(loop)
+    }
+
+    loop
+  }
+
 }

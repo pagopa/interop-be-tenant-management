@@ -51,7 +51,6 @@ object TenantEventsSerde {
     override def write(obj: PersistentTenantFeature): JsValue = obj match {
       case x: PersistentCertifier => JsObject(x.toJson.asJsObject.fields + ("kind" -> JsString("certifier")))
     }
-
   }
 
   implicit val pvsFormat: RootJsonFormat[PersistentVerificationStrictness] =

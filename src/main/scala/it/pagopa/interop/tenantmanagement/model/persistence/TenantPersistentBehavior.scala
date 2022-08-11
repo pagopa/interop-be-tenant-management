@@ -43,6 +43,10 @@ object TenantPersistentBehavior {
           Effect.none[Event, State]
         }
 
+      case GetTenants(from, to, replyTo) =>
+        replyTo ! StatusReply.Success[List[PersistentTenant]](state.allTenants.slice(from, to))
+        Effect.none[Event, State]
+
       case Idle =>
         shard ! ClusterSharding.Passivate(context.self)
         context.log.debug(s"Passivate shard: ${shard.path.name}")

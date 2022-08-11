@@ -74,7 +74,47 @@ paths:
       operationId: getTenant
       responses:
         '200':
-          description: Tenant created
+          description: the tenant corresponding to the tenant id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tenant'
+        '400':
+          description: Invalid input
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Tenant not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /tenants/{origin}/{code}:
+    parameters:
+      - $ref: '#/components/parameters/CorrelationIdHeader'
+      - $ref: '#/components/parameters/IpAddress'
+      - name: origin
+        in: path
+        description: the origin of the external id code
+        required: true
+        schema:
+          type: string
+      - name: code
+        in: path
+        description: the external id code
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - tenant
+      summary: Get a tenant
+      operationId: getTenantByExternalId
+      responses:
+        '200':
+          description: the tenant corresponding to the external id
           content:
             application/json:
               schema:
