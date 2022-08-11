@@ -15,8 +15,7 @@ import it.pagopa.interop.tenantmanagement.utils.AuthorizedRoutes.endpoints
 import java.util.UUID
 import it.pagopa.interop.tenantmanagement.model.ExternalId
 import java.time.OffsetDateTime
-import it.pagopa.interop.tenantmanagement.model.TenantAttribute
-import it.pagopa.interop.tenantmanagement.model.TenantAttributeKind
+import it.pagopa.interop.tenantmanagement.model._
 import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
 
 class TenantApiServiceAuthzSpec extends ClusteredMUnitRouteTest {
@@ -33,9 +32,8 @@ class TenantApiServiceAuthzSpec extends ClusteredMUnitRouteTest {
 
     val fakeSeed = TenantSeed(
       id = UUID.randomUUID().some,
-      selfcareId = UUID.randomUUID().toString(),
       externalId = ExternalId("IPA", "pippo"),
-      kinds = Nil,
+      features = Nil,
       attributes = List(
         TenantAttribute(
           id = UUID.randomUUID(),

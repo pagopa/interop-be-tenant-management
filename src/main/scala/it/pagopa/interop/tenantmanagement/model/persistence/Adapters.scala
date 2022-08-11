@@ -5,10 +5,48 @@ import it.pagopa.interop.tenantmanagement.model.tenant._
 import it.pagopa.interop.tenantmanagement.model._
 import it.pagopa.interop.tenantmanagement.error.InternalErrors
 import java.util.UUID
-import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantKind._
 import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
+import it.pagopa.interop.tenantmanagement.model.tenant.PersistentVerificationStrictness.STANDARD
+import it.pagopa.interop.tenantmanagement.model.tenant.PersistentVerificationStrictness.STRICT
 
 object Adapters {
+
+  implicit class PersistentVerificationStrictnessWrapper(private val p: PersistentVerificationStrictness)
+      extends AnyVal {
+    def toAPI(): VerificationStrictness = p match {
+      case STANDARD => VerificationStrictness.STANDARD
+      case STRICT   => VerificationStrictness.STRICT
+    }
+  }
+
+  implicit class PersistentVerificationStrictnessObjectWrapper(private val p: PersistentVerificationStrictness.type)
+      extends AnyVal {
+    def fromAPI(p: VerificationStrictness): PersistentVerificationStrictness = p match {
+      case VerificationStrictness.STANDARD => STANDARD
+      case VerificationStrictness.STRICT   => STRICT
+    }
+  }
+
+  implicit class PersistentVerificationTenantVerifierWrapper(private val p: PersistentTenantVerifier) extends AnyVal {
+    def toAPI(): TenantVerifier = TenantVerifier(
+      id = p.id,
+      verificationDate = p.verificationDate,
+      expirationDate = p.expirationDate,
+      extentionDate = p.expirationDate,
+      revocationDate = p.revocationDate
+    )
+  }
+
+  implicit class PersistentVerificationTenantVerifierObjectWrapper(private val p: PersistentTenantVerifier.type)
+      extends AnyVal {
+    def fromAPI(p: TenantVerifier): PersistentTenantVerifier = PersistentTenantVerifier(
+      id = p.id,
+      verificationDate = p.verificationDate,
+      expirationDate = p.expirationDate,
+      extentionDate = p.expirationDate,
+      revocationDate = p.revocationDate
+    )
+  }
 
   implicit class PersistentAttributesWrapper(private val p: PersistentTenantAttribute) extends AnyVal {
     def toAPI: TenantAttribute = p match {
@@ -18,8 +56,9 @@ object Adapters {
           kind = TenantAttributeKind.CERTIFIED,
           assignmentTimestamp = a.assignmentTimestamp,
           revocationTimestamp = a.revocationTimestamp,
-          extensionTimestamp = None,
-          expirationTimestamp = None
+          strictness = None,
+          verifiedBy = None,
+          revokedBy = None
         )
       case a: PersistentDeclaredAttribute  =>
         TenantAttribute(
@@ -27,17 +66,19 @@ object Adapters {
           kind = TenantAttributeKind.DECLARED,
           assignmentTimestamp = a.assignmentTimestamp,
           revocationTimestamp = a.revocationTimestamp,
-          extensionTimestamp = None,
-          expirationTimestamp = None
+          strictness = None,
+          verifiedBy = None,
+          revokedBy = None
         )
       case a: PersistentVerifiedAttribute  =>
         TenantAttribute(
           id = a.id,
           kind = TenantAttributeKind.VERIFIED,
           assignmentTimestamp = a.assignmentTimestamp,
-          revocationTimestamp = a.revocationTimestamp,
-          extensionTimestamp = a.extensionTimestamp,
-          expirationTimestamp = a.expirationTimestamp.some
+          revocationTimestamp = None,
+          strictness = a.strictness.toAPI().some,
+          verifiedBy = None,
+          revokedBy = None
         )
     }
   }
@@ -51,17 +92,25 @@ object Adapters {
         PersistentDeclaredAttribute(attributes.id, attributes.assignmentTimestamp, attributes.revocationTimestamp)
           .asRight[Throwable]
       case TenantAttributeKind.VERIFIED  =>
-        attributes.expirationTimestamp
-          .toRight(InternalErrors.InvalidAttribute("verified", "expirationTimestamp"))
-          .map(expirationTimestamp =>
-            PersistentVerifiedAttribute(
-              id = attributes.id,
-              assignmentTimestamp = attributes.assignmentTimestamp,
-              revocationTimestamp = attributes.revocationTimestamp,
-              extensionTimestamp = attributes.extensionTimestamp,
-              expirationTimestamp = expirationTimestamp
-            )
-          )
+        for {
+          strictness <- attributes.strictness
+            .toRight(InternalErrors.InvalidAttribute("verified", "strictness"))
+            .map(PersistentVerificationStrictness.fromAPI)
+          verifiedBy <- attributes.verifiedBy
+            .toRight(InternalErrors.InvalidAttribute("verified", "verifiedBy"))
+            .map(_.map(PersistentTenantVerifier.fromAPI).toList)
+          // ! TODO it doesn't validate the fact that the revoked must always have a revocationDate
+          revokedBy  <- attributes.revokedBy
+            .toRight(InternalErrors.InvalidAttribute("verified", "revokedBy"))
+            .map(_.map(PersistentTenantVerifier.fromAPI).toList)
+        } yield PersistentVerifiedAttribute(
+          id = attributes.id,
+          assignmentTimestamp = attributes.assignmentTimestamp,
+          strictness = strictness,
+          verifiedBy = verifiedBy,
+          revokedBy = revokedBy
+        )
+
     }
   }
 
@@ -75,11 +124,25 @@ object Adapters {
       PersistentTenantExternalId(origin = e.origin, value = e.value)
   }
 
+  implicit class PersistentTenantFeatureWrapper(private val p: PersistentTenantFeature) extends AnyVal {
+    def toAPI: TenantFeature = p match {
+      case PersistentTenantFeature.PersistentCertifier(certifierId) => TenantFeature(Certifier(certifierId).some)
+    }
+  }
+
+  implicit class PersistentTenantFeatureObjectWrapper(private val p: PersistentTenantFeature.type) extends AnyVal {
+    def fromAPI(e: TenantFeature): Either[Throwable, PersistentTenantFeature] = e match {
+      case TenantFeature(Some(Certifier(certifierId))) =>
+        PersistentTenantFeature.PersistentCertifier(certifierId).asRight[Throwable]
+      case _                                           => InternalErrors.InvalidFeature.asLeft[PersistentTenantFeature]
+    }
+  }
+
   implicit class PersistentTenantWrapper(private val p: PersistentTenant) extends AnyVal {
     def toAPI: Tenant = Tenant(
       id = p.id,
-      selfcareId = p.selfcareId.toString,
-      kinds = p.kinds.map(_.toAPI),
+      selfcareId = p.selfcareId,
+      features = p.features.map(_.toAPI),
       attributes = p.attributes.map(_.toAPI),
       externalId = p.externalId.toAPI,
       createdAt = p.createdAt,
@@ -90,34 +153,19 @@ object Adapters {
   implicit class PersistentTenantObjectWrapper(private val p: PersistentTenant.type) extends AnyVal {
     // We'll remove the field "id" from api and use just UUID.randomUUID once
     // migrated the persistence of all the already created eservices
-    def fromAPI(seed: TenantSeed, supplier: OffsetDateTimeSupplier): Either[Throwable, PersistentTenant] =
-      seed.attributes.toList
-        .traverse(PersistentTenantAttribute.fromAPI)
-        .map(attributes =>
-          PersistentTenant(
-            id = seed.id.getOrElse(UUID.randomUUID()),
-            selfcareId = seed.selfcareId,
-            externalId = PersistentTenantExternalId.fromAPI(seed.externalId),
-            kinds = seed.kinds.map(PersistentTenantKind.fromAPI).toList,
-            attributes = attributes,
-            createdAt = supplier.get,
-            updatedAt = None
-          )
-        )
-  }
+    def fromAPI(seed: TenantSeed, supplier: OffsetDateTimeSupplier): Either[Throwable, PersistentTenant] = for {
+      attributes <- seed.attributes.toList.traverse(PersistentTenantAttribute.fromAPI)
+      features   <- seed.features.toList.traverse(PersistentTenantFeature.fromAPI)
+    } yield PersistentTenant(
+      id = seed.id.getOrElse(UUID.randomUUID()),
+      selfcareId = None,
+      externalId = PersistentTenantExternalId.fromAPI(seed.externalId),
+      features = features,
+      attributes = attributes,
+      createdAt = supplier.get,
+      updatedAt = None
+    )
 
-  implicit class PersistentTenantKindWrapper(private val p: PersistentTenantKind) extends AnyVal {
-    def toAPI: TenantKind = p match {
-      case CERTIFIER => TenantKind.CERTIFIER
-      case STANDARD  => TenantKind.STANDARD
-    }
-  }
-
-  implicit class PersistentTenantKindObjectWrapper(private val p: PersistentTenantKind.type) extends AnyVal {
-    def fromAPI(p: TenantKind): PersistentTenantKind = p match {
-      case TenantKind.CERTIFIER => CERTIFIER
-      case TenantKind.STANDARD  => STANDARD
-    }
   }
 
 }

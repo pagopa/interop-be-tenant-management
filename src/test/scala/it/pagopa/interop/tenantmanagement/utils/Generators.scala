@@ -56,45 +56,63 @@ object Generators {
   val verifiedAttributeGen: Gen[(PersistentVerifiedAttribute, VerifiedAttributeV1)] = for {
     id                                    <- Gen.uuid
     (assignmentTimestamp, assignmentLong) <- offsetDatetimeGen
-    (revocationTimestamp, revocationLong) <- Gen.option(offsetDatetimeGen).map(_.separate)
-    (expirationTimestamp, expirationLong) <- offsetDatetimeGen
-    (extentionTimestamp, extentionLong)   <- Gen.option(offsetDatetimeGen).map(_.separate)
+    (strictness, strictnessV1)            <- verificationStrictnessGen
+    (verifiedBy, verifiedByV1)            <- listOf(tenantVerifierGen).map(_.separate)
+    (revokedBy, revokedByV1)              <- listOf(tenantVerifierGen).map(_.separate)
   } yield (
     PersistentVerifiedAttribute(
       id = id,
       assignmentTimestamp = assignmentTimestamp,
-      revocationTimestamp = revocationTimestamp,
-      extensionTimestamp = extentionTimestamp,
-      expirationTimestamp = expirationTimestamp
+      strictness = strictness,
+      verifiedBy = verifiedBy,
+      revokedBy = revokedBy
     ),
     VerifiedAttributeV1(
       id = id.toString(),
       assignmentTimestamp = assignmentLong,
-      revocationTimestamp = revocationLong,
-      expirationTimestamp = expirationLong,
-      extensionTimestamp = extentionLong
+      strictness = strictnessV1,
+      verifiedBy = verifiedByV1,
+      revokedBy = revokedByV1
     )
+  )
+
+  val verificationStrictnessGen: Gen[(PersistentVerificationStrictness, VerificationStrictnessV1)] = Gen.oneOf(
+    (PersistentVerificationStrictness.STANDARD, VerificationStrictnessV1.STANDARD),
+    (PersistentVerificationStrictness.STRICT, VerificationStrictnessV1.STRICT)
+  )
+
+  val tenantVerifierGen: Gen[(PersistentTenantVerifier, TenantVerifierV1)] = for {
+    id                                     <- Gen.uuid
+    (verificationDate, verificationDateV1) <- offsetDatetimeGen
+    (expirationDate, expirationDateV1)     <- Gen.option(offsetDatetimeGen).map(_.separate)
+    (extentionDate, extentionDateV1)       <- Gen.option(offsetDatetimeGen).map(_.separate)
+    (revocationDate, revocationDateV1)     <- Gen.option(offsetDatetimeGen).map(_.separate)
+  } yield (
+    PersistentTenantVerifier(id, verificationDate, expirationDate, extentionDate, revocationDate),
+    TenantVerifierV1(id.toString(), verificationDateV1, expirationDateV1, extentionDateV1, revocationDateV1)
   )
 
   val attributeGen: Gen[(PersistentTenantAttribute, TenantAttributeV1)] =
     Gen.oneOf(declaredAttributeGen, verifiedAttributeGen, certifiedAttributeGen)
 
-  val tenantKindGen: Gen[(PersistentTenantKind, TenantKindV1)] = Gen.oneOf(
-    (PersistentTenantKind.CERTIFIER, TenantKindV1.CERTIFIER),
-    (PersistentTenantKind.STANDARD, TenantKindV1.STANDARD)
-  )
+  val certifierGen: Gen[(PersistentTenantFeature.PersistentCertifier, CertifierV1)] =
+    stringGen.map(certifierId => (PersistentTenantFeature.PersistentCertifier(certifierId), CertifierV1(certifierId)))
+
+  val tenantFeature: Gen[(PersistentTenantFeature, TenantFeatureV1)] = for {
+    (certifier, certifierV1) <- certifierGen
+  } yield (certifier, certifierV1)
 
   val tenantGen: Gen[(PersistentTenant, TenantV1)] = for {
     id                                               <- Gen.uuid
-    selfcareId                                       <- stringGen
+    selfcareId                                       <- Gen.option(stringGen)
+    (features, featuresV1)                           <- listOf(tenantFeature).map(_.separate)
     (externalId, externalIdV1)                       <- externalIdGen
-    (kinds, kindsV1)                                 <- listOf(tenantKindGen).map(_.separate)
     (persistentTenantAttributes, tenantAttributesV1) <- listOf(attributeGen).map(_.separate)
     (createdAt, createdAtV1)                         <- offsetDatetimeGen
     (updatedAt, updatedAtV1)                         <- Gen.option(offsetDatetimeGen).map(_.separate)
   } yield (
-    PersistentTenant(id, selfcareId, externalId, kinds, persistentTenantAttributes, createdAt, updatedAt),
-    TenantV1(id.toString(), selfcareId.toString(), externalIdV1, kindsV1, tenantAttributesV1, createdAtV1, updatedAtV1)
+    PersistentTenant(id, selfcareId, externalId, features, persistentTenantAttributes, createdAt, updatedAt),
+    TenantV1(id.toString(), selfcareId, externalIdV1, featuresV1, tenantAttributesV1, createdAtV1, updatedAtV1)
   )
 
   val stateGen: Gen[(State, StateV1)] = listOf(tenantGen).map(_.separate).map { case (ps, psv1) =>

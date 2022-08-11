@@ -20,13 +20,30 @@ object TenantEventsSerde {
 
   def getKind(e: Event): String = e match { case TenantCreated(_) => tenantCreated }
 
+  // Serdes
+
+  implicit val ptvFormat: RootJsonFormat[PersistentTenantVerifier] = jsonFormat5(PersistentTenantVerifier.apply)
+  implicit val ptfFormat: RootJsonFormat[PersistentTenantFeature]  = null
+
+  implicit val pvsFormat: RootJsonFormat[PersistentVerificationStrictness] =
+    new RootJsonFormat[PersistentVerificationStrictness] {
+      override def read(json: JsValue): PersistentVerificationStrictness = json match {
+        case JsString("STRICT")   => PersistentVerificationStrictness.STRICT
+        case JsString("STANDARD") => PersistentVerificationStrictness.STANDARD
+        case x => throw new DeserializationException(s"Unable to deserialize PersistentTenantKind: unmapped kind $x")
+      }
+      override def write(obj: PersistentVerificationStrictness): JsValue = obj match {
+        case PersistentVerificationStrictness.STRICT   => JsString("STRICT")
+        case PersistentVerificationStrictness.STANDARD => JsString("STANDARD")
+      }
+    }
+
   private implicit val pasFormat: RootJsonFormat[PersistentTenantAttribute] = {
-    implicit val ptvFormat: RootJsonFormat[PersistentTenantVerifier]     = jsonFormat5(PersistentTenantVerifier.apply)
     implicit val pcaFormat: RootJsonFormat[PersistentCertifiedAttribute] = jsonFormat3(
       PersistentCertifiedAttribute.apply
     )
     implicit val pdaFormat: RootJsonFormat[PersistentDeclaredAttribute] = jsonFormat3(PersistentDeclaredAttribute.apply)
-    implicit val pvaFormat: RootJsonFormat[PersistentVerifiedAttribute] = jsonFormat4(PersistentVerifiedAttribute.apply)
+    implicit val pvaFormat: RootJsonFormat[PersistentVerifiedAttribute] = jsonFormat5(PersistentVerifiedAttribute.apply)
 
     new RootJsonFormat[PersistentTenantAttribute] {
       override def read(json: JsValue): PersistentTenantAttribute = {
@@ -64,32 +81,6 @@ object TenantEventsSerde {
   private implicit val pexFormat: RootJsonFormat[PersistentTenantExternalId] = jsonFormat2(
     PersistentTenantExternalId.apply
   )
-
-  implicit val pvsFormat: RootJsonFormat[PersistentVerificationStrictness] =
-    new RootJsonFormat[PersistentVerificationStrictness] {
-      override def read(json: JsValue): PersistentVerificationStrictness = json match {
-        case JsString("STRICT")   => PersistentVerificationStrictness.STRICT
-        case JsString("STANDARD") => PersistentVerificationStrictness.STANDARD
-        case x => throw new DeserializationException(s"Unable to deserialize PersistentTenantKind: unmapped kind $x")
-      }
-      override def write(obj: PersistentVerificationStrictness): JsValue = obj match {
-        case PersistentVerificationStrictness.STRICT   => JsString("STRICT")
-        case PersistentVerificationStrictness.STANDARD => JsString("STANDARD")
-      }
-    }
-
-  implicit val ptkFormat: RootJsonFormat[PersistentTenantKind] =
-    new RootJsonFormat[PersistentTenantKind] {
-      override def read(json: JsValue): PersistentTenantKind = json match {
-        case JsString("Standard")  => PersistentTenantKind.Standard
-        case JsString("Certifier") => PersistentTenantKind.Certifier()
-        case x => throw new DeserializationException(s"Unable to deserialize PersistentTenantKind: unmapped kind $x")
-      }
-      override def write(obj: PersistentTenantKind): JsValue = obj match {
-        case PersistentTenantKind.Standard  => JsString("Standard")
-        case PersistentTenantKind.Certifier => JsString("Certifier")
-      }
-    }
 
   private implicit val ptFormat: RootJsonFormat[PersistentTenant] = jsonFormat7(PersistentTenant.apply)
   private implicit val tcFormat: RootJsonFormat[TenantCreated]    = jsonFormat1(TenantCreated.apply)

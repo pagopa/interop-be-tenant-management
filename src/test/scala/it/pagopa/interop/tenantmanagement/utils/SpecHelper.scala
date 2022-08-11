@@ -31,7 +31,6 @@ trait SpecHelper {
 
   def randomTenantAndSeed(offsetDateTime: OffsetDateTime): (Tenant, TenantSeed) = {
     val tenantId: UUID         = UUID.randomUUID()
-    val selfcareId: String     = UUID.randomUUID().toString()
     val externalId: ExternalId = ExternalId("IPA", "pippo")
 
     val attribute: TenantAttribute = TenantAttribute(
@@ -42,17 +41,16 @@ trait SpecHelper {
 
     val tenantSeed: TenantSeed = TenantSeed(
       id = tenantId.some,
-      selfcareId = selfcareId,
       externalId = externalId,
-      kinds = TenantKind.CERTIFIER :: Nil,
+      features = TenantFeature(Certifier("foo").some) :: Nil,
       attributes = attribute :: Nil
     )
 
     val tenant: Tenant = Tenant(
       id = tenantId,
-      selfcareId = selfcareId.toString,
+      selfcareId = None,
       externalId = externalId,
-      kinds = TenantKind.CERTIFIER :: Nil,
+      features = TenantFeature(Certifier("foo").some) :: Nil,
       attributes = attribute :: Nil,
       createdAt = offsetDateTime,
       updatedAt = None

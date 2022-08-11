@@ -262,7 +262,7 @@ components:
         - id
         - certifier
         - externalId
-        - kinds
+        - features
         - attributes
         - createdAt
     ExternalId:
@@ -283,17 +283,17 @@ components:
           format: uuid
         externalId:
           $ref: '#/components/schemas/ExternalId'
-        kinds:
+        features:
           type: array
           items:
-            $ref: '#/components/schemas/TenantKind'
+            $ref: '#/components/schemas/TenantFeature'
         attributes:
           type: array
           items:
             $ref: '#/components/schemas/TenantAttribute'
       required:
         - externalId
-        - kinds
+        - features
         - attributes
   securitySchemes:
     bearerAuth:

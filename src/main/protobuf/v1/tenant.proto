@@ -13,13 +13,13 @@ message TenantV1 {
   required string id = 1;
   optional string selfcareId = 2;
   required ExternalIdV1 externalId = 3;
-  repeated TenantFeaturesV1 features = 4;
+  repeated TenantFeatureV1 features = 4;
   repeated TenantAttributeV1 attributes = 5;
   required int64 createdAt = 6;
   optional int64 updatedAt = 7;
 }
 
-message TenantFeaturesV1 {
+message TenantFeatureV1 {
   oneof sealed_value {
     CertifierV1 certifier = 1;
   }

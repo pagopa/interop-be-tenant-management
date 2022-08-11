@@ -5,4 +5,5 @@ object InternalErrors {
   final case class TenantAlreadyExists(tenantId: String) extends Throwable(s"Tenant $tenantId already exists")
   final case class InvalidAttribute(attribute: String, field: String)
       extends Throwable(s"Invalid field $field in $attribute attribute")
+  case object InvalidFeature                             extends Throwable(s"Invalid feature")
 }

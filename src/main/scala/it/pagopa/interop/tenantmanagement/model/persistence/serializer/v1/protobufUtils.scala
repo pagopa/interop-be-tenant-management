@@ -6,21 +6,20 @@ import it.pagopa.interop.tenantmanagement.model.tenant._
 import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.tenant.TenantAttributeV1.Empty
 import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.tenant._
 import it.pagopa.interop.commons.utils.TypeConversions.LongOps
+import it.pagopa.interop.tenantmanagement.model.tenant.PersistentVerificationStrictness._
+import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantFeature.PersistentCertifier
+import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.tenant.VerificationStrictnessV1.Unrecognized
 
 object protobufUtils {
 
-  def toPersistentTenantKind(protobufTenantKind: TenantKindV1): Either[Throwable, PersistentTenantKind] =
-    protobufTenantKind match {
-      case TenantKindV1.STANDARD            => PersistentTenantKind.STANDARD.asRight[Throwable]
-      case TenantKindV1.CERTIFIER           => PersistentTenantKind.CERTIFIER.asRight[Throwable]
-      case TenantKindV1.Unrecognized(value) =>
-        new RuntimeException(s"Unable to deserialize tenant kind value $value").asLeft[PersistentTenantKind]
+  def toPersistentTenantFeature(protobufTenantFeature: TenantFeatureV1): Either[Throwable, PersistentTenantFeature] =
+    protobufTenantFeature match {
+      case TenantFeatureV1.Empty    => new Exception("Boom").asLeft[PersistentTenantFeature]
+      case CertifierV1(certifierId) => PersistentTenantFeature.PersistentCertifier(certifierId).asRight[Throwable]
     }
 
-  def toProtobufTenantKind(persistentTenantKind: PersistentTenantKind): TenantKindV1 = persistentTenantKind match {
-    case PersistentTenantKind.STANDARD  => TenantKindV1.STANDARD
-    case PersistentTenantKind.CERTIFIER => TenantKindV1.CERTIFIER
-  }
+  def toProtobufTenantFeature(persistentTenantFeatures: PersistentTenantFeature): TenantFeatureV1 =
+    persistentTenantFeatures match { case PersistentCertifier(certifierId) => CertifierV1(certifierId) }
 
   def toPersistentTenantExternalId(
     protobufTenantExternalId: ExternalIdV1
@@ -36,14 +35,14 @@ object protobufUtils {
     id         <- protobufTenant.id.toUUID.toEither
     externalId <- toPersistentTenantExternalId(protobufTenant.externalId)
     attributes <- protobufTenant.attributes.traverse(toPersistentTenantAttributes)
-    kinds      <- protobufTenant.kinds.toList.traverse(toPersistentTenantKind)
+    features   <- protobufTenant.features.toList.traverse(toPersistentTenantFeature)
     createdAt  <- protobufTenant.createdAt.toOffsetDateTime.toEither
     updatedAt  <- protobufTenant.updatedAt.traverse(_.toOffsetDateTime.toEither)
   } yield PersistentTenant(
     id = id,
     selfcareId = protobufTenant.selfcareId,
     externalId = externalId,
-    kinds = kinds,
+    features = features,
     attributes = attributes.toList,
     createdAt = createdAt,
     updatedAt = updatedAt
@@ -53,50 +52,80 @@ object protobufUtils {
     externalId <- toProtobufTenantExternalId(persistentTenant.externalId)
   } yield TenantV1(
     id = persistentTenant.id.toString,
-    selfcareId = persistentTenant.selfcareId.toString,
+    selfcareId = persistentTenant.selfcareId,
     externalId = externalId,
-    kinds = persistentTenant.kinds.map(toProtobufTenantKind),
+    features = persistentTenant.features.map(toProtobufTenantFeature),
     attributes = persistentTenant.attributes.map(toProtobufTenantAttribute),
     createdAt = persistentTenant.createdAt.toMillis,
     updatedAt = persistentTenant.updatedAt.map(_.toMillis)
   )
 
+  def toProtobufStrictness(strictness: PersistentVerificationStrictness): VerificationStrictnessV1 = strictness match {
+    case STANDARD => VerificationStrictnessV1.STANDARD
+    case STRICT   => VerificationStrictnessV1.STRICT
+  }
+
+  def toPersistentStrictness(
+    strictness: VerificationStrictnessV1
+  ): Either[Throwable, PersistentVerificationStrictness] =
+    strictness match {
+      case VerificationStrictnessV1.STANDARD => STANDARD.asRight[Throwable]
+      case VerificationStrictnessV1.STRICT   => STRICT.asRight[Throwable]
+      case Unrecognized(unrecognizedValue)   =>
+        new Exception(s"Boom $unrecognizedValue").asLeft[PersistentVerificationStrictness]
+    }
+
+  def toProtobufTenantVerifier(verifier: PersistentTenantVerifier): TenantVerifierV1 = TenantVerifierV1(
+    id = verifier.id.toString(),
+    verificationDate = verifier.verificationDate.toMillis,
+    expirationDate = verifier.expirationDate.map(_.toMillis),
+    extentionDate = verifier.extentionDate.map(_.toMillis),
+    revocationDate = verifier.revocationDate.map(_.toMillis)
+  )
+
+  def toPersistentTenantVerifier(verifier: TenantVerifierV1): Either[Throwable, PersistentTenantVerifier] = for {
+    id               <- verifier.id.toUUID.toEither
+    verificationDate <- verifier.verificationDate.toOffsetDateTime.toEither
+    expirationDate   <- verifier.expirationDate.traverse(_.toOffsetDateTime.toEither)
+    extentionDate    <- verifier.extentionDate.traverse(_.toOffsetDateTime.toEither)
+    revocationDate   <- verifier.revocationDate.traverse(_.toOffsetDateTime.toEither)
+  } yield PersistentTenantVerifier(
+    id = id,
+    verificationDate = verificationDate,
+    expirationDate = expirationDate,
+    extentionDate = extentionDate,
+    revocationDate = revocationDate
+  )
+
   def toPersistentTenantAttributes(
     protobufTenantAttribute: TenantAttributeV1
   ): Either[Throwable, PersistentTenantAttribute] = protobufTenantAttribute match {
-    case Empty                                                                 => Left(new RuntimeException("Booom"))
-    case CertifiedAttributeV1(id, assignmentTimestamp, revocationTimestamp, _) =>
+    case Empty                                                              => Left(new RuntimeException("Booom"))
+    case CertifiedAttributeV1(id, assignmentTimestamp, revocationTimestamp) =>
       for {
         uuid <- id.toUUID.toEither
         at   <- assignmentTimestamp.toOffsetDateTime.toEither
         rt   <- revocationTimestamp.traverse(_.toOffsetDateTime.toEither)
       } yield PersistentCertifiedAttribute(id = uuid, assignmentTimestamp = at, revocationTimestamp = rt)
-    case DeclaredAttributeV1(id, assignmentTimestamp, revocationTimestamp, _)  =>
+    case DeclaredAttributeV1(id, assignmentTimestamp, revocationTimestamp)  =>
       for {
         uuid <- id.toUUID.toEither
         at   <- assignmentTimestamp.toOffsetDateTime.toEither
         rt   <- revocationTimestamp.traverse(_.toOffsetDateTime.toEither)
       } yield PersistentDeclaredAttribute(id = uuid, assignmentTimestamp = at, revocationTimestamp = rt)
-    case VerifiedAttributeV1(
-          id,
-          assignmentTimestamp,
-          revocationTimestamp,
-          expirationTimestamp,
-          extensionTimestamp,
-          _
-        ) =>
+    case VerifiedAttributeV1(id, assignmentTimestamp, strictn, vBy, rBy)    =>
       for {
-        uuid <- id.toUUID.toEither
-        at   <- assignmentTimestamp.toOffsetDateTime.toEither
-        rt   <- revocationTimestamp.traverse(_.toOffsetDateTime.toEither)
-        ext  <- extensionTimestamp.traverse(_.toOffsetDateTime.toEither)
-        exp  <- expirationTimestamp.toOffsetDateTime.toEither
+        uuid       <- id.toUUID.toEither
+        at         <- assignmentTimestamp.toOffsetDateTime.toEither
+        verifiedBy <- vBy.traverse(toPersistentTenantVerifier)
+        revokedBy  <- rBy.traverse(toPersistentTenantVerifier)
+        strictness <- toPersistentStrictness(strictn)
       } yield PersistentVerifiedAttribute(
         id = uuid,
         assignmentTimestamp = at,
-        revocationTimestamp = rt,
-        extensionTimestamp = ext,
-        expirationTimestamp = exp
+        strictness = strictness,
+        verifiedBy = verifiedBy,
+        revokedBy = revokedBy
       )
   }
 
@@ -114,19 +143,13 @@ object protobufUtils {
           assignmentTimestamp = assignmentTimestamp.toMillis,
           revocationTimestamp = revocationTimestamp.map(_.toMillis)
         )
-      case PersistentVerifiedAttribute(
-            id,
-            assignmentTimestamp,
-            revocationTimestamp,
-            extensionTimestamp,
-            expirationTimestamp
-          ) =>
+      case PersistentVerifiedAttribute(id, assignmentTimestamp, strictness, vBy, rBy) =>
         VerifiedAttributeV1(
           id = id.toString,
           assignmentTimestamp = assignmentTimestamp.toMillis,
-          revocationTimestamp = revocationTimestamp.map(_.toMillis),
-          expirationTimestamp = expirationTimestamp.toMillis,
-          extensionTimestamp = extensionTimestamp.map(_.toMillis)
+          strictness = toProtobufStrictness(strictness),
+          verifiedBy = vBy.map(toProtobufTenantVerifier),
+          revokedBy = rBy.map(toProtobufTenantVerifier)
         )
     }
 
