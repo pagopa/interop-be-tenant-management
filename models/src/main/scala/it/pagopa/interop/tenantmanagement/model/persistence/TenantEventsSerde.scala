@@ -5,6 +5,7 @@ import spray.json.DefaultJsonProtocol._
 import it.pagopa.interop.tenantmanagement.model.tenant._
 import it.pagopa.interop.commons.utils.SprayCommonFormats._
 import it.pagopa.interop.commons.queue.message.ProjectableEvent
+import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantFeature.PersistentCertifier
 
 object TenantEventsSerde {
 
@@ -23,7 +24,35 @@ object TenantEventsSerde {
   // Serdes
 
   implicit val ptvFormat: RootJsonFormat[PersistentTenantVerifier] = jsonFormat5(PersistentTenantVerifier.apply)
-  implicit val ptfFormat: RootJsonFormat[PersistentTenantFeature]  = null
+
+  implicit val ptfFormat: RootJsonFormat[PersistentTenantFeature] = new RootJsonFormat[PersistentTenantFeature] {
+
+    implicit val pcFormat: RootJsonFormat[PersistentTenantFeature.PersistentCertifier] = jsonFormat1(
+      PersistentTenantFeature.PersistentCertifier.apply
+    )
+
+    override def read(json: JsValue): PersistentTenantFeature = {
+      val fields: Map[String, JsValue] = json.asJsObject.fields
+      val kind: String                 = fields
+        .get("kind")
+        .collect { case JsString(kind) => kind }
+        .getOrElse(
+          throw new DeserializationException("Unable to deserialize PersistentTenantFeature: missing attribute kind")
+        )
+      val restOfTheFields: JsObject    = JsObject(fields - "kind")
+
+      kind match {
+        case "certifier" => restOfTheFields.convertTo[PersistentCertifier]
+        case x           =>
+          throw new DeserializationException(s"Unable to deserialize PersistentTenantFeature: unmapped kind $x")
+      }
+    }
+
+    override def write(obj: PersistentTenantFeature): JsValue = obj match {
+      case x: PersistentCertifier => JsObject(x.toJson.asJsObject.fields + ("kind" -> JsString("certifier")))
+    }
+
+  }
 
   implicit val pvsFormat: RootJsonFormat[PersistentVerificationStrictness] =
     new RootJsonFormat[PersistentVerificationStrictness] {
