@@ -6,5 +6,4 @@ object InternalErrors {
   final case class InvalidAttribute(attribute: String, field: String)
       extends Throwable(s"Invalid field $field in $attribute attribute")
   case object InvalidFeature                             extends Throwable(s"Invalid feature")
-  case object NonUniqueTenantMapping                     extends Throwable
 }

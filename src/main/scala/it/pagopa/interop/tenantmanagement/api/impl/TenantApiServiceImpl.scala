@@ -105,47 +105,28 @@ final case class TenantApiServiceImpl(
     contexts: Seq[(String, String)]
   ): Route = authorize(ADMIN_ROLE, API_ROLE, M2M_ROLE, SECURITY_ROLE) {
 
-    val externalId: ExternalId                   = ExternalId(origin, code)
-    val result: Future[Option[PersistentTenant]] = findFirstTenantWithExtenalId(externalId)
+    val externalId: PersistentTenantExternalId   = PersistentTenantExternalId.fromAPI(ExternalId(origin, code))
+    val result: Future[Option[PersistentTenant]] = findFirstTenant(_.externalId == externalId)
 
     onComplete(result) {
-      case Success(Some(tenant))           => getTenantByExternalId200(tenant.toAPI)
-      case Success(None)                   =>
+      case Success(Some(tenant)) => getTenantByExternalId200(tenant.toAPI)
+      case Success(None)         =>
         logger.info(s"Tenant with externalId $externalId not found")
         getTenant404(problemOf(StatusCodes.NotFound, GetTenantNotFound))
-      case Failure(NonUniqueTenantMapping) =>
-        complete(problemOf(StatusCodes.InternalServerError, GenericError("Internal server error")))
-      case Failure(ex)                     =>
+      case Failure(ex)           =>
         logger.error(s"Error while getting the tenant with externalId $externalId", ex)
         complete(problemOf(StatusCodes.InternalServerError, GenericError(ex.getMessage)))
     }
   }
 
-  private def findFirstTenantWithExtenalId(
-    externalId: ExternalId
-  )(implicit contexts: Seq[(String, String)]): Future[Option[PersistentTenant]] =
-    findFirstTenant(_.externalId == PersistentTenantExternalId.fromAPI(externalId)).flatMap {
-      case Nil           => Future.successful(none[PersistentTenant])
-      case tenant :: Nil => Future.successful(tenant.some)
-      case ts            =>
-        logger.error(s"MORE THAN ONE TENANT CORRESPONDING TO $externalId :\n ${ts.mkString("\n")}")
-        Future.failed(NonUniqueTenantMapping)
-    }
-
-  private def findFirstTenant(matchCriteria: PersistentTenant => Boolean): Future[List[PersistentTenant]] =
-    commanders.traverseFilter(findFirstInShard(_, matchCriteria))
-
-  private def findFirstInShard(
-    commander: EntityRef[Command],
-    matchCriteria: PersistentTenant => Boolean
-  ): Future[Option[PersistentTenant]] = {
+  def findFirstTenant(matchCriteria: PersistentTenant => Boolean): Future[Option[PersistentTenant]] = {
     val commandIterator = Command.getTenantsCommandIterator(100)
 
-    // It's stack safe since every submission to an Execution context resets the stack, creating a trampoline effect
-    def loop: Future[Option[PersistentTenant]] = commander.askWithStatus(commandIterator.next()).flatMap { slice =>
-      if (slice.isEmpty) Future.successful(None)
-      else slice.find(matchCriteria).map(_.some).map(Future.successful).getOrElse(loop)
-    }
+    def loop: Future[Option[PersistentTenant]] =
+      Future.traverse(commanders)(_.askWithStatus(commandIterator.next())).map(_.flatten).flatMap { slice =>
+        if (slice.isEmpty) Future.successful(None)
+        else slice.find(matchCriteria).map(_.some).map(Future.successful).getOrElse(loop)
+      }
 
     loop
   }
