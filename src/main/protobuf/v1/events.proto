@@ -11,3 +11,7 @@ option (scalapb.options) = {
 message TenantCreatedV1 {
   required TenantV1 tenant = 1;
 }
+
+message TenantUpdatedV1 {
+  required TenantV1 tenant = 1;
+}

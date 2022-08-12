@@ -6,3 +6,4 @@ import it.pagopa.interop.commons.queue.message.ProjectableEvent
 sealed trait Event extends Persistable with ProjectableEvent
 
 final case class TenantCreated(tenant: PersistentTenant) extends Event
+final case class TenantUpdated(tenant: PersistentTenant) extends Event

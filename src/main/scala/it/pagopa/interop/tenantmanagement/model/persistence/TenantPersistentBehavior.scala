@@ -4,10 +4,12 @@ import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior, SupervisorStrategy}
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityTypeKey}
 import akka.pattern.StatusReply
+import akka.pattern.StatusReply._
 import akka.persistence.typed.PersistenceId
-import akka.persistence.typed.scaladsl.{Effect, EffectBuilder, EventSourcedBehavior, RetentionCriteria}
-import it.pagopa.interop.tenantmanagement.error.InternalErrors.{TenantAlreadyExists, TenantNotFound}
+import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior, RetentionCriteria}
+import it.pagopa.interop.tenantmanagement.error.InternalErrors.{TenantAlreadyExists, NotFoundTenant}
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenant
+import it.pagopa.interop.tenantmanagement.model.persistence.Adapters._
 
 import java.time.temporal.ChronoUnit
 import scala.concurrent.duration.{DurationInt, DurationLong}
@@ -22,52 +24,45 @@ object TenantPersistentBehavior {
     val idleTimeout = context.system.settings.config.getDuration("tenant-management.idle-timeout")
     context.setReceiveTimeout(idleTimeout.get(ChronoUnit.SECONDS) seconds, Idle)
     command match {
-      case CreateTenant(newTenant, replyTo) =>
-        val tenant: Option[PersistentTenant] = state.tenants.get(newTenant.id.toString)
-        tenant.fold(
-          Effect
-            .persist(TenantCreated(newTenant))
-            .thenRun { (_: State) => replyTo ! StatusReply.Success(newTenant) }
-        ) { p =>
-          replyTo ! StatusReply.Error[PersistentTenant](TenantAlreadyExists(p.id.toString))
-          Effect.none[TenantCreated, State]
-        }
-
       case GetTenant(tenantId, replyTo) =>
-        val tenant: Option[PersistentTenant] = state.tenants.get(tenantId)
-        tenant.fold {
-          replyTo ! StatusReply.Error[PersistentTenant](TenantNotFound(tenantId))
-          Effect.none[Event, State]
-        } { p =>
-          replyTo ! StatusReply.Success[PersistentTenant](p)
-          Effect.none[Event, State]
-        }
+        val maybeTenant: Option[PersistentTenant] = state.tenants.get(tenantId)
+        val response = maybeTenant.fold(error[PersistentTenant](NotFoundTenant(tenantId)))(success)
+        Effect.reply(replyTo)(response)
 
-      case GetTenants(from, to, replyTo) =>
-        replyTo ! StatusReply.Success[List[PersistentTenant]](state.allTenants.slice(from, to))
-        Effect.none[Event, State]
+      case GetTenantsWithExternalId(externalId, replyTo) =>
+        val matchingTenants: List[PersistentTenant] = state.allTenants.filter(_.externalId == externalId)
+        Effect.reply(replyTo)(success(matchingTenants))
+
+      case CreateTenant(newTenant, replyTo) =>
+        val maybeTenantId: Option[String]         = state.tenants.get(newTenant.id.toString).map(_.id.toString())
+        val success: Effect[TenantCreated, State] = persistAndReply(newTenant, TenantCreated)(replyTo)
+        val failure: String => Effect[TenantCreated, State] = id => fail(TenantAlreadyExists(id))(replyTo)
+        maybeTenantId.fold(success)(failure)
+
+      case UpdateTenant(tenantDelta, replyTo) =>
+        val maybeTenant: Option[PersistentTenant]                     =
+          state.tenants.get(tenantDelta.id.toString).map(_.update(tenantDelta))
+        val success: PersistentTenant => Effect[TenantUpdated, State] = t => persistAndReply(t, TenantUpdated)(replyTo)
+        val failure: Effect[TenantUpdated, State] = fail(NotFoundTenant(tenantDelta.id.toString))(replyTo)
+        maybeTenant.fold(failure)(success)
 
       case Idle =>
-        shard ! ClusterSharding.Passivate(context.self)
         context.log.debug(s"Passivate shard: ${shard.path.name}")
-        Effect.none[Event, State]
+        Effect.reply(shard)(ClusterSharding.Passivate(context.self))
     }
   }
 
-  def handleFailure[T](ex: Throwable)(replyTo: ActorRef[StatusReply[PersistentTenant]]): EffectBuilder[T, State] = {
-    replyTo ! StatusReply.Error[PersistentTenant](ex)
-    Effect.none[T, State]
-  }
+  def fail[T](ex: Throwable)(replyTo: ActorRef[StatusReply[PersistentTenant]]): Effect[T, State] =
+    Effect.reply(replyTo)(error[PersistentTenant](ex))
 
-  def persistStateAndReply[T](tenant: PersistentTenant, eventBuilder: PersistentTenant => T)(
+  def persistAndReply[T](tenant: PersistentTenant, eventBuilder: PersistentTenant => T)(
     replyTo: ActorRef[StatusReply[PersistentTenant]]
-  ): EffectBuilder[T, State] = Effect
-    .persist(eventBuilder(tenant))
-    .thenRun((_: State) => replyTo ! StatusReply.Success(tenant))
+  ): Effect[T, State] = Effect.persist(eventBuilder(tenant)).thenReply(replyTo)((_: State) => success(tenant))
 
   private val eventHandler: (State, Event) => State = (state, event) =>
     event match {
       case TenantCreated(tenant) => state.addTenant(tenant)
+      case TenantUpdated(tenant) => state.addTenant(tenant)
     }
 
   val TypeKey: EntityTypeKey[Command] = EntityTypeKey[Command]("interop-be-tenant-management-persistence")

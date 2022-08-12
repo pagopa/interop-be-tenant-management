@@ -30,10 +30,10 @@ object Generators {
     x <- Gen.listOfN(n, g)
   } yield x
 
-  val externalIdGen: Gen[(PersistentTenantExternalId, ExternalIdV1)] = for {
+  val externalIdGen: Gen[(PersistentExternalId, ExternalIdV1)] = for {
     origin <- stringGen
     value  <- stringGen
-  } yield (PersistentTenantExternalId(origin, value), ExternalIdV1(origin, value))
+  } yield (PersistentExternalId(origin, value), ExternalIdV1(origin, value))
 
   val certifiedAttributeGen: Gen[(PersistentCertifiedAttribute, CertifiedAttributeV1)] = for {
     id                                    <- Gen.uuid
@@ -127,6 +127,10 @@ object Generators {
 
   val tenantCreatedGen: Gen[(TenantCreated, TenantCreatedV1)] = tenantGen.map { case (a, b) =>
     (TenantCreated(a), TenantCreatedV1(b))
+  }
+
+  val tenantUpdatedGen: Gen[(TenantUpdated, TenantUpdatedV1)] = tenantGen.map { case (a, b) =>
+    (TenantUpdated(a), TenantUpdatedV1(b))
   }
 
 }

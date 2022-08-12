@@ -20,6 +20,8 @@ class PersistentSerializationSpec extends ScalaCheckSuite with DiffxAssertions {
   deserCheck[State, StateV1](stateGen)
   serdeCheck[TenantCreated, TenantCreatedV1](tenantCreatedGen)
   deserCheck[TenantCreated, TenantCreatedV1](tenantCreatedGen)
+  serdeCheck[TenantUpdated, TenantUpdatedV1](tenantUpdatedGen)
+  deserCheck[TenantUpdated, TenantUpdatedV1](tenantUpdatedGen)
 
   // TODO move me in commons
   def serdeCheck[A: TypeTag, B](gen: Gen[(A, B)], adapter: B => B = identity[B](_))(implicit

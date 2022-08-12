@@ -27,6 +27,12 @@ object Adapters {
     }
   }
 
+  implicit class PersistentTenantDeltaObjectWrapper(private val p: PersistentTenantDelta.type) extends AnyVal {
+    def fromAPI(tenantId: String, td: TenantDelta): Either[Throwable, PersistentTenantDelta] = for {
+      features <- td.features.toList.traverse(PersistentTenantFeature.fromAPI)
+    } yield PersistentTenantDelta(id = tenantId, selfcareId = td.selfcareId, features = features)
+  }
+
   implicit class PersistentVerificationTenantVerifierWrapper(private val p: PersistentTenantVerifier) extends AnyVal {
     def toAPI(): TenantVerifier = TenantVerifier(
       id = p.id,
@@ -114,14 +120,12 @@ object Adapters {
     }
   }
 
-  implicit class PersistentTenantExternalIdWrapper(private val p: PersistentTenantExternalId) extends AnyVal {
+  implicit class PersistentTenantExternalIdWrapper(private val p: PersistentExternalId) extends AnyVal {
     def toAPI: ExternalId = ExternalId(origin = p.origin, value = p.value)
   }
 
-  implicit class PersistentTenantExternalIdObjectWrapper(private val p: PersistentTenantExternalId.type)
-      extends AnyVal {
-    def fromAPI(e: ExternalId): PersistentTenantExternalId =
-      PersistentTenantExternalId(origin = e.origin, value = e.value)
+  implicit class PersistentTenantExternalIdObjectWrapper(private val p: PersistentExternalId.type) extends AnyVal {
+    def fromAPI(e: ExternalId): PersistentExternalId = PersistentExternalId(origin = e.origin, value = e.value)
   }
 
   implicit class PersistentTenantFeatureWrapper(private val p: PersistentTenantFeature) extends AnyVal {
@@ -148,6 +152,9 @@ object Adapters {
       createdAt = p.createdAt,
       updatedAt = p.updatedAt
     )
+
+    def update(ptd: PersistentTenantDelta): PersistentTenant =
+      p.copy(selfcareId = ptd.selfcareId, features = ptd.features)
   }
 
   implicit class PersistentTenantObjectWrapper(private val p: PersistentTenant.type) extends AnyVal {
@@ -159,7 +166,7 @@ object Adapters {
     } yield PersistentTenant(
       id = seed.id.getOrElse(UUID.randomUUID()),
       selfcareId = None,
-      externalId = PersistentTenantExternalId.fromAPI(seed.externalId),
+      externalId = PersistentExternalId.fromAPI(seed.externalId),
       features = features,
       attributes = attributes,
       createdAt = supplier.get,

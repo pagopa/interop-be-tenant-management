@@ -91,6 +91,36 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+    post:
+      tags:
+        - tenant
+      summary: Updates a tenant
+      operationId: updateTenant
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TenantDelta'
+        required: true
+      responses:
+        '200':
+          description: the newly updated tenant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tenant'
+        '400':
+          description: Invalid input
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Tenant not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
   /tenants/{origin}/{code}:
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
@@ -335,6 +365,18 @@ components:
         - externalId
         - features
         - attributes
+    TenantDelta:
+      description: Tenant Delta model
+      type: object
+      properties:
+        selfcareId:
+          type: string
+        features:
+          type: array
+          items:
+            $ref: '#/components/schemas/TenantFeature'
+      required:
+        - features
   securitySchemes:
     bearerAuth:
       type: http

@@ -14,12 +14,16 @@ object TenantEventsSerde {
   }
 
   private val tenantCreated: String = "tenant-created"
+  private val updateTenant: String  = "update-tenant"
 
   val jsonToTenant: PartialFunction[String, JsValue => ProjectableEvent] = { case `tenantCreated` =>
     _.convertTo[TenantCreated]
   }
 
-  def getKind(e: Event): String = e match { case TenantCreated(_) => tenantCreated }
+  def getKind(e: Event): String = e match {
+    case TenantCreated(_) => tenantCreated
+    case TenantUpdated(_) => updateTenant
+  }
 
   // Serdes
 
@@ -106,11 +110,8 @@ object TenantEventsSerde {
     }
   }
 
-  private implicit val pexFormat: RootJsonFormat[PersistentTenantExternalId] = jsonFormat2(
-    PersistentTenantExternalId.apply
-  )
-
-  private implicit val ptFormat: RootJsonFormat[PersistentTenant] = jsonFormat7(PersistentTenant.apply)
-  private implicit val tcFormat: RootJsonFormat[TenantCreated]    = jsonFormat1(TenantCreated.apply)
+  private implicit val pexFormat: RootJsonFormat[PersistentExternalId] = jsonFormat2(PersistentExternalId.apply)
+  private implicit val ptFormat: RootJsonFormat[PersistentTenant]      = jsonFormat7(PersistentTenant.apply)
+  private implicit val tcFormat: RootJsonFormat[TenantCreated]         = jsonFormat1(TenantCreated.apply)
 
 }

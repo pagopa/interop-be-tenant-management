@@ -17,7 +17,7 @@ import it.pagopa.interop.tenantmanagement.error.InternalErrors._
 import it.pagopa.interop.tenantmanagement.error.TenantManagementErrors._
 import it.pagopa.interop.tenantmanagement.model.persistence.Adapters._
 import it.pagopa.interop.tenantmanagement.model.persistence._
-import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenant
+import it.pagopa.interop.tenantmanagement.model.tenant._
 import it.pagopa.interop.tenantmanagement.model._
 import it.pagopa.interop.commons.utils.TypeConversions.EitherOps
 import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
@@ -28,7 +28,6 @@ import akka.util.Timeout
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContextExecutor
 import cats.implicits._
-import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantExternalId
 
 final case class TenantApiServiceImpl(
   system: ActorSystem[_],
@@ -90,7 +89,7 @@ final case class TenantApiServiceImpl(
 
     onComplete(result) {
       case Success(tenant)             => getTenant200(tenant.toAPI)
-      case Failure(ex: TenantNotFound) =>
+      case Failure(ex: NotFoundTenant) =>
         logger.error(s"Error while getting the tenant $tenantId", ex)
         getTenant404(problemOf(StatusCodes.NotFound, GetTenantNotFound))
       case Failure(ex)                 =>
@@ -105,30 +104,55 @@ final case class TenantApiServiceImpl(
     contexts: Seq[(String, String)]
   ): Route = authorize(ADMIN_ROLE, API_ROLE, M2M_ROLE, SECURITY_ROLE) {
 
-    val externalId: PersistentTenantExternalId   = PersistentTenantExternalId.fromAPI(ExternalId(origin, code))
-    val result: Future[Option[PersistentTenant]] = findFirstTenant(_.externalId == externalId)
+    val result: Future[Option[PersistentTenant]] =
+      findFirstTenantWithExternalId(PersistentExternalId.fromAPI(ExternalId(origin, code)))
 
     onComplete(result) {
       case Success(Some(tenant)) => getTenantByExternalId200(tenant.toAPI)
       case Success(None)         =>
-        logger.info(s"Tenant with externalId $externalId not found")
+        logger.info(s"Tenant with externalId $origin,$code not found")
         getTenant404(problemOf(StatusCodes.NotFound, GetTenantNotFound))
       case Failure(ex)           =>
-        logger.error(s"Error while getting the tenant with externalId $externalId", ex)
+        logger.error(s"Error while getting the tenant with externalId $origin,$code", ex)
         complete(problemOf(StatusCodes.InternalServerError, GenericError(ex.getMessage)))
     }
   }
 
-  def findFirstTenant(matchCriteria: PersistentTenant => Boolean): Future[Option[PersistentTenant]] = {
-    val commandIterator = Command.getTenantsCommandIterator(100)
+  def findFirstTenantWithExternalId(
+    externalId: PersistentExternalId
+  )(implicit contexts: Seq[(String, String)]): Future[Option[PersistentTenant]] = {
+    def askAction(commander: EntityRef[Command]) =
+      commander.askWithStatus[List[PersistentTenant]](r => GetTenantsWithExternalId(externalId, r))
 
-    def loop: Future[Option[PersistentTenant]] =
-      Future.traverse(commanders)(_.askWithStatus(commandIterator.next())).map(_.flatten).flatMap { slice =>
-        if (slice.isEmpty) Future.successful(None)
-        else slice.find(matchCriteria).map(_.some).map(Future.successful).getOrElse(loop)
-      }
+    Future.traverse(commanders)(askAction).map(_.flatten).flatMap {
+      case Nil           => Future.successful(None)
+      case tenant :: Nil => Future.successful(tenant.some)
+      case ts            =>
+        logger.error(s"Multiple Tenants Corresponding To External Id $externalId: ${ts.mkString(", ")}")
+        Future.failed(MultipleTenantsForExternalId) // * I'l leave this as a 500
+    }
+  }
 
-    loop
+  override def updateTenant(tenantId: String, tenantDelta: TenantDelta)(implicit
+    toEntityMarshallerProblem: ToEntityMarshaller[Problem],
+    toEntityMarshallerTenant: ToEntityMarshaller[Tenant],
+    contexts: Seq[(String, String)]
+  ): Route = authorize(ADMIN_ROLE, API_ROLE, M2M_ROLE, SECURITY_ROLE) {
+
+    val result: Future[PersistentTenant] = for {
+      delta  <- PersistentTenantDelta.fromAPI(tenantId, tenantDelta).toFuture
+      result <- commander(tenantId).askWithStatus(r => UpdateTenant(delta, r))
+    } yield result
+
+    onComplete(result) {
+      case Success(tenant)                 => updateTenant200(tenant.toAPI)
+      case Failure(NotFoundTenant(tenant)) =>
+        logger.info(s"Tenant $tenant not found")
+        getTenant404(problemOf(StatusCodes.NotFound, GetTenantNotFound))
+      case Failure(ex)                     =>
+        logger.error(s"Error while updating tenant $tenantId", ex)
+        complete(problemOf(StatusCodes.InternalServerError, GenericError(ex.getMessage)))
+    }
   }
 
 }

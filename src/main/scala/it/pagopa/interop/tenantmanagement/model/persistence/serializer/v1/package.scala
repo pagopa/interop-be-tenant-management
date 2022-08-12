@@ -30,4 +30,10 @@ package object v1 {
   implicit def tenantCreatedV1PersistEventSerializer: PersistEventSerializer[TenantCreated, TenantCreatedV1] =
     event => toProtobufTenant(event.tenant).map(TenantCreatedV1.of)
 
+  implicit def tenantUpdatedV1PersistEventDeserializer: PersistEventDeserializer[TenantUpdatedV1, TenantUpdated] =
+    event => toPersistentTenant(event.tenant).map(TenantUpdated)
+
+  implicit def tenantUpdatedV1PersistEventSerializer: PersistEventSerializer[TenantUpdated, TenantUpdatedV1] =
+    event => toProtobufTenant(event.tenant).map(TenantUpdatedV1.of)
+
 }

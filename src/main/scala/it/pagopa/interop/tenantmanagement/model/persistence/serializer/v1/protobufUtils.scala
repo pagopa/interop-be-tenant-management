@@ -21,14 +21,10 @@ object protobufUtils {
   def toProtobufTenantFeature(persistentTenantFeatures: PersistentTenantFeature): TenantFeatureV1 =
     persistentTenantFeatures match { case PersistentCertifier(certifierId) => CertifierV1(certifierId) }
 
-  def toPersistentTenantExternalId(
-    protobufTenantExternalId: ExternalIdV1
-  ): Either[Throwable, PersistentTenantExternalId] =
-    PersistentTenantExternalId(protobufTenantExternalId.origin, protobufTenantExternalId.value).asRight[Throwable]
+  def toPersistentTenantExternalId(protobufTenantExternalId: ExternalIdV1): Either[Throwable, PersistentExternalId] =
+    PersistentExternalId(protobufTenantExternalId.origin, protobufTenantExternalId.value).asRight[Throwable]
 
-  def toProtobufTenantExternalId(
-    protobufTenantExternalId: PersistentTenantExternalId
-  ): Either[Throwable, ExternalIdV1] =
+  def toProtobufTenantExternalId(protobufTenantExternalId: PersistentExternalId): Either[Throwable, ExternalIdV1] =
     ExternalIdV1(protobufTenantExternalId.origin, protobufTenantExternalId.value).asRight[Throwable]
 
   def toPersistentTenant(protobufTenant: TenantV1): Either[Throwable, PersistentTenant] = for {
