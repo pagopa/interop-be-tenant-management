@@ -9,20 +9,22 @@ import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantFeature.P
 
 object TenantEventsSerde {
 
-  val tenantToJson: PartialFunction[ProjectableEvent, JsValue] = { case x @ TenantCreated(_) =>
-    x.toJson
+  val tenantToJson: PartialFunction[ProjectableEvent, JsValue] = {
+    case x @ TenantCreated(_) => x.toJson
+    case x @ TenantUpdated(_) => x.toJson
   }
 
   private val tenantCreated: String = "tenant-created"
-  private val updateTenant: String  = "update-tenant"
+  private val tenantUpdated: String = "tenant-updated"
 
-  val jsonToTenant: PartialFunction[String, JsValue => ProjectableEvent] = { case `tenantCreated` =>
-    _.convertTo[TenantCreated]
+  val jsonToTenant: PartialFunction[String, JsValue => ProjectableEvent] = {
+    case `tenantCreated` => _.convertTo[TenantCreated]
+    case `tenantUpdated` => _.convertTo[TenantUpdated]
   }
 
   def getKind(e: Event): String = e match {
     case TenantCreated(_) => tenantCreated
-    case TenantUpdated(_) => updateTenant
+    case TenantUpdated(_) => tenantUpdated
   }
 
   // Serdes
@@ -114,5 +116,6 @@ object TenantEventsSerde {
   private implicit val pexFormat: RootJsonFormat[PersistentExternalId] = jsonFormat2(PersistentExternalId.apply)
   private implicit val ptFormat: RootJsonFormat[PersistentTenant]      = jsonFormat7(PersistentTenant.apply)
   private implicit val tcFormat: RootJsonFormat[TenantCreated]         = jsonFormat1(TenantCreated.apply)
+  private implicit val tuFormat: RootJsonFormat[TenantUpdated]         = jsonFormat1(TenantUpdated.apply)
 
 }

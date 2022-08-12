@@ -8,6 +8,8 @@ object TenantManagementErrors {
   final case class CreateTenantInvalidAttribute(attribute: String, field: String)
       extends ComponentError("0003", s"Error creating tenant - Invalid field $field in $attribute attribute")
 
-  case object GetTenantNotFound   extends ComponentError("0004", "Tenant not found")
-  case object GetTenantBadRequest extends ComponentError("0005", "Error getting tenant - Bad Request")
+  case object GetTenantNotFound    extends ComponentError("0004", "Tenant not found")
+  case object GetTenantBadRequest  extends ComponentError("0005", "Error getting tenant - Bad Request")
+  case object AddAttributeConflict extends ComponentError("0006", "Attribute already exists")
+  case object AttributeNotFound    extends ComponentError("0007", "Attribute not found")
 }

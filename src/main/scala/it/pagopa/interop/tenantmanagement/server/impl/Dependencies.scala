@@ -35,6 +35,8 @@ import slick.jdbc.JdbcProfile
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 import it.pagopa.interop.commons.utils.service.impl.OffsetDateTimeSupplierImpl
+import it.pagopa.interop.tenantmanagement.api.AttributesApi
+import it.pagopa.interop.tenantmanagement.api.impl._
 
 trait Dependencies {
 
@@ -87,8 +89,15 @@ trait Dependencies {
 
   def tenantApi(sharding: ClusterSharding, jwtReader: JWTReader)(implicit actorSystem: ActorSystem[_]) =
     new TenantApi(
-      TenantApiServiceImpl(actorSystem, sharding, tenantPersistenceEntity, OffsetDateTimeSupplierImpl),
+      new TenantApiServiceImpl(actorSystem, sharding, tenantPersistenceEntity, OffsetDateTimeSupplierImpl),
       TenantApiMarshallerImpl,
+      jwtReader.OAuth2JWTValidatorAsContexts
+    )
+
+  def attributesApi(sharding: ClusterSharding, jwtReader: JWTReader)(implicit actorSystem: ActorSystem[_]) =
+    new AttributesApi(
+      new AttributesApiServiceImpl(actorSystem, sharding, tenantPersistenceEntity),
+      AttributesApiMarshallerImpl,
       jwtReader.OAuth2JWTValidatorAsContexts
     )
 

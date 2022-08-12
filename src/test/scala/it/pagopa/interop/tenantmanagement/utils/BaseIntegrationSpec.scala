@@ -5,8 +5,8 @@ import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity}
 import akka.cluster.typed.{Cluster, Join}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.directives.SecurityDirectives
-import it.pagopa.interop.tenantmanagement.api.TenantApi
-import it.pagopa.interop.tenantmanagement.api.impl.{TenantApiMarshallerImpl, TenantApiServiceImpl}
+import it.pagopa.interop.tenantmanagement.api._
+import it.pagopa.interop.tenantmanagement.api.impl._
 import it.pagopa.interop.tenantmanagement.model.persistence.TenantPersistentBehavior
 import it.pagopa.interop.tenantmanagement.server.Controller
 import it.pagopa.interop.tenantmanagement.server.impl.Main.behaviorFactory
@@ -52,8 +52,20 @@ abstract class BaseIntegrationSpec extends FunSuite with SpecHelper {
           def get: OffsetDateTime = mockedTime
         }
 
+        val attributesApi: AttributesApi = new AttributesApi(
+          new AttributesApiServiceImpl(actorTestKit.internalSystem, sharding, persistentEntity),
+          AttributesApiMarshallerImpl,
+          SecurityDirectives.authenticateOAuth2(
+            "SecurityRealm",
+            {
+              case Provided(identifier) => Some(Seq(BEARER -> identifier, USER_ROLES -> "admin"))
+              case Missing              => None
+            }
+          )
+        )
+
         val tenantApi: TenantApi = new TenantApi(
-          TenantApiServiceImpl(actorTestKit.internalSystem, sharding, persistentEntity, offsetDateTimeSupplier),
+          new TenantApiServiceImpl(actorTestKit.internalSystem, sharding, persistentEntity, offsetDateTimeSupplier),
           TenantApiMarshallerImpl,
           SecurityDirectives.authenticateOAuth2(
             "SecurityRealm",
@@ -65,7 +77,7 @@ abstract class BaseIntegrationSpec extends FunSuite with SpecHelper {
         )
 
         implicit val classic: actor.ActorSystem = actorTestKit.internalSystem.classicSystem
-        val controller: Controller              = new Controller(tenantApi)
+        val controller: Controller              = new Controller(attributesApi, tenantApi)
 
         bindServer = Await.result(
           Http()

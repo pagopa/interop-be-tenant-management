@@ -3,9 +3,9 @@ package it.pagopa.interop.tenantmanagement.authz
 import cats.implicits._
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.cluster.sharding.typed.scaladsl.Entity
-import it.pagopa.interop.tenantmanagement.api.TenantApiService
-import it.pagopa.interop.tenantmanagement.api.impl.TenantApiMarshallerImpl._
-import it.pagopa.interop.tenantmanagement.api.impl.TenantApiServiceImpl
+import it.pagopa.interop.tenantmanagement.api._
+import it.pagopa.interop.tenantmanagement.api.impl._
+import it.pagopa.interop.tenantmanagement.api.impl.AttributesApiMarshallerImpl._
 import it.pagopa.interop.tenantmanagement.model.persistence.Command
 import it.pagopa.interop.tenantmanagement.model.{TenantSeed}
 import it.pagopa.interop.tenantmanagement.server.impl.Main.tenantPersistenceEntity
@@ -17,6 +17,7 @@ import it.pagopa.interop.tenantmanagement.model.ExternalId
 import java.time.OffsetDateTime
 import it.pagopa.interop.tenantmanagement.model._
 import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
+import it.pagopa.interop.tenantmanagement.api.impl.AttributesApiServiceImpl
 
 class TenantApiServiceAuthzSpec extends ClusteredMUnitRouteTest {
   override val testPersistentEntity: Entity[Command, ShardingEnvelope[Command]] = tenantPersistenceEntity
@@ -25,8 +26,15 @@ class TenantApiServiceAuthzSpec extends ClusteredMUnitRouteTest {
     def get: OffsetDateTime = OffsetDateTime.now()
   }
 
-  val service: TenantApiService =
-    TenantApiServiceImpl(testKit.system, testAkkaSharding, testPersistentEntity, iCallConstructorsBecauseOOPIsNeverDead)
+  val tenantService: TenantApiService = new TenantApiServiceImpl(
+    testKit.system,
+    testAkkaSharding,
+    testPersistentEntity,
+    iCallConstructorsBecauseOOPIsNeverDead
+  )
+
+  val service: AttributesApiService =
+    new AttributesApiServiceImpl(testKit.system, testAkkaSharding, testPersistentEntity)
 
   test("Tenant api operation authorization spec should accept authorized roles for createTenant") {
 
@@ -44,14 +52,14 @@ class TenantApiServiceAuthzSpec extends ClusteredMUnitRouteTest {
     )
     validateAuthorization(
       endpoints("createTenant"),
-      { implicit c: Seq[(String, String)] => service.createTenant(fakeSeed) }
+      { implicit c: Seq[(String, String)] => tenantService.createTenant(fakeSeed) }
     )
   }
 
   test("Tenant api operation authorization spec should accept authorized roles for getTenant") {
     validateAuthorization(
       endpoints("getTenant"),
-      { implicit c: Seq[(String, String)] => service.getTenant("fakeSeed") }
+      { implicit c: Seq[(String, String)] => tenantService.getTenant("fakeSeed") }
     )
   }
 

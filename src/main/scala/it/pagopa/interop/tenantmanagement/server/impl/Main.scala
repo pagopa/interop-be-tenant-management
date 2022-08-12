@@ -56,8 +56,9 @@ object Main extends App with Dependencies {
 
       val serverBinding: Future[Http.ServerBinding] = for {
         jwtReader <- getJwtValidator()
-        api        = tenantApi(sharding, jwtReader)
-        controller = new Controller(api, validationExceptionToRoute.some)(actorSystem.classicSystem)
+        tApi       = tenantApi(sharding, jwtReader)
+        aApi       = attributesApi(sharding, jwtReader)
+        controller = new Controller(aApi, tApi, validationExceptionToRoute.some)(actorSystem.classicSystem)
         binding <- Http().newServerAt("0.0.0.0", ApplicationConfiguration.serverPort).bind(controller.routes)
       } yield binding
 

@@ -3,6 +3,7 @@ package it.pagopa.interop.tenantmanagement.model.persistence
 import akka.actor.typed.ActorRef
 import akka.pattern.StatusReply
 import it.pagopa.interop.tenantmanagement.model.tenant._
+import java.util.UUID
 
 sealed trait Command
 
@@ -16,4 +17,19 @@ final case class GetTenantsWithExternalId(
 ) extends Command
 
 final case class UpdateTenant(tenantDelta: PersistentTenantDelta, replyTo: ActorRef[StatusReply[PersistentTenant]])
+    extends Command
+
+final case class AddAttribute(
+  tenantId: String,
+  persistentAttribute: PersistentTenantAttribute,
+  replyTo: ActorRef[StatusReply[PersistentTenant]]
+) extends Command
+
+final case class UpdateAttribute(
+  tenantId: String,
+  persistentAttribute: PersistentTenantAttribute,
+  replyTo: ActorRef[StatusReply[PersistentTenant]]
+) extends Command
+
+final case class DeleteAttribute(tenantId: String, attributeId: UUID, replyTo: ActorRef[StatusReply[PersistentTenant]])
     extends Command

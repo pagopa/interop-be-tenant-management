@@ -8,6 +8,7 @@ import java.util.UUID
 import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentVerificationStrictness.STANDARD
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentVerificationStrictness.STRICT
+import java.time.OffsetDateTime
 
 object Adapters {
 
@@ -174,6 +175,14 @@ object Adapters {
 
     def update(ptd: PersistentTenantDelta): PersistentTenant =
       p.copy(selfcareId = ptd.selfcareId, features = ptd.features)
+
+    def getAttribute(id: UUID): Option[PersistentTenantAttribute] = p.attributes.find(_.id == id)
+    def addAttribute(attr: PersistentTenantAttribute, time: OffsetDateTime): PersistentTenant =
+      p.copy(attributes = attr :: p.attributes, createdAt = time) // TODO! created should NOT be passed from FE
+    def updateAttribute(attr: PersistentTenantAttribute, time: OffsetDateTime): PersistentTenant =
+      p.copy(attributes = attr :: p.attributes, updatedAt = time.some)
+    def deleteAttribute(id: UUID, time: OffsetDateTime): PersistentTenant                        =
+      p.copy(attributes = p.attributes.filterNot(_.id == id), updatedAt = time.some)
   }
 
   implicit class PersistentTenantObjectWrapper(private val p: PersistentTenant.type) extends AnyVal {

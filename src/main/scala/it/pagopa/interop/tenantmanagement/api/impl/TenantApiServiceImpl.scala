@@ -29,7 +29,7 @@ import scala.concurrent.duration._
 import scala.concurrent.ExecutionContextExecutor
 import cats.implicits._
 
-final case class TenantApiServiceImpl(
+class TenantApiServiceImpl(
   system: ActorSystem[_],
   sharding: ClusterSharding,
   entity: Entity[Command, ShardingEnvelope[Command]],
