@@ -31,7 +31,7 @@ trait SpecHelper {
 
   def randomTenantAndSeed(offsetDateTime: OffsetDateTime): (Tenant, TenantSeed) = {
     val tenantId: UUID         = UUID.randomUUID()
-    val externalId: ExternalId = ExternalId("IPA", "pippo")
+    val externalId: ExternalId = ExternalId(UUID.randomUUID().toString(), UUID.randomUUID().toString())
 
     val attribute: TenantAttribute = TenantAttribute(
       id = UUID.randomUUID(),
@@ -59,17 +59,24 @@ trait SpecHelper {
     (tenant, tenantSeed)
   }
 
-  def createTenant(seed: TenantSeed)(implicit actorSystem: ActorSystem[_]): Future[Tenant] = {
+  def createTenant[T](
+    seed: TenantSeed
+  )(implicit actorSystem: ActorSystem[_], um: Unmarshaller[HttpResponse, T]): Future[T] = {
     implicit val ec: ExecutionContext = actorSystem.executionContext
     for {
-      data          <- Marshal(seed).to[MessageEntity].map(_.dataBytes)
-      responseBytes <- makeRequest(data, "tenants", HttpMethods.POST)
-      tenant        <- Unmarshal(responseBytes).to[Tenant]
-    } yield tenant
+      data   <- Marshal(seed).to[MessageEntity].map(_.dataBytes)
+      result <- performCall[T](HttpMethods.POST, s"tenants", data.some)
+    } yield result
   }
 
-  def getTenant(id: UUID)(implicit actorSystem: ActorSystem[_]): Future[Tenant] =
-    get[Tenant](s"tenants/${id.toString}")
+  def getTenant[T](id: UUID)(implicit actorSystem: ActorSystem[_], um: Unmarshaller[HttpResponse, T]): Future[T] =
+    performCall[T](HttpMethods.GET, s"tenants/${id.toString()}", None)
+
+  def getTenantByExternalId[T](origin: String, code: String)(implicit
+    actorSystem: ActorSystem[_],
+    um: Unmarshaller[HttpResponse, T]
+  ): Future[T] =
+    performCall[T](HttpMethods.GET, s"tenants/$origin/$code", None)
 
   def updateTenant[T](id: UUID, tenantDelta: TenantDelta)(implicit
     actorSystem: ActorSystem[_],
@@ -77,48 +84,29 @@ trait SpecHelper {
   ): Future[T] = {
     implicit val ec: ExecutionContext = actorSystem.executionContext
     for {
-      data          <- Marshal(tenantDelta).to[MessageEntity].map(_.dataBytes)
-      responseBytes <- makeRequest(data, s"tenants/${id.toString()}", HttpMethods.POST)
-      tenant        <- Unmarshal(responseBytes).to[T]
-    } yield tenant
+      data   <- Marshal(tenantDelta).to[MessageEntity].map(_.dataBytes)
+      result <- performCall[T](HttpMethods.POST, s"tenants/${id.toString()}", data.some)
+    } yield result
   }
 
-  private def get[T](
-    path: String
-  )(implicit actorSystem: ActorSystem[_], um: Unmarshaller[HttpResponse, T]): Future[T] = {
-    implicit val ec: ExecutionContext = actorSystem.executionContext
-    for {
-      responseBytes <- Http().singleRequest(
-        HttpRequest(uri = s"$url/$path", method = HttpMethods.GET, headers = requestHeaders)
-      )
-      response      <- Unmarshal(responseBytes).to[T]
-    } yield response
-  }
-
-  def makeRequest(data: Source[ByteString, Any], path: String, verb: HttpMethod)(implicit
-    actorSystem: ActorSystem[_]
-  ): Future[HttpResponse] = Http().singleRequest(
-    HttpRequest(
-      uri = s"$url/$path",
-      method = verb,
-      entity = HttpEntity(ContentTypes.`application/json`, data),
-      headers = requestHeaders
-    )
-  )
-
-  def makeFailingRequest[T](verb: HttpMethod, url: String, data: T)(implicit
+  private def performCall[T](verb: HttpMethod, path: String, data: Option[Source[ByteString, Any]])(implicit
     actorSystem: ActorSystem[_],
-    marshaller: Marshaller[T, MessageEntity]
-  ): Future[Problem] = {
+    um: Unmarshaller[HttpResponse, T]
+  ) = {
     implicit val ec: ExecutionContext = actorSystem.executionContext
     for {
-      body          <- Marshal(data).to[MessageEntity].map(_.dataBytes)
-      responseBytes <- makeRequest(body, url, verb)
-      problem       <- Unmarshal(responseBytes).to[Problem]
-    } yield problem
+      responseBytes <- request(verb, path, data)
+      result        <- Unmarshal(responseBytes).to[T]
+    } yield result
   }
 
-  def makeFailingGet(url: String)(implicit actorSystem: ActorSystem[_]): Future[Problem] =
-    makeFailingRequest(HttpMethods.GET, url, "")
+  private def request(verb: HttpMethod, path: String, data: Option[Source[ByteString, Any]])(implicit
+    actorSystem: ActorSystem[_]
+  ): Future[HttpResponse] = {
+    val request: HttpRequest = HttpRequest(uri = s"$url/$path", method = verb, headers = requestHeaders)
+    val finalRequest         =
+      data.fold(request)(data => request.withEntity(entity = HttpEntity(ContentTypes.`application/json`, data)))
+    Http().singleRequest(finalRequest)
+  }
 
 }
