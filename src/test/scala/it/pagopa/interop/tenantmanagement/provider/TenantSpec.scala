@@ -104,4 +104,6 @@ class TenantSpec extends BaseIntegrationSpec {
     }
   }
 
+  // TODO! You have to finish the tests for the attributes api and add a persistentBehaviourTest
+
 }
