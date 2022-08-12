@@ -27,5 +27,5 @@ final case class PersistentVerifiedAttribute(
   assignmentTimestamp: OffsetDateTime,
   strictness: PersistentVerificationStrictness,
   verifiedBy: List[PersistentTenantVerifier],
-  revokedBy: List[PersistentTenantVerifier]
+  revokedBy: List[PersistentTenantRevoker]
 ) extends PersistentTenantAttribute

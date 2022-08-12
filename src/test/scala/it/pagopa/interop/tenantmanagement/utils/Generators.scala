@@ -58,7 +58,7 @@ object Generators {
     (assignmentTimestamp, assignmentLong) <- offsetDatetimeGen
     (strictness, strictnessV1)            <- verificationStrictnessGen
     (verifiedBy, verifiedByV1)            <- listOf(tenantVerifierGen).map(_.separate)
-    (revokedBy, revokedByV1)              <- listOf(tenantVerifierGen).map(_.separate)
+    (revokedBy, revokedByV1)              <- listOf(tenantRevokerGen).map(_.separate)
   } yield (
     PersistentVerifiedAttribute(
       id = id,
@@ -86,10 +86,20 @@ object Generators {
     (verificationDate, verificationDateV1) <- offsetDatetimeGen
     (expirationDate, expirationDateV1)     <- Gen.option(offsetDatetimeGen).map(_.separate)
     (extentionDate, extentionDateV1)       <- Gen.option(offsetDatetimeGen).map(_.separate)
-    (revocationDate, revocationDateV1)     <- Gen.option(offsetDatetimeGen).map(_.separate)
   } yield (
-    PersistentTenantVerifier(id, verificationDate, expirationDate, extentionDate, revocationDate),
-    TenantVerifierV1(id.toString(), verificationDateV1, expirationDateV1, extentionDateV1, revocationDateV1)
+    PersistentTenantVerifier(id, verificationDate, expirationDate, extentionDate),
+    TenantVerifierV1(id.toString(), verificationDateV1, expirationDateV1, extentionDateV1)
+  )
+
+  val tenantRevokerGen: Gen[(PersistentTenantRevoker, TenantRevokerV1)] = for {
+    id                                     <- Gen.uuid
+    (verificationDate, verificationDateV1) <- offsetDatetimeGen
+    (expirationDate, expirationDateV1)     <- Gen.option(offsetDatetimeGen).map(_.separate)
+    (extentionDate, extentionDateV1)       <- Gen.option(offsetDatetimeGen).map(_.separate)
+    (revocationDate, revocationDateV1)     <- offsetDatetimeGen
+  } yield (
+    PersistentTenantRevoker(id, verificationDate, expirationDate, extentionDate, revocationDate),
+    TenantRevokerV1(id.toString(), verificationDateV1, expirationDateV1, extentionDateV1, revocationDateV1)
   )
 
   val attributeGen: Gen[(PersistentTenantAttribute, TenantAttributeV1)] =

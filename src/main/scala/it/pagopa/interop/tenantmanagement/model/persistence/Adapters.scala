@@ -38,14 +38,33 @@ object Adapters {
       id = p.id,
       verificationDate = p.verificationDate,
       expirationDate = p.expirationDate,
-      extentionDate = p.expirationDate,
-      revocationDate = p.revocationDate
+      extentionDate = p.expirationDate
     )
   }
 
   implicit class PersistentVerificationTenantVerifierObjectWrapper(private val p: PersistentTenantVerifier.type)
       extends AnyVal {
     def fromAPI(p: TenantVerifier): PersistentTenantVerifier = PersistentTenantVerifier(
+      id = p.id,
+      verificationDate = p.verificationDate,
+      expirationDate = p.expirationDate,
+      extentionDate = p.expirationDate
+    )
+  }
+
+  implicit class PersistentVerificationTenantRevokerWrapper(private val p: PersistentTenantRevoker) extends AnyVal {
+    def toAPI(): PersistentTenantRevoker = PersistentTenantRevoker(
+      id = p.id,
+      verificationDate = p.verificationDate,
+      expirationDate = p.expirationDate,
+      extentionDate = p.expirationDate,
+      revocationDate = p.revocationDate
+    )
+  }
+
+  implicit class PersistentVerificationTenantRevokerObjectWrapper(private val p: PersistentTenantRevoker.type)
+      extends AnyVal {
+    def fromAPI(p: TenantRevoker): PersistentTenantRevoker = PersistentTenantRevoker(
       id = p.id,
       verificationDate = p.verificationDate,
       expirationDate = p.expirationDate,
@@ -108,7 +127,7 @@ object Adapters {
           // ! TODO it doesn't validate the fact that the revoked must always have a revocationDate
           revokedBy  <- attributes.revokedBy
             .toRight(InternalErrors.InvalidAttribute("verified", "revokedBy"))
-            .map(_.map(PersistentTenantVerifier.fromAPI).toList)
+            .map(_.map(PersistentTenantRevoker.fromAPI).toList)
         } yield PersistentVerifiedAttribute(
           id = attributes.id,
           assignmentTimestamp = attributes.assignmentTimestamp,

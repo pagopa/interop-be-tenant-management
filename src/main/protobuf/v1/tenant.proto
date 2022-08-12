@@ -39,7 +39,14 @@ message TenantVerifierV1 {
   required int64 verificationDate = 2;
   optional int64 expirationDate = 3;
   optional int64 extentionDate = 4;
-  optional int64 revocationDate = 5;
+}
+
+message TenantRevokerV1 {
+  required string id = 1;
+  required int64 verificationDate = 2;
+  optional int64 expirationDate = 3;
+  optional int64 extentionDate = 4;
+  required int64 revocationDate = 5;
 }
 
 message ExternalIdV1 {
@@ -64,7 +71,7 @@ message VerifiedAttributeV1 {
   required int64 assignmentTimestamp = 2;
   required VerificationStrictnessV1 strictness = 3;
   repeated TenantVerifierV1 verifiedBy = 4;
-  repeated TenantVerifierV1 revokedBy = 5;
+  repeated TenantRevokerV1 revokedBy = 5;
 }
 
 message TenantAttributeV1 {

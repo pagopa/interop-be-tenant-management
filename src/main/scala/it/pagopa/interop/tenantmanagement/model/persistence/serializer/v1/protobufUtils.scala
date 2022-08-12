@@ -75,8 +75,7 @@ object protobufUtils {
     id = verifier.id.toString(),
     verificationDate = verifier.verificationDate.toMillis,
     expirationDate = verifier.expirationDate.map(_.toMillis),
-    extentionDate = verifier.extentionDate.map(_.toMillis),
-    revocationDate = verifier.revocationDate.map(_.toMillis)
+    extentionDate = verifier.extentionDate.map(_.toMillis)
   )
 
   def toPersistentTenantVerifier(verifier: TenantVerifierV1): Either[Throwable, PersistentTenantVerifier] = for {
@@ -84,8 +83,28 @@ object protobufUtils {
     verificationDate <- verifier.verificationDate.toOffsetDateTime.toEither
     expirationDate   <- verifier.expirationDate.traverse(_.toOffsetDateTime.toEither)
     extentionDate    <- verifier.extentionDate.traverse(_.toOffsetDateTime.toEither)
-    revocationDate   <- verifier.revocationDate.traverse(_.toOffsetDateTime.toEither)
   } yield PersistentTenantVerifier(
+    id = id,
+    verificationDate = verificationDate,
+    expirationDate = expirationDate,
+    extentionDate = extentionDate
+  )
+
+  def toProtobufTenantRevoker(verifier: PersistentTenantRevoker): TenantRevokerV1 = TenantRevokerV1(
+    id = verifier.id.toString(),
+    verificationDate = verifier.verificationDate.toMillis,
+    expirationDate = verifier.expirationDate.map(_.toMillis),
+    extentionDate = verifier.extentionDate.map(_.toMillis),
+    revocationDate = verifier.revocationDate.toMillis
+  )
+
+  def toPersistentTenantRevoker(verifier: TenantRevokerV1): Either[Throwable, PersistentTenantRevoker] = for {
+    id               <- verifier.id.toUUID.toEither
+    verificationDate <- verifier.verificationDate.toOffsetDateTime.toEither
+    expirationDate   <- verifier.expirationDate.traverse(_.toOffsetDateTime.toEither)
+    extentionDate    <- verifier.extentionDate.traverse(_.toOffsetDateTime.toEither)
+    revocationDate   <- verifier.revocationDate.toOffsetDateTime.toEither
+  } yield PersistentTenantRevoker(
     id = id,
     verificationDate = verificationDate,
     expirationDate = expirationDate,
@@ -114,7 +133,7 @@ object protobufUtils {
         uuid       <- id.toUUID.toEither
         at         <- assignmentTimestamp.toOffsetDateTime.toEither
         verifiedBy <- vBy.traverse(toPersistentTenantVerifier)
-        revokedBy  <- rBy.traverse(toPersistentTenantVerifier)
+        revokedBy  <- rBy.traverse(toPersistentTenantRevoker)
         strictness <- toPersistentStrictness(strictn)
       } yield PersistentVerifiedAttribute(
         id = uuid,
@@ -145,7 +164,7 @@ object protobufUtils {
           assignmentTimestamp = assignmentTimestamp.toMillis,
           strictness = toProtobufStrictness(strictness),
           verifiedBy = vBy.map(toProtobufTenantVerifier),
-          revokedBy = rBy.map(toProtobufTenantVerifier)
+          revokedBy = rBy.map(toProtobufTenantRevoker)
         )
     }
 

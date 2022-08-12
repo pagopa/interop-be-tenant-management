@@ -27,7 +27,8 @@ object TenantEventsSerde {
 
   // Serdes
 
-  implicit val ptvFormat: RootJsonFormat[PersistentTenantVerifier] = jsonFormat5(PersistentTenantVerifier.apply)
+  implicit val ptvFormat: RootJsonFormat[PersistentTenantVerifier] = jsonFormat4(PersistentTenantVerifier.apply)
+  implicit val ptrFormat: RootJsonFormat[PersistentTenantRevoker]  = jsonFormat5(PersistentTenantRevoker.apply)
 
   implicit val ptfFormat: RootJsonFormat[PersistentTenantFeature] = new RootJsonFormat[PersistentTenantFeature] {
 
