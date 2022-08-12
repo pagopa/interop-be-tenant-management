@@ -60,12 +60,18 @@ class AttributesApiServiceImpl(
     } yield actorResponse
 
     onComplete(result) {
-      case Success(tenant)                          =>
+      case Success(tenant)                         =>
         addTenantAttribute200(tenant.toAPI)
-      case Failure(ex @ AttributeAlreadyExists(id)) =>
-        logger.error(s"Error while adding the attribute $id", ex)
+      case Failure(ex @ AttributeAlreadyExists(_)) =>
+        logger.error(s"Error while adding the attribute ${tenantAttribute.id}", ex)
         addTenantAttribute409(problemOf(StatusCodes.Conflict, AddAttributeConflict))
-      case Failure(ex)                              =>
+      case Failure(ex @ NotFoundTenant(_))         =>
+        logger.error(s"Error while adding the attribute ${tenantAttribute.id}", ex)
+        addTenantAttribute404(problemOf(StatusCodes.Conflict, AttributeNotFound))
+      case Failure(ex @ NotFoundAttribute(_))      =>
+        logger.error(s"Error while adding the attribute ${tenantAttribute.id}", ex)
+        addTenantAttribute404(problemOf(StatusCodes.Conflict, AttributeNotFound))
+      case Failure(ex)                             =>
         logger.error(s"Error while adding the attribute ${tenantAttribute.id}", ex)
         complete(problemOf(StatusCodes.InternalServerError, GenericError("Error while adding the attribute")))
     }
@@ -82,13 +88,19 @@ class AttributesApiServiceImpl(
     } yield actorResponse
 
     onComplete(result) {
-      case Success(tenant)                          =>
+      case Success(tenant)                         =>
         addTenantAttribute200(tenant.toAPI)
-      case Failure(ex @ AttributeAlreadyExists(id)) =>
-        logger.error(s"Error while adding the attribute $id", ex)
+      case Failure(ex @ AttributeAlreadyExists(_)) =>
+        logger.error(s"Error while deleting the attribute $attributeId", ex)
         addTenantAttribute409(problemOf(StatusCodes.Conflict, AddAttributeConflict))
-      case Failure(ex)                              =>
-        logger.error(s"Error while delete the attribute $attributeId", ex)
+      case Failure(ex @ NotFoundTenant(_))         =>
+        logger.error(s"Error while deleting the attribute $attributeId", ex)
+        addTenantAttribute404(problemOf(StatusCodes.Conflict, AttributeNotFound))
+      case Failure(ex @ NotFoundAttribute(_))      =>
+        logger.error(s"Error while deleting the attribute $attributeId", ex)
+        addTenantAttribute404(problemOf(StatusCodes.Conflict, AttributeNotFound))
+      case Failure(ex)                             =>
+        logger.error(s"Error while deleting the attribute $attributeId", ex)
         complete(problemOf(StatusCodes.InternalServerError, GenericError("Error while adding the attribute")))
     }
   }
@@ -104,13 +116,19 @@ class AttributesApiServiceImpl(
     } yield actorResponse
 
     onComplete(result) {
-      case Success(tenant)                          =>
+      case Success(tenant)                         =>
         addTenantAttribute200(tenant.toAPI)
-      case Failure(ex @ AttributeAlreadyExists(id)) =>
-        logger.error(s"Error while adding the attribute $id", ex)
+      case Failure(ex @ AttributeAlreadyExists(_)) =>
+        logger.error(s"Error while updating the attribute $attributeId", ex)
         addTenantAttribute409(problemOf(StatusCodes.Conflict, AddAttributeConflict))
-      case Failure(ex)                              =>
-        logger.error(s"Error while delete the attribute $attributeId", ex)
+      case Failure(ex @ NotFoundTenant(_))         =>
+        logger.error(s"Error while updating the attribute $attributeId", ex)
+        addTenantAttribute404(problemOf(StatusCodes.Conflict, AttributeNotFound))
+      case Failure(ex @ NotFoundAttribute(_))      =>
+        logger.error(s"Error while updating the attribute $attributeId", ex)
+        addTenantAttribute404(problemOf(StatusCodes.Conflict, AttributeNotFound))
+      case Failure(ex)                             =>
+        logger.error(s"Error while updating the attribute $attributeId", ex)
         complete(problemOf(StatusCodes.InternalServerError, GenericError("Error while adding the attribute")))
     }
   }

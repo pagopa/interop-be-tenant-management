@@ -14,7 +14,8 @@ object protobufUtils {
 
   def toPersistentTenantFeature(protobufTenantFeature: TenantFeatureV1): Either[Throwable, PersistentTenantFeature] =
     protobufTenantFeature match {
-      case TenantFeatureV1.Empty    => new Exception("Boom").asLeft[PersistentTenantFeature]
+      case TenantFeatureV1.Empty    =>
+        new Exception("Unable to deserialize PersistentTenantFeature").asLeft[PersistentTenantFeature]
       case CertifierV1(certifierId) => PersistentTenantFeature.PersistentCertifier(certifierId).asRight[Throwable]
     }
 
@@ -68,7 +69,8 @@ object protobufUtils {
       case VerificationStrictnessV1.STANDARD => STANDARD.asRight[Throwable]
       case VerificationStrictnessV1.STRICT   => STRICT.asRight[Throwable]
       case Unrecognized(unrecognizedValue)   =>
-        new Exception(s"Boom $unrecognizedValue").asLeft[PersistentVerificationStrictness]
+        new Exception(s"Unable to deserialize VerificationStrictness $unrecognizedValue")
+          .asLeft[PersistentVerificationStrictness]
     }
 
   def toProtobufTenantVerifier(verifier: PersistentTenantVerifier): TenantVerifierV1 = TenantVerifierV1(

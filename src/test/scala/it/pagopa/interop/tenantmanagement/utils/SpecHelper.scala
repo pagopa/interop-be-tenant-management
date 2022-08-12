@@ -71,6 +71,18 @@ trait SpecHelper {
   def getTenant(id: UUID)(implicit actorSystem: ActorSystem[_]): Future[Tenant] =
     get[Tenant](s"tenants/${id.toString}")
 
+  def updateTenant[T](id: UUID, tenantDelta: TenantDelta)(implicit
+    actorSystem: ActorSystem[_],
+    um: Unmarshaller[HttpResponse, T]
+  ): Future[T] = {
+    implicit val ec: ExecutionContext = actorSystem.executionContext
+    for {
+      data          <- Marshal(tenantDelta).to[MessageEntity].map(_.dataBytes)
+      responseBytes <- makeRequest(data, s"tenants/${id.toString()}", HttpMethods.POST)
+      tenant        <- Unmarshal(responseBytes).to[T]
+    } yield tenant
+  }
+
   private def get[T](
     path: String
   )(implicit actorSystem: ActorSystem[_], um: Unmarshaller[HttpResponse, T]): Future[T] = {
@@ -108,4 +120,5 @@ trait SpecHelper {
 
   def makeFailingGet(url: String)(implicit actorSystem: ActorSystem[_]): Future[Problem] =
     makeFailingRequest(HttpMethods.GET, url, "")
+
 }

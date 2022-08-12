@@ -55,4 +55,19 @@ class TenantSpec extends BaseIntegrationSpec {
     }
   }
 
+  test("Update of a tenant must fail if tenant does not exist".ignore) {
+    val (system, mockedTime)          = suiteState()
+    implicit val s: ActorSystem[_]    = system
+    implicit val ec: ExecutionContext = system.executionContext
+
+    val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime)
+
+    val tenantDelta: TenantDelta = TenantDelta(None, Nil)
+
+    createTenant(tenantSeed) >> updateTenant[Problem](tenant.id, tenantDelta).map { result =>
+      assertEquals(result.status, 404)
+      assertEquals(result.errors.map(_.code), Seq("018-0004"))
+    }
+  }
+
 }

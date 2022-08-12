@@ -33,23 +33,27 @@ class TenantApiServiceAuthzSpec extends ClusteredMUnitRouteTest {
     iCallConstructorsBecauseOOPIsNeverDead
   )
 
-  val service: AttributesApiService =
+  val attributesService: AttributesApiService =
     new AttributesApiServiceImpl(testKit.system, testAkkaSharding, testPersistentEntity)
+
+  val fakeSeed: TenantSeed = TenantSeed(
+    id = UUID.randomUUID().some,
+    externalId = ExternalId("IPA", "pippo"),
+    features = Nil,
+    attributes = List(
+      TenantAttribute(
+        id = UUID.randomUUID(),
+        kind = TenantAttributeKind.CERTIFIED,
+        assignmentTimestamp = OffsetDateTime.now()
+      )
+    )
+  )
+
+  val fakeAttribute: TenantAttribute =
+    TenantAttribute(UUID.randomUUID(), TenantAttributeKind.CERTIFIED, OffsetDateTime.now, None, None, None, None)
 
   test("Tenant api operation authorization spec should accept authorized roles for createTenant") {
 
-    val fakeSeed = TenantSeed(
-      id = UUID.randomUUID().some,
-      externalId = ExternalId("IPA", "pippo"),
-      features = Nil,
-      attributes = List(
-        TenantAttribute(
-          id = UUID.randomUUID(),
-          kind = TenantAttributeKind.CERTIFIED,
-          assignmentTimestamp = OffsetDateTime.now()
-        )
-      )
-    )
     validateAuthorization(
       endpoints("createTenant"),
       { implicit c: Seq[(String, String)] => tenantService.createTenant(fakeSeed) }
@@ -60,6 +64,43 @@ class TenantApiServiceAuthzSpec extends ClusteredMUnitRouteTest {
     validateAuthorization(
       endpoints("getTenant"),
       { implicit c: Seq[(String, String)] => tenantService.getTenant("fakeSeed") }
+    )
+  }
+
+  test("Tenant api operation authorization spec should accept authorized roles for getTenantByExternalId") {
+    validateAuthorization(
+      endpoints("getTenantByExternalId"),
+      { implicit c: Seq[(String, String)] => tenantService.getTenantByExternalId("fakeOrigin", "fakeCode") }
+    )
+  }
+
+  test("Tenant api operation authorization spec should accept authorized roles for updateTenant") {
+    validateAuthorization(
+      endpoints("updateTenant"),
+      { implicit c: Seq[(String, String)] => tenantService.updateTenant("tenantId", TenantDelta(None, Nil)) }
+    )
+  }
+
+  test("Attributes api operation authorization spec should accept authorized roles for addTenantAttribute") {
+    validateAuthorization(
+      endpoints("updateTenant"),
+      { implicit c: Seq[(String, String)] => attributesService.addTenantAttribute("tenantId", fakeAttribute) }
+    )
+  }
+
+  test("Attributes api operation authorization spec should accept authorized roles for deleteTenantAttribute") {
+    validateAuthorization(
+      endpoints("updateTenant"),
+      { implicit c: Seq[(String, String)] => attributesService.deleteTenantAttribute("tenantId", "fakeAttributeId") }
+    )
+  }
+
+  test("Attributes api operation authorization spec should accept authorized roles for updateTenantAttribute") {
+    validateAuthorization(
+      endpoints("updateTenant"),
+      { implicit c: Seq[(String, String)] =>
+        attributesService.updateTenantAttribute("tenantId", "fakeAttributeId", fakeAttribute)
+      }
     )
   }
 

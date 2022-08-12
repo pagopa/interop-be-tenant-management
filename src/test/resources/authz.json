@@ -19,6 +19,56 @@
         "api",
         "m2m"
       ]
+    },
+    {
+      "route": "getTenantByExternalId",
+      "verb": "GET",
+      "roles": [
+        "admin",
+        "security",
+        "api",
+        "m2m"
+      ]
+    },
+    {
+      "route": "updateTenant",
+      "verb": "POST",
+      "roles": [
+        "admin",
+        "security",
+        "api",
+        "m2m"
+      ]
+    },
+    {
+      "route": "addTenantAttribute",
+      "verb": "POST",
+      "roles": [
+        "admin",
+        "security",
+        "api",
+        "m2m"
+      ]
+    },
+    {
+      "route": "deleteTenantAttribute",
+      "verb": "DELETE",
+      "roles": [
+        "admin",
+        "security",
+        "api",
+        "m2m"
+      ]
+    },
+    {
+      "route": "updateTenantAttribute",
+      "verb": "POST",
+      "roles": [
+        "admin",
+        "security",
+        "api",
+        "m2m"
+      ]
     }
   ]
 }
