@@ -56,29 +56,29 @@ object Generators {
   val verifiedAttributeGen: Gen[(PersistentVerifiedAttribute, VerifiedAttributeV1)] = for {
     id                                    <- Gen.uuid
     (assignmentTimestamp, assignmentLong) <- offsetDatetimeGen
-    (strictness, strictnessV1)            <- verificationStrictnessGen
+    (renewal, renewalV1)                  <- verificationRenewalGen
     (verifiedBy, verifiedByV1)            <- listOf(tenantVerifierGen).map(_.separate)
     (revokedBy, revokedByV1)              <- listOf(tenantRevokerGen).map(_.separate)
   } yield (
     PersistentVerifiedAttribute(
       id = id,
       assignmentTimestamp = assignmentTimestamp,
-      strictness = strictness,
+      renewal = renewal,
       verifiedBy = verifiedBy,
       revokedBy = revokedBy
     ),
     VerifiedAttributeV1(
       id = id.toString(),
       assignmentTimestamp = assignmentLong,
-      strictness = strictnessV1,
+      renewal = renewalV1,
       verifiedBy = verifiedByV1,
       revokedBy = revokedByV1
     )
   )
 
-  val verificationStrictnessGen: Gen[(PersistentVerificationStrictness, VerificationStrictnessV1)] = Gen.oneOf(
-    (PersistentVerificationStrictness.STANDARD, VerificationStrictnessV1.STANDARD),
-    (PersistentVerificationStrictness.STRICT, VerificationStrictnessV1.STRICT)
+  val verificationRenewalGen: Gen[(PersistentVerificationRenewal, PersistentVerificationRenewalV1)] = Gen.oneOf(
+    (PersistentVerificationRenewal.AUTOMATIC_RENEWAL, PersistentVerificationRenewalV1.AUTOMATIC_RENEWAL),
+    (PersistentVerificationRenewal.REVOKE_ON_EXPIRATION, PersistentVerificationRenewalV1.REVOKE_ON_EXPIRATION)
   )
 
   val tenantVerifierGen: Gen[(PersistentTenantVerifier, TenantVerifierV1)] = for {

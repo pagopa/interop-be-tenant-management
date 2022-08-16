@@ -358,8 +358,8 @@ components:
         revocationTimestamp:
           type: string
           format: date-time
-        strictness:
-          $ref: '#/components/schemas/VerificationStrictness'
+        renewal:
+          $ref: '#/components/schemas/VerificationRenewal'
         verifiedBy:
           type: array
           items:
@@ -378,11 +378,11 @@ components:
         - CERTIFIED
         - DECLARED
         - VERIFIED
-    VerificationStrictness:
+    VerificationRenewal:
       type: string
       enum:
-        - STRICT
-        - STANDARD
+        - REVOKE_ON_EXPIRATION
+        - AUTOMATIC_RENEWAL
     TenantFeature:
       type: object
       properties:

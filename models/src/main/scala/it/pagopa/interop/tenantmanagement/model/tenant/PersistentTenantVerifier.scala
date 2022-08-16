@@ -7,5 +7,5 @@ final case class PersistentTenantVerifier(
   id: UUID,
   verificationDate: OffsetDateTime,
   expirationDate: Option[OffsetDateTime],
-  extentionDate: Option[OffsetDateTime]
+  extensionDate: Option[OffsetDateTime]
 )

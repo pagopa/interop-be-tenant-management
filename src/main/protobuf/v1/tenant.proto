@@ -29,16 +29,16 @@ message CertifierV1 {
   required string certifierId = 1;
 }
 
-enum VerificationStrictnessV1 {
-  STANDARD = 1;
-  STRICT   = 2;
+enum PersistentVerificationRenewalV1 {
+  REVOKE_ON_EXPIRATION = 1;
+  AUTOMATIC_RENEWAL    = 2;
 }
 
 message TenantVerifierV1 {
   required string id = 1;
   required int64 verificationDate = 2;
   optional int64 expirationDate = 3;
-  optional int64 extentionDate = 4;
+  optional int64 extensionDate = 4;
 }
 
 message TenantRevokerV1 {
@@ -69,7 +69,7 @@ message DeclaredAttributeV1 {
 message VerifiedAttributeV1 {
   required string id = 1;
   required int64 assignmentTimestamp = 2;
-  required VerificationStrictnessV1 strictness = 3;
+  required PersistentVerificationRenewalV1 renewal = 3;
   repeated TenantVerifierV1 verifiedBy = 4;
   repeated TenantRevokerV1 revokedBy = 5;
 }

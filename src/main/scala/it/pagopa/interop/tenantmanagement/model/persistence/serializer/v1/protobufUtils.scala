@@ -6,9 +6,9 @@ import it.pagopa.interop.tenantmanagement.model.tenant._
 import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.tenant.TenantAttributeV1.Empty
 import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.tenant._
 import it.pagopa.interop.commons.utils.TypeConversions.LongOps
-import it.pagopa.interop.tenantmanagement.model.tenant.PersistentVerificationStrictness._
+import it.pagopa.interop.tenantmanagement.model.tenant.PersistentVerificationRenewal._
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantFeature.PersistentCertifier
-import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.tenant.VerificationStrictnessV1.Unrecognized
+import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.tenant.PersistentVerificationRenewalV1.Unrecognized
 
 object protobufUtils {
 
@@ -32,7 +32,7 @@ object protobufUtils {
     id         <- protobufTenant.id.toUUID.toEither
     externalId <- toPersistentTenantExternalId(protobufTenant.externalId)
     attributes <- protobufTenant.attributes.traverse(toPersistentTenantAttributes)
-    features   <- protobufTenant.features.toList.traverse(toPersistentTenantFeature)
+    features   <- protobufTenant.features.traverse(toPersistentTenantFeature)
     createdAt  <- protobufTenant.createdAt.toOffsetDateTime.toEither
     updatedAt  <- protobufTenant.updatedAt.traverse(_.toOffsetDateTime.toEither)
   } yield PersistentTenant(
@@ -40,7 +40,7 @@ object protobufUtils {
     selfcareId = protobufTenant.selfcareId,
     externalId = externalId,
     features = features,
-    attributes = attributes.toList,
+    attributes = attributes,
     createdAt = createdAt,
     updatedAt = updatedAt
   )
@@ -57,39 +57,37 @@ object protobufUtils {
     updatedAt = persistentTenant.updatedAt.map(_.toMillis)
   )
 
-  def toProtobufStrictness(strictness: PersistentVerificationStrictness): VerificationStrictnessV1 = strictness match {
-    case STANDARD => VerificationStrictnessV1.STANDARD
-    case STRICT   => VerificationStrictnessV1.STRICT
+  def toProtobufRenewal(renewal: PersistentVerificationRenewal): PersistentVerificationRenewalV1 = renewal match {
+    case AUTOMATIC_RENEWAL    => PersistentVerificationRenewalV1.AUTOMATIC_RENEWAL
+    case REVOKE_ON_EXPIRATION => PersistentVerificationRenewalV1.REVOKE_ON_EXPIRATION
   }
 
-  def toPersistentStrictness(
-    strictness: VerificationStrictnessV1
-  ): Either[Throwable, PersistentVerificationStrictness] =
-    strictness match {
-      case VerificationStrictnessV1.STANDARD => STANDARD.asRight[Throwable]
-      case VerificationStrictnessV1.STRICT   => STRICT.asRight[Throwable]
-      case Unrecognized(unrecognizedValue)   =>
-        new Exception(s"Unable to deserialize VerificationStrictness $unrecognizedValue")
-          .asLeft[PersistentVerificationStrictness]
+  def toPersistentRenewal(renewal: PersistentVerificationRenewalV1): Either[Throwable, PersistentVerificationRenewal] =
+    renewal match {
+      case PersistentVerificationRenewalV1.AUTOMATIC_RENEWAL    => AUTOMATIC_RENEWAL.asRight[Throwable]
+      case PersistentVerificationRenewalV1.REVOKE_ON_EXPIRATION => REVOKE_ON_EXPIRATION.asRight[Throwable]
+      case Unrecognized(unrecognizedValue)                      =>
+        new Exception(s"Unable to deserialize VerificationRenewal $unrecognizedValue")
+          .asLeft[PersistentVerificationRenewal]
     }
 
   def toProtobufTenantVerifier(verifier: PersistentTenantVerifier): TenantVerifierV1 = TenantVerifierV1(
     id = verifier.id.toString(),
     verificationDate = verifier.verificationDate.toMillis,
     expirationDate = verifier.expirationDate.map(_.toMillis),
-    extentionDate = verifier.extentionDate.map(_.toMillis)
+    extensionDate = verifier.extensionDate.map(_.toMillis)
   )
 
   def toPersistentTenantVerifier(verifier: TenantVerifierV1): Either[Throwable, PersistentTenantVerifier] = for {
     id               <- verifier.id.toUUID.toEither
     verificationDate <- verifier.verificationDate.toOffsetDateTime.toEither
     expirationDate   <- verifier.expirationDate.traverse(_.toOffsetDateTime.toEither)
-    extentionDate    <- verifier.extentionDate.traverse(_.toOffsetDateTime.toEither)
+    extensionDate    <- verifier.extensionDate.traverse(_.toOffsetDateTime.toEither)
   } yield PersistentTenantVerifier(
     id = id,
     verificationDate = verificationDate,
     expirationDate = expirationDate,
-    extentionDate = extentionDate
+    extensionDate = extensionDate
   )
 
   def toProtobufTenantRevoker(verifier: PersistentTenantRevoker): TenantRevokerV1 = TenantRevokerV1(
@@ -130,17 +128,17 @@ object protobufUtils {
         at   <- assignmentTimestamp.toOffsetDateTime.toEither
         rt   <- revocationTimestamp.traverse(_.toOffsetDateTime.toEither)
       } yield PersistentDeclaredAttribute(id = uuid, assignmentTimestamp = at, revocationTimestamp = rt)
-    case VerifiedAttributeV1(id, assignmentTimestamp, strictn, vBy, rBy)    =>
+    case VerifiedAttributeV1(id, assignmentTimestamp, ren, vBy, rBy)        =>
       for {
         uuid       <- id.toUUID.toEither
         at         <- assignmentTimestamp.toOffsetDateTime.toEither
         verifiedBy <- vBy.traverse(toPersistentTenantVerifier)
         revokedBy  <- rBy.traverse(toPersistentTenantRevoker)
-        strictness <- toPersistentStrictness(strictn)
+        renewal    <- toPersistentRenewal(ren)
       } yield PersistentVerifiedAttribute(
         id = uuid,
         assignmentTimestamp = at,
-        strictness = strictness,
+        renewal = renewal,
         verifiedBy = verifiedBy,
         revokedBy = revokedBy
       )
@@ -160,11 +158,11 @@ object protobufUtils {
           assignmentTimestamp = assignmentTimestamp.toMillis,
           revocationTimestamp = revocationTimestamp.map(_.toMillis)
         )
-      case PersistentVerifiedAttribute(id, assignmentTimestamp, strictness, vBy, rBy) =>
+      case PersistentVerifiedAttribute(id, assignmentTimestamp, renewal, vBy, rBy)    =>
         VerifiedAttributeV1(
           id = id.toString,
           assignmentTimestamp = assignmentTimestamp.toMillis,
-          strictness = toProtobufStrictness(strictness),
+          renewal = toProtobufRenewal(renewal),
           verifiedBy = vBy.map(toProtobufTenantVerifier),
           revokedBy = rBy.map(toProtobufTenantRevoker)
         )

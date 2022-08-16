@@ -60,16 +60,16 @@ object TenantEventsSerde {
     }
   }
 
-  implicit val pvsFormat: RootJsonFormat[PersistentVerificationStrictness] =
-    new RootJsonFormat[PersistentVerificationStrictness] {
-      override def read(json: JsValue): PersistentVerificationStrictness = json match {
-        case JsString("STRICT")   => PersistentVerificationStrictness.STRICT
-        case JsString("STANDARD") => PersistentVerificationStrictness.STANDARD
+  implicit val pvsFormat: RootJsonFormat[PersistentVerificationRenewal] =
+    new RootJsonFormat[PersistentVerificationRenewal] {
+      override def read(json: JsValue): PersistentVerificationRenewal = json match {
+        case JsString("REVOKE_ON_EXPIRATION") => PersistentVerificationRenewal.REVOKE_ON_EXPIRATION
+        case JsString("AUTOMATIC_RENEWAL")    => PersistentVerificationRenewal.AUTOMATIC_RENEWAL
         case x => throw new DeserializationException(s"Unable to deserialize PersistentTenantKind: unmapped kind $x")
       }
-      override def write(obj: PersistentVerificationStrictness): JsValue = obj match {
-        case PersistentVerificationStrictness.STRICT   => JsString("STRICT")
-        case PersistentVerificationStrictness.STANDARD => JsString("STANDARD")
+      override def write(obj: PersistentVerificationRenewal): JsValue = obj match {
+        case PersistentVerificationRenewal.REVOKE_ON_EXPIRATION => JsString("REVOKE_ON_EXPIRATION")
+        case PersistentVerificationRenewal.AUTOMATIC_RENEWAL    => JsString("AUTOMATIC_RENEWAL")
       }
     }
 

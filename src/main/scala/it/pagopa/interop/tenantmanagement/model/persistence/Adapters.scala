@@ -6,25 +6,24 @@ import it.pagopa.interop.tenantmanagement.model._
 import it.pagopa.interop.tenantmanagement.error.InternalErrors
 import java.util.UUID
 import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
-import it.pagopa.interop.tenantmanagement.model.tenant.PersistentVerificationStrictness.STANDARD
-import it.pagopa.interop.tenantmanagement.model.tenant.PersistentVerificationStrictness.STRICT
+import it.pagopa.interop.tenantmanagement.model.tenant.PersistentVerificationRenewal.AUTOMATIC_RENEWAL
+import it.pagopa.interop.tenantmanagement.model.tenant.PersistentVerificationRenewal.REVOKE_ON_EXPIRATION
 import java.time.OffsetDateTime
 
 object Adapters {
 
-  implicit class PersistentVerificationStrictnessWrapper(private val p: PersistentVerificationStrictness)
-      extends AnyVal {
-    def toAPI(): VerificationStrictness = p match {
-      case STANDARD => VerificationStrictness.STANDARD
-      case STRICT   => VerificationStrictness.STRICT
+  implicit class PersistentVerificationRenewalWrapper(private val p: PersistentVerificationRenewal) extends AnyVal {
+    def toAPI(): VerificationRenewal = p match {
+      case AUTOMATIC_RENEWAL    => VerificationRenewal.AUTOMATIC_RENEWAL
+      case REVOKE_ON_EXPIRATION => VerificationRenewal.REVOKE_ON_EXPIRATION
     }
   }
 
-  implicit class PersistentVerificationStrictnessObjectWrapper(private val p: PersistentVerificationStrictness.type)
+  implicit class PersistentVerificationRenewalObjectWrapper(private val p: PersistentVerificationRenewal.type)
       extends AnyVal {
-    def fromAPI(p: VerificationStrictness): PersistentVerificationStrictness = p match {
-      case VerificationStrictness.STANDARD => STANDARD
-      case VerificationStrictness.STRICT   => STRICT
+    def fromAPI(p: VerificationRenewal): PersistentVerificationRenewal = p match {
+      case VerificationRenewal.AUTOMATIC_RENEWAL    => AUTOMATIC_RENEWAL
+      case VerificationRenewal.REVOKE_ON_EXPIRATION => REVOKE_ON_EXPIRATION
     }
   }
 
@@ -49,7 +48,7 @@ object Adapters {
       id = p.id,
       verificationDate = p.verificationDate,
       expirationDate = p.expirationDate,
-      extentionDate = p.expirationDate
+      extensionDate = p.expirationDate
     )
   }
 
@@ -82,7 +81,7 @@ object Adapters {
           kind = TenantAttributeKind.CERTIFIED,
           assignmentTimestamp = a.assignmentTimestamp,
           revocationTimestamp = a.revocationTimestamp,
-          strictness = None,
+          renewal = None,
           verifiedBy = None,
           revokedBy = None
         )
@@ -92,7 +91,7 @@ object Adapters {
           kind = TenantAttributeKind.DECLARED,
           assignmentTimestamp = a.assignmentTimestamp,
           revocationTimestamp = a.revocationTimestamp,
-          strictness = None,
+          renewal = None,
           verifiedBy = None,
           revokedBy = None
         )
@@ -102,7 +101,7 @@ object Adapters {
           kind = TenantAttributeKind.VERIFIED,
           assignmentTimestamp = a.assignmentTimestamp,
           revocationTimestamp = None,
-          strictness = a.strictness.toAPI().some,
+          renewal = a.renewal.toAPI().some,
           verifiedBy = None,
           revokedBy = None
         )
@@ -119,9 +118,9 @@ object Adapters {
           .asRight[Throwable]
       case TenantAttributeKind.VERIFIED  =>
         for {
-          strictness <- attributes.strictness
-            .toRight(InternalErrors.InvalidAttribute("verified", "strictness"))
-            .map(PersistentVerificationStrictness.fromAPI)
+          renewal    <- attributes.renewal
+            .toRight(InternalErrors.InvalidAttribute("verified", "renewal"))
+            .map(PersistentVerificationRenewal.fromAPI)
           verifiedBy <- attributes.verifiedBy
             .toRight(InternalErrors.InvalidAttribute("verified", "verifiedBy"))
             .map(_.map(PersistentTenantVerifier.fromAPI).toList)
@@ -132,7 +131,7 @@ object Adapters {
         } yield PersistentVerifiedAttribute(
           id = attributes.id,
           assignmentTimestamp = attributes.assignmentTimestamp,
-          strictness = strictness,
+          renewal = renewal,
           verifiedBy = verifiedBy,
           revokedBy = revokedBy
         )
