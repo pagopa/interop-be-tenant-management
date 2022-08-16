@@ -130,6 +130,7 @@ paths:
         required: true
         schema:
           type: string
+          format: uuid
     post:
       tags:
         - attributes
