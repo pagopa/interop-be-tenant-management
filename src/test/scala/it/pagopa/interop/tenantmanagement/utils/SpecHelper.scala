@@ -76,7 +76,7 @@ trait SpecHelper {
     actorSystem: ActorSystem[_],
     um: Unmarshaller[HttpResponse, T]
   ): Future[T] =
-    performCall[T](HttpMethods.GET, s"tenants/$origin/$code", None)
+    performCall[T](HttpMethods.GET, s"tenants/origin/$origin/code/$code", None)
 
   def updateTenant[T](id: UUID, tenantDelta: TenantDelta)(implicit
     actorSystem: ActorSystem[_],

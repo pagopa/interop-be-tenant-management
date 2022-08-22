@@ -236,7 +236,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  /tenants/{origin}/{code}:
+  /tenants/origin/{origin}/code/{code}:
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
       - $ref: '#/components/parameters/IpAddress'

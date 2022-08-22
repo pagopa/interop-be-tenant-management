@@ -67,7 +67,7 @@ class AttributesApiServiceImpl(
         addTenantAttribute409(problemOf(StatusCodes.Conflict, AddAttributeConflict))
       case Failure(ex @ NotFoundTenant(_))         =>
         logger.error(s"Error while adding the attribute ${tenantAttribute.id}", ex)
-        addTenantAttribute404(problemOf(StatusCodes.Conflict, AttributeNotFound))
+        addTenantAttribute404(problemOf(StatusCodes.Conflict, GetTenantNotFound))
       case Failure(ex @ NotFoundAttribute(_))      =>
         logger.error(s"Error while adding the attribute ${tenantAttribute.id}", ex)
         addTenantAttribute404(problemOf(StatusCodes.Conflict, AttributeNotFound))
