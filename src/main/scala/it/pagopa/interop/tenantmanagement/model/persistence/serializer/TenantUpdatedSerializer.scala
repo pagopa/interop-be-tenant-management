@@ -12,7 +12,7 @@ class TenantUpdatedSerializer extends SerializerWithStringManifest {
 
   final val currentVersion: String = version1
 
-  override def identifier: Int = 100000
+  override def identifier: Int = 100001
 
   override def manifest(o: AnyRef): String = s"${o.getClass.getName}|$currentVersion"
 
