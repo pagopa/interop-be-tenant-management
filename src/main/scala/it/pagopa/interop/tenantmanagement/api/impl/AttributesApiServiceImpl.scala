@@ -53,7 +53,7 @@ class AttributesApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerTenant: ToEntityMarshaller[Tenant],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE, API_ROLE, SECURITY_ROLE, M2M_ROLE, INTERNAL_ROLE) {
+  ): Route = authorize(ADMIN_ROLE, M2M_ROLE, INTERNAL_ROLE) {
     val result: Future[PersistentTenant] = for {
       attribute     <- PersistentTenantAttribute.fromAPI(tenantAttribute).toFuture
       actorResponse <- commander(tenantId).askWithStatus(ref => AddAttribute(tenantId, attribute, ref))
@@ -81,7 +81,7 @@ class AttributesApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerTenant: ToEntityMarshaller[Tenant],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE, API_ROLE, SECURITY_ROLE, M2M_ROLE, INTERNAL_ROLE) {
+  ): Route = authorize(ADMIN_ROLE, M2M_ROLE, INTERNAL_ROLE) {
     val result: Future[PersistentTenant] = for {
       attributeUUID <- attributeId.toFutureUUID
       actorResponse <- commander(tenantId).askWithStatus(ref => DeleteAttribute(tenantId, attributeUUID, ref))
@@ -109,7 +109,7 @@ class AttributesApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerTenant: ToEntityMarshaller[Tenant],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE, API_ROLE, SECURITY_ROLE, M2M_ROLE) {
+  ): Route = authorize(ADMIN_ROLE, M2M_ROLE) {
     val result: Future[PersistentTenant] = for {
       attribute     <- PersistentTenantAttribute.fromAPI(tenantAttribute).toFuture
       actorResponse <- commander(tenantId).askWithStatus(ref => UpdateAttribute(tenantId, attribute, ref))
