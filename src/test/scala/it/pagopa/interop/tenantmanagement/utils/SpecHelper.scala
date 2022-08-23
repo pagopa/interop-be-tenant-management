@@ -29,21 +29,23 @@ trait SpecHelper {
     `X-Forwarded-For`(RemoteAddress(InetAddress.getByName("127.0.0.1")))
   )
 
-  def randomTenantAndSeed(offsetDateTime: OffsetDateTime): (Tenant, TenantSeed) = {
+  def randomAttributeAndSeed(offsetDateTime: OffsetDateTime, uuid: UUID): (TenantAttribute, TenantAttributeSeed) =
+    (
+      TenantAttribute(id = uuid, kind = TenantAttributeKind.CERTIFIED, assignmentTimestamp = offsetDateTime),
+      TenantAttributeSeed(kind = TenantAttributeKind.CERTIFIED, assignmentTimestamp = offsetDateTime)
+    )
+
+  def randomTenantAndSeed(offsetDateTime: OffsetDateTime, uuid: UUID): (Tenant, TenantSeed) = {
     val tenantId: UUID         = UUID.randomUUID()
     val externalId: ExternalId = ExternalId(UUID.randomUUID().toString(), UUID.randomUUID().toString())
 
-    val attribute: TenantAttribute = TenantAttribute(
-      id = UUID.randomUUID(),
-      kind = TenantAttributeKind.CERTIFIED,
-      assignmentTimestamp = OffsetDateTime.now()
-    )
+    val (attribute, attributeSeed) = randomAttributeAndSeed(offsetDateTime, uuid)
 
     val tenantSeed: TenantSeed = TenantSeed(
       id = tenantId.some,
       externalId = externalId,
       features = TenantFeature(Certifier("foo").some) :: Nil,
-      attributes = attribute :: Nil
+      attributes = attributeSeed :: Nil
     )
 
     val tenant: Tenant = Tenant(
@@ -88,6 +90,33 @@ trait SpecHelper {
       result <- performCall[T](HttpMethods.POST, s"tenants/${id.toString()}", data.some)
     } yield result
   }
+
+  def addTenantAttribute[T](tenantId: String, attributeSeed: TenantAttributeSeed)(implicit
+    actorSystem: ActorSystem[_],
+    um: Unmarshaller[HttpResponse, T]
+  ): Future[T] = {
+    implicit val ec: ExecutionContext = actorSystem.executionContext
+    for {
+      data   <- Marshal(attributeSeed).to[MessageEntity].map(_.dataBytes)
+      result <- performCall[T](HttpMethods.POST, s"tenants/${tenantId}/attributes", data.some)
+    } yield result
+  }
+
+  def updateTenantAttribute[T](tenantId: String, attributeId: String, attributeSeed: TenantAttributeSeed)(implicit
+    actorSystem: ActorSystem[_],
+    um: Unmarshaller[HttpResponse, T]
+  ): Future[T] = {
+    implicit val ec: ExecutionContext = actorSystem.executionContext
+    for {
+      data   <- Marshal(attributeSeed).to[MessageEntity].map(_.dataBytes)
+      result <- performCall[T](HttpMethods.POST, s"tenants/${tenantId}/attributes/${attributeId}", data.some)
+    } yield result
+  }
+
+  def deleteTenantAttribute[T](tenantId: String, attributeId: String)(implicit
+    actorSystem: ActorSystem[_],
+    um: Unmarshaller[HttpResponse, T]
+  ): Future[T] = performCall[T](HttpMethods.DELETE, s"tenants/${tenantId}/attributes/${attributeId}", None)
 
   private def performCall[T](verb: HttpMethod, path: String, data: Option[Source[ByteString, Any]])(implicit
     actorSystem: ActorSystem[_],

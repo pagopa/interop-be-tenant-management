@@ -24,17 +24,20 @@ import akka.actor.typed.ActorSystem
 import akka.actor
 import java.time.OffsetDateTime
 import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
+import java.util.UUID
+import it.pagopa.interop.commons.utils.service.UUIDSupplier
 
 abstract class BaseIntegrationSpec extends FunSuite with SpecHelper {
 
   override def munitFixtures = List(suiteState)
 
-  val suiteState: Fixture[(ActorSystem[_], OffsetDateTime)] =
-    new Fixture[(ActorSystem[_], OffsetDateTime)]("actorSystem") {
-      private var bindServer: Http.ServerBinding    = null
-      private var actorTestKit: ActorTestKit        = null
-      private var mockedTime: OffsetDateTime        = null
-      def apply(): (ActorSystem[_], OffsetDateTime) = (actorTestKit.internalSystem, mockedTime)
+  val suiteState: Fixture[(ActorSystem[_], OffsetDateTime, UUID)] =
+    new Fixture[(ActorSystem[_], OffsetDateTime, UUID)]("actorSystem") {
+      private var bindServer: Http.ServerBinding          = null
+      private var actorTestKit: ActorTestKit              = null
+      private var mockedTime: OffsetDateTime              = null
+      private var mockedUUID: UUID                        = null
+      def apply(): (ActorSystem[_], OffsetDateTime, UUID) = (actorTestKit.internalSystem, mockedTime, mockedUUID)
 
       override def beforeAll(): Unit = {
         Logger(this.getClass()) // * A logger should be created before the one in akka to avoid the "replay" message
@@ -47,13 +50,24 @@ abstract class BaseIntegrationSpec extends FunSuite with SpecHelper {
         sharding.init(persistentEntity)
 
         mockedTime = OffsetDateTime.now()
+        mockedUUID = UUID.randomUUID()
 
         val offsetDateTimeSupplier: OffsetDateTimeSupplier = new OffsetDateTimeSupplier {
           def get: OffsetDateTime = mockedTime
         }
 
+        val uuidSupplier: UUIDSupplier = new UUIDSupplier {
+          def get: UUID = mockedUUID
+        }
+
         val attributesApi: AttributesApi = new AttributesApi(
-          new AttributesApiServiceImpl(actorTestKit.internalSystem, sharding, persistentEntity),
+          new AttributesApiServiceImpl(
+            actorTestKit.internalSystem,
+            sharding,
+            persistentEntity,
+            offsetDateTimeSupplier,
+            uuidSupplier
+          ),
           AttributesApiMarshallerImpl,
           SecurityDirectives.authenticateOAuth2(
             "SecurityRealm",
@@ -65,7 +79,13 @@ abstract class BaseIntegrationSpec extends FunSuite with SpecHelper {
         )
 
         val tenantApi: TenantApi = new TenantApi(
-          new TenantApiServiceImpl(actorTestKit.internalSystem, sharding, persistentEntity, offsetDateTimeSupplier),
+          new TenantApiServiceImpl(
+            actorTestKit.internalSystem,
+            sharding,
+            persistentEntity,
+            offsetDateTimeSupplier,
+            uuidSupplier
+          ),
           TenantApiMarshallerImpl,
           SecurityDirectives.authenticateOAuth2(
             "SecurityRealm",

@@ -4,6 +4,7 @@ import akka.actor.typed.ActorRef
 import akka.pattern.StatusReply
 import it.pagopa.interop.tenantmanagement.model.tenant._
 import java.util.UUID
+import java.time.OffsetDateTime
 
 sealed trait Command
 
@@ -22,14 +23,21 @@ final case class UpdateTenant(tenantDelta: PersistentTenantDelta, replyTo: Actor
 final case class AddAttribute(
   tenantId: String,
   persistentAttribute: PersistentTenantAttribute,
+  dateTime: OffsetDateTime,
   replyTo: ActorRef[StatusReply[PersistentTenant]]
 ) extends Command
 
 final case class UpdateAttribute(
   tenantId: String,
+  attributeId: UUID,
   persistentAttribute: PersistentTenantAttribute,
+  dateTime: OffsetDateTime,
   replyTo: ActorRef[StatusReply[PersistentTenant]]
 ) extends Command
 
-final case class DeleteAttribute(tenantId: String, attributeId: UUID, replyTo: ActorRef[StatusReply[PersistentTenant]])
-    extends Command
+final case class DeleteAttribute(
+  tenantId: String,
+  attributeId: UUID,
+  dateTime: OffsetDateTime,
+  replyTo: ActorRef[StatusReply[PersistentTenant]]
+) extends Command

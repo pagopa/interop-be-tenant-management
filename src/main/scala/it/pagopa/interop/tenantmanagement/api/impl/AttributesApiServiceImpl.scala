@@ -1,7 +1,7 @@
 package it.pagopa.interop.tenantmanagement.api.impl
 
 import it.pagopa.interop.tenantmanagement.api.AttributesApiService
-import it.pagopa.interop.tenantmanagement.model.{Problem, Tenant, TenantAttribute}
+import it.pagopa.interop.tenantmanagement.model.{Problem, Tenant}
 import it.pagopa.interop.tenantmanagement.model.persistence.Command
 
 import akka.actor.typed.ActorSystem
@@ -28,11 +28,16 @@ import scala.util.{Failure, Success}
 import akka.util.Timeout
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContextExecutor
+import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
+import it.pagopa.interop.tenantmanagement.model.TenantAttributeSeed
+import it.pagopa.interop.commons.utils.service.UUIDSupplier
 
 class AttributesApiServiceImpl(
   system: ActorSystem[_],
   sharding: ClusterSharding,
-  entity: Entity[Command, ShardingEnvelope[Command]]
+  entity: Entity[Command, ShardingEnvelope[Command]],
+  offsetDateTimeSupplier: OffsetDateTimeSupplier,
+  uuidSupplier: UUIDSupplier
 ) extends AttributesApiService {
 
   private val logger                            = Logger.takingImplicit[ContextFieldsToLog](this.getClass())
@@ -49,30 +54,29 @@ class AttributesApiServiceImpl(
   private def commander(id: String): EntityRef[Command] =
     sharding.entityRefFor(TenantPersistentBehavior.TypeKey, getShard(id, settings.numberOfShards))
 
-  override def addTenantAttribute(tenantId: String, tenantAttribute: TenantAttribute)(implicit
+  override def addTenantAttribute(tenantId: String, tenantAttribute: TenantAttributeSeed)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerTenant: ToEntityMarshaller[Tenant],
     contexts: Seq[(String, String)]
   ): Route = authorize(ADMIN_ROLE, M2M_ROLE, INTERNAL_ROLE) {
     val result: Future[PersistentTenant] = for {
-      attribute     <- PersistentTenantAttribute.fromAPI(tenantAttribute).toFuture
-      actorResponse <- commander(tenantId).askWithStatus(ref => AddAttribute(tenantId, attribute, ref))
+      attribute     <- PersistentTenantAttribute.fromAPI(tenantAttribute, uuidSupplier).toFuture
+      actorResponse <- commander(tenantId).askWithStatus(ref =>
+        AddAttribute(tenantId, attribute, offsetDateTimeSupplier.get, ref)
+      )
     } yield actorResponse
 
     onComplete(result) {
       case Success(tenant)                         =>
         addTenantAttribute200(tenant.toAPI)
       case Failure(ex @ AttributeAlreadyExists(_)) =>
-        logger.error(s"Error while adding the attribute ${tenantAttribute.id}", ex)
+        logger.error(s"Error while adding the attribute ${tenantAttribute}", ex)
         addTenantAttribute409(problemOf(StatusCodes.Conflict, AddAttributeConflict))
       case Failure(ex @ NotFoundTenant(_))         =>
-        logger.error(s"Error while adding the attribute ${tenantAttribute.id}", ex)
-        addTenantAttribute404(problemOf(StatusCodes.Conflict, GetTenantNotFound))
-      case Failure(ex @ NotFoundAttribute(_))      =>
-        logger.error(s"Error while adding the attribute ${tenantAttribute.id}", ex)
-        addTenantAttribute404(problemOf(StatusCodes.Conflict, AttributeNotFound))
+        logger.error(s"Error while adding the attribute ${tenantAttribute}", ex)
+        addTenantAttribute404(problemOf(StatusCodes.NotFound, GetTenantNotFound))
       case Failure(ex)                             =>
-        logger.error(s"Error while adding the attribute ${tenantAttribute.id}", ex)
+        logger.error(s"Error while adding the attribute ${tenantAttribute}", ex)
         complete(problemOf(StatusCodes.InternalServerError, GenericError("Error while adding the attribute")))
     }
   }
@@ -84,53 +88,52 @@ class AttributesApiServiceImpl(
   ): Route = authorize(ADMIN_ROLE, M2M_ROLE, INTERNAL_ROLE) {
     val result: Future[PersistentTenant] = for {
       attributeUUID <- attributeId.toFutureUUID
-      actorResponse <- commander(tenantId).askWithStatus(ref => DeleteAttribute(tenantId, attributeUUID, ref))
+      actorResponse <- commander(tenantId).askWithStatus(ref =>
+        DeleteAttribute(tenantId, attributeUUID, offsetDateTimeSupplier.get, ref)
+      )
     } yield actorResponse
 
     onComplete(result) {
-      case Success(tenant)                         =>
+      case Success(tenant)                    =>
         addTenantAttribute200(tenant.toAPI)
-      case Failure(ex @ AttributeAlreadyExists(_)) =>
+      case Failure(ex @ NotFoundTenant(_))    =>
         logger.error(s"Error while deleting the attribute $attributeId", ex)
-        addTenantAttribute409(problemOf(StatusCodes.Conflict, AddAttributeConflict))
-      case Failure(ex @ NotFoundTenant(_))         =>
+        addTenantAttribute404(problemOf(StatusCodes.NotFound, GetTenantNotFound))
+      case Failure(ex @ NotFoundAttribute(_)) =>
         logger.error(s"Error while deleting the attribute $attributeId", ex)
-        addTenantAttribute404(problemOf(StatusCodes.Conflict, AttributeNotFound))
-      case Failure(ex @ NotFoundAttribute(_))      =>
-        logger.error(s"Error while deleting the attribute $attributeId", ex)
-        addTenantAttribute404(problemOf(StatusCodes.Conflict, AttributeNotFound))
-      case Failure(ex)                             =>
+        addTenantAttribute404(problemOf(StatusCodes.NotFound, AttributeNotFound))
+      case Failure(ex)                        =>
         logger.error(s"Error while deleting the attribute $attributeId", ex)
         complete(problemOf(StatusCodes.InternalServerError, GenericError("Error while adding the attribute")))
     }
   }
 
-  override def updateTenantAttribute(tenantId: String, attributeId: String, tenantAttribute: TenantAttribute)(implicit
+  override def updateTenantAttribute(tenantId: String, attributeId: String, tenantAttribute: TenantAttributeSeed)(
+    implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerTenant: ToEntityMarshaller[Tenant],
     contexts: Seq[(String, String)]
   ): Route = authorize(ADMIN_ROLE, M2M_ROLE) {
     val result: Future[PersistentTenant] = for {
-      attribute     <- PersistentTenantAttribute.fromAPI(tenantAttribute).toFuture
-      actorResponse <- commander(tenantId).askWithStatus(ref => UpdateAttribute(tenantId, attribute, ref))
+      attrId        <- attributeId.toFutureUUID
+      attribute     <- PersistentTenantAttribute.fromAPI(tenantAttribute, uuidSupplier).toFuture
+      actorResponse <- commander(tenantId).askWithStatus(ref =>
+        UpdateAttribute(tenantId, attrId, attribute, offsetDateTimeSupplier.get, ref)
+      )
     } yield actorResponse
 
     onComplete(result) {
-      case Success(tenant)                         =>
+      case Success(tenant)                    =>
         addTenantAttribute200(tenant.toAPI)
-      case Failure(ex @ AttributeAlreadyExists(_)) =>
+      case Failure(ex @ NotFoundTenant(_))    =>
         logger.error(s"Error while updating the attribute $attributeId", ex)
-        addTenantAttribute409(problemOf(StatusCodes.Conflict, AddAttributeConflict))
-      case Failure(ex @ NotFoundTenant(_))         =>
+        addTenantAttribute404(problemOf(StatusCodes.NotFound, GetTenantNotFound))
+      case Failure(ex @ NotFoundAttribute(_)) =>
         logger.error(s"Error while updating the attribute $attributeId", ex)
-        addTenantAttribute404(problemOf(StatusCodes.Conflict, AttributeNotFound))
-      case Failure(ex @ NotFoundAttribute(_))      =>
-        logger.error(s"Error while updating the attribute $attributeId", ex)
-        addTenantAttribute404(problemOf(StatusCodes.Conflict, AttributeNotFound))
-      case Failure(ex)                             =>
+        addTenantAttribute404(problemOf(StatusCodes.NotFound, AttributeNotFound))
+      case Failure(ex)                        =>
         logger.error(s"Error while updating the attribute $attributeId", ex)
         complete(problemOf(StatusCodes.InternalServerError, GenericError("Error while adding the attribute")))
     }
   }
-
 }

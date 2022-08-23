@@ -15,7 +15,6 @@ import cats.implicits._
 import java.time.temporal.ChronoUnit
 import scala.concurrent.duration.{DurationInt, DurationLong}
 import scala.language.postfixOps
-import it.pagopa.interop.commons.utils.service.impl.OffsetDateTimeSupplierImpl
 
 object TenantPersistentBehavior {
 
@@ -48,27 +47,27 @@ object TenantPersistentBehavior {
         val failure: Effect[TenantUpdated, State] = fail(NotFoundTenant(tenantDelta.id.toString))(replyTo)
         maybeTenant.fold(failure)(success)
 
-      case AddAttribute(tenantId, attribute, replyTo) =>
+      case AddAttribute(tenantId, attribute, dateTime, replyTo) =>
         val result: Either[Throwable, PersistentTenant] = for {
           maybeTenant <- state.tenants.get(tenantId).toRight(NotFoundTenant(tenantId))
           _           <- maybeTenant
             .getAttribute(attribute.id)
             .fold(Either.unit[Throwable])(_ => AttributeAlreadyExists(attribute.id.toString).asLeft[Unit])
-        } yield maybeTenant.addAttribute(attribute, OffsetDateTimeSupplierImpl.get)
+        } yield maybeTenant.addAttribute(attribute, dateTime)
         result.fold(fail(_)(replyTo), t => persistAndReply(t, TenantUpdated)(replyTo))
 
-      case UpdateAttribute(tenantId, attribute, replyTo) =>
+      case UpdateAttribute(tenantId, attributeId, attribute, dateTime, replyTo) =>
         val result: Either[Throwable, PersistentTenant] = for {
           maybeTenant <- state.tenants.get(tenantId).toRight(NotFoundTenant(tenantId))
-          _           <- maybeTenant.getAttribute(attribute.id).toRight(NotFoundAttribute(attribute.id.toString))
-        } yield maybeTenant.addAttribute(attribute, OffsetDateTimeSupplierImpl.get)
+          _           <- maybeTenant.getAttribute(attributeId).toRight(NotFoundAttribute(attribute.id.toString))
+        } yield maybeTenant.deleteAttribute(attributeId, dateTime).addAttribute(attribute, dateTime)
         result.fold(fail(_)(replyTo), t => persistAndReply(t, TenantUpdated)(replyTo))
 
-      case DeleteAttribute(tenantId, attributeId, replyTo) =>
+      case DeleteAttribute(tenantId, attributeId, dateTime, replyTo) =>
         val result: Either[Throwable, PersistentTenant] = for {
           maybeTenant <- state.tenants.get(tenantId).toRight(NotFoundTenant(tenantId))
           _           <- maybeTenant.getAttribute(attributeId).toRight(NotFoundAttribute(attributeId.toString))
-        } yield maybeTenant.deleteAttribute(attributeId, OffsetDateTimeSupplierImpl.get)
+        } yield maybeTenant.deleteAttribute(attributeId, dateTime)
         result.fold(fail(_)(replyTo), t => persistAndReply(t, TenantUpdated)(replyTo))
 
       case Idle =>

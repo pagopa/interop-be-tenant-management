@@ -12,19 +12,18 @@ import it.pagopa.interop.tenantmanagement.api.impl._
 class TenantSpec extends BaseIntegrationSpec {
 
   test("Creation of a new tenant must succeed") {
-    val (system, mockedTime)           = suiteState()
-    implicit val s: ActorSystem[_]     = system
-    implicit val ecs: ExecutionContext = system.executionContext
-    val (expected, tenantSeed)         = randomTenantAndSeed(mockedTime)
-
+    val (system, mockedTime, mockedUUID) = suiteState()
+    implicit val s: ActorSystem[_]       = system
+    implicit val ecs: ExecutionContext   = system.executionContext
+    val (expected, tenantSeed)           = randomTenantAndSeed(mockedTime, mockedUUID)
     createTenant[Tenant](tenantSeed).map(tenant => assertEquals(tenant, expected))
   }
 
   test("Creation of a new tenant must fail if already exists") {
-    val (system, mockedTime)          = suiteState()
-    implicit val s: ActorSystem[_]    = system
-    implicit val ec: ExecutionContext = system.executionContext
-    val (_, tenantSeed)               = randomTenantAndSeed(mockedTime)
+    val (system, mockedTime, mockedUUID) = suiteState()
+    implicit val s: ActorSystem[_]       = system
+    implicit val ec: ExecutionContext    = system.executionContext
+    val (_, tenantSeed)                  = randomTenantAndSeed(mockedTime, mockedUUID)
 
     createTenant[Tenant](tenantSeed) >> createTenant[Problem](tenantSeed).map { result =>
       assertEquals(result.status, 409)
@@ -33,17 +32,17 @@ class TenantSpec extends BaseIntegrationSpec {
   }
 
   test("Retrieve of a tenant must succeed if tenant exists") {
-    val (system, mockedTime)          = suiteState()
-    implicit val s: ActorSystem[_]    = system
-    implicit val ec: ExecutionContext = system.executionContext
-    val (expected, tenantSeed)        = randomTenantAndSeed(mockedTime)
+    val (system, mockedTime, mockedUUID) = suiteState()
+    implicit val s: ActorSystem[_]       = system
+    implicit val ec: ExecutionContext    = system.executionContext
+    val (expected, tenantSeed)           = randomTenantAndSeed(mockedTime, mockedUUID)
 
     val response: Future[Tenant] = createTenant[Tenant](tenantSeed) >> getTenant[Tenant](expected.id)
     response.map(tenant => assertEquals(tenant, expected))
   }
 
   test("Retrieve of a tenant must fail if tenant does not exist") {
-    val (system, _)                   = suiteState()
+    val (system, _, _)                = suiteState()
     implicit val s: ActorSystem[_]    = system
     implicit val ec: ExecutionContext = system.executionContext
 
@@ -54,7 +53,7 @@ class TenantSpec extends BaseIntegrationSpec {
   }
 
   test("Update of a tenant must fail if tenant does not exist") {
-    val (system, _)                   = suiteState()
+    val (system, _, _)                = suiteState()
     implicit val s: ActorSystem[_]    = system
     implicit val ec: ExecutionContext = system.executionContext
 
@@ -67,11 +66,11 @@ class TenantSpec extends BaseIntegrationSpec {
   }
 
   test("Update of a tenant must succeed if tenant exists") {
-    val (system, mockedTime)          = suiteState()
-    implicit val s: ActorSystem[_]    = system
-    implicit val ec: ExecutionContext = system.executionContext
+    val (system, mockedTime, mockedUUID) = suiteState()
+    implicit val s: ActorSystem[_]       = system
+    implicit val ec: ExecutionContext    = system.executionContext
 
-    val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime)
+    val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, mockedUUID)
 
     val tenantDelta: TenantDelta = TenantDelta(None, Nil)
 
@@ -81,11 +80,11 @@ class TenantSpec extends BaseIntegrationSpec {
   }
 
   test("Get of a tenant by externalId must succeed if tenant exist") {
-    val (system, mockedTime)          = suiteState()
-    implicit val s: ActorSystem[_]    = system
-    implicit val ec: ExecutionContext = system.executionContext
+    val (system, mockedTime, mockedUUID) = suiteState()
+    implicit val s: ActorSystem[_]       = system
+    implicit val ec: ExecutionContext    = system.executionContext
 
-    val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime)
+    val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, mockedUUID)
 
     createTenant[Tenant](tenantSeed) >> getTenantByExternalId[Tenant](tenant.externalId.origin, tenant.externalId.value)
       .map { result =>
@@ -94,7 +93,7 @@ class TenantSpec extends BaseIntegrationSpec {
   }
 
   test("Get of a tenant by externalId must fail if tenant does not exist") {
-    val (system, _)                   = suiteState()
+    val (system, _, _)                = suiteState()
     implicit val s: ActorSystem[_]    = system
     implicit val ec: ExecutionContext = system.executionContext
 
@@ -104,6 +103,137 @@ class TenantSpec extends BaseIntegrationSpec {
     }
   }
 
-  // TODO! You have to finish the tests for the attributes api and add a persistentBehaviourTest
+  test("Adding an attribute must fail if tenant does not exist") {
+    val (system, mockedTime, mockedUUID) = suiteState()
+    implicit val s: ActorSystem[_]       = system
+    implicit val ec: ExecutionContext    = system.executionContext
+
+    val (_, randomAttributeSeed) = randomAttributeAndSeed(mockedTime, mockedUUID)
+
+    addTenantAttribute[Problem]("fakeTenant", randomAttributeSeed).map { result =>
+      assertEquals(result.status, 404)
+      assertEquals(result.errors.map(_.code), Seq("018-0004"))
+    }
+  }
+
+  test("Adding an attribute must fail if attribute in the tenant already exists") {
+    val (system, mockedTime, mockedUUID) = suiteState()
+    implicit val s: ActorSystem[_]       = system
+    implicit val ec: ExecutionContext    = system.executionContext
+
+    val (tenant, tenantSeed)     = randomTenantAndSeed(mockedTime, mockedUUID)
+    val (_, randomAttributeSeed) = randomAttributeAndSeed(mockedTime, mockedUUID)
+
+    createTenant(tenantSeed) >> addTenantAttribute[Problem](tenant.id.toString, randomAttributeSeed).map { result =>
+      assertEquals(result.status, 409)
+      assertEquals(result.errors.map(_.code), Seq("018-0006"))
+    }
+  }
+
+  test("Adding an attribute must succeed if tenant exists and attribute does not") {
+    val (system, mockedTime, mockedUUID) = suiteState()
+    implicit val s: ActorSystem[_]       = system
+    implicit val ec: ExecutionContext    = system.executionContext
+
+    // TODO! The supplier always return the same id so the call fails and
+    // TODO! it's impossible to create an attribute with a different id
+
+    val (tenant, tenantSeed)              = randomTenantAndSeed(mockedTime, mockedUUID)
+    val (randomAttr, randomAttributeSeed) = randomAttributeAndSeed(mockedTime, mockedUUID)
+
+    val expected: Tenant =
+      tenant.copy(attributes = tenant.attributes.prepended(randomAttr), updatedAt = mockedTime.some)
+
+    createTenant(tenantSeed) >> addTenantAttribute[Tenant](tenant.id.toString, randomAttributeSeed).map { result =>
+      assertEquals(result, expected)
+    }
+  }
+
+  test("Deleting an attribute must fail if tenant does not exist") {
+    val (system, _, _)                = suiteState()
+    implicit val s: ActorSystem[_]    = system
+    implicit val ec: ExecutionContext = system.executionContext
+
+    deleteTenantAttribute[Problem]("fakeTenant", UUID.randomUUID.toString).map { result =>
+      assertEquals(result.status, 404)
+      assertEquals(result.errors.map(_.code), Seq("018-0004"))
+    }
+  }
+
+  test("Deleting an attribute must fail if attribute in the tenant doesn't exists") {
+    val (system, mockedTime, mockedUUID) = suiteState()
+    implicit val s: ActorSystem[_]       = system
+    implicit val ec: ExecutionContext    = system.executionContext
+
+    val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, mockedUUID)
+
+    createTenant(tenantSeed) >> deleteTenantAttribute[Problem](tenant.id.toString, UUID.randomUUID.toString).map {
+      result =>
+        assertEquals(result.status, 404)
+        assertEquals(result.errors.map(_.code), Seq("018-0007"))
+    }
+  }
+
+  test("Deleting an attribute must succeed if attribute exists in tenant") {
+    val (system, mockedTime, mockedUUID) = suiteState()
+    implicit val s: ActorSystem[_]       = system
+    implicit val ec: ExecutionContext    = system.executionContext
+
+    val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, mockedUUID)
+    val expected             = tenant.copy(attributes = Nil, updatedAt = mockedTime.some)
+
+    createTenant(tenantSeed) >> deleteTenantAttribute[Tenant](tenant.id.toString, tenant.attributes.head.id.toString)
+      .map { result => assertEquals(result, expected) }
+  }
+
+  test("Updating an attribute must fail if tenant does not exist") {
+    val (system, mockedTime, mockedUUID) = suiteState()
+    implicit val s: ActorSystem[_]       = system
+    implicit val ec: ExecutionContext    = system.executionContext
+
+    val (_, randomAttributeSeed) = randomAttributeAndSeed(mockedTime, mockedUUID)
+
+    updateTenantAttribute[Problem]("fakeTenant", UUID.randomUUID.toString, randomAttributeSeed).map { result =>
+      assertEquals(result.status, 404)
+      assertEquals(result.errors.map(_.code), Seq("018-0004"))
+    }
+  }
+
+  test("Updating an attribute must fail if attribute in the tenant doesn't exists") {
+    val (system, mockedTime, mockedUUID) = suiteState()
+    implicit val s: ActorSystem[_]       = system
+    implicit val ec: ExecutionContext    = system.executionContext
+
+    val (tenant, tenantSeed)     = randomTenantAndSeed(mockedTime, mockedUUID)
+    val (_, randomAttributeSeed) = randomAttributeAndSeed(mockedTime, UUID.randomUUID())
+
+    createTenant(tenantSeed) >> updateTenantAttribute[Problem](
+      tenant.id.toString,
+      UUID.randomUUID.toString,
+      randomAttributeSeed
+    )
+      .map { result =>
+        assertEquals(result.status, 404)
+        assertEquals(result.errors.map(_.code), Seq("018-0007"))
+      }
+  }
+
+  test("Updating an attribute must succeed if attribute exists in tenant") {
+    val (system, mockedTime, mockedUUID) = suiteState()
+    implicit val s: ActorSystem[_]       = system
+    implicit val ec: ExecutionContext    = system.executionContext
+
+    val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, mockedUUID)
+
+    val (randomAttr, randomAttributeSeed) = randomAttributeAndSeed(mockedTime, UUID.randomUUID())
+
+    val expected = tenant.copy(attributes = randomAttr :: Nil, updatedAt = mockedTime.some)
+
+    createTenant(tenantSeed) >> updateTenantAttribute[Tenant](
+      tenant.id.toString,
+      tenant.attributes.head.id.toString,
+      randomAttributeSeed
+    ).map { result => assertEquals(result, expected) }
+  }
 
 }

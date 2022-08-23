@@ -18,6 +18,7 @@ import java.time.OffsetDateTime
 import it.pagopa.interop.tenantmanagement.model._
 import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
 import it.pagopa.interop.tenantmanagement.api.impl.AttributesApiServiceImpl
+import it.pagopa.interop.commons.utils.service.UUIDSupplier
 
 class TenantApiServiceAuthzSpec extends ClusteredMUnitRouteTest {
   override val testPersistentEntity: Entity[Command, ShardingEnvelope[Command]] = tenantPersistenceEntity
@@ -26,31 +27,37 @@ class TenantApiServiceAuthzSpec extends ClusteredMUnitRouteTest {
     def get: OffsetDateTime = OffsetDateTime.now()
   }
 
+  val iCallConstructorsBecauseOOPIsNeverDeadAgain = new UUIDSupplier {
+    def get: UUID = UUID.randomUUID()
+  }
+
   val tenantService: TenantApiService = new TenantApiServiceImpl(
     testKit.system,
     testAkkaSharding,
     testPersistentEntity,
-    iCallConstructorsBecauseOOPIsNeverDead
+    iCallConstructorsBecauseOOPIsNeverDead,
+    iCallConstructorsBecauseOOPIsNeverDeadAgain
   )
 
   val attributesService: AttributesApiService =
-    new AttributesApiServiceImpl(testKit.system, testAkkaSharding, testPersistentEntity)
+    new AttributesApiServiceImpl(
+      testKit.system,
+      testAkkaSharding,
+      testPersistentEntity,
+      iCallConstructorsBecauseOOPIsNeverDead,
+      iCallConstructorsBecauseOOPIsNeverDeadAgain
+    )
 
   val fakeSeed: TenantSeed = TenantSeed(
     id = UUID.randomUUID().some,
     externalId = ExternalId("IPA", "pippo"),
     features = Nil,
-    attributes = List(
-      TenantAttribute(
-        id = UUID.randomUUID(),
-        kind = TenantAttributeKind.CERTIFIED,
-        assignmentTimestamp = OffsetDateTime.now()
-      )
-    )
+    attributes =
+      TenantAttributeSeed(kind = TenantAttributeKind.CERTIFIED, assignmentTimestamp = OffsetDateTime.now()) :: Nil
   )
 
-  val fakeAttribute: TenantAttribute =
-    TenantAttribute(UUID.randomUUID(), TenantAttributeKind.CERTIFIED, OffsetDateTime.now, None, None, None, None)
+  val fakeAttributeSeed: TenantAttributeSeed =
+    TenantAttributeSeed(TenantAttributeKind.CERTIFIED, OffsetDateTime.now, None, None, None, None)
 
   test("Tenant api operation authorization spec should accept authorized roles for createTenant") {
 
@@ -84,7 +91,7 @@ class TenantApiServiceAuthzSpec extends ClusteredMUnitRouteTest {
   test("Attributes api operation authorization spec should accept authorized roles for addTenantAttribute") {
     validateAuthorization(
       endpoints("addTenantAttribute"),
-      { implicit c: Seq[(String, String)] => attributesService.addTenantAttribute("tenantId", fakeAttribute) }
+      { implicit c: Seq[(String, String)] => attributesService.addTenantAttribute("tenantId", fakeAttributeSeed) }
     )
   }
 
@@ -99,7 +106,7 @@ class TenantApiServiceAuthzSpec extends ClusteredMUnitRouteTest {
     validateAuthorization(
       endpoints("updateTenantAttribute"),
       { implicit c: Seq[(String, String)] =>
-        attributesService.updateTenantAttribute("tenantId", "fakeAttributeId", fakeAttribute)
+        attributesService.updateTenantAttribute("tenantId", "fakeAttributeId", fakeAttributeSeed)
       }
     )
   }
