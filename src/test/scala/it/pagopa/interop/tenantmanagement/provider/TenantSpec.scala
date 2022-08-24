@@ -135,18 +135,15 @@ class TenantSpec extends BaseIntegrationSpec {
     implicit val s: ActorSystem[_]       = system
     implicit val ec: ExecutionContext    = system.executionContext
 
-    // TODO! The supplier always return the same id so the call fails and
-    // TODO! it's impossible to create an attribute with a different id
-
     val (tenant, tenantSeed)              = randomTenantAndSeed(mockedTime, mockedUUID)
     val (randomAttr, randomAttributeSeed) = randomAttributeAndSeed(mockedTime, mockedUUID)
 
-    val expected: Tenant =
-      tenant.copy(attributes = tenant.attributes.prepended(randomAttr), updatedAt = mockedTime.some)
+    val expected: Tenant = tenant.copy(attributes = randomAttr :: Nil, updatedAt = mockedTime.some)
 
-    createTenant(tenantSeed) >> addTenantAttribute[Tenant](tenant.id.toString, randomAttributeSeed).map { result =>
-      assertEquals(result, expected)
-    }
+    createTenant(tenantSeed.copy(attributes = Nil)) >> addTenantAttribute[Tenant](
+      tenant.id.toString,
+      randomAttributeSeed
+    ).map { result => assertEquals(result, expected) }
   }
 
   test("Deleting an attribute must fail if tenant does not exist") {
@@ -225,7 +222,7 @@ class TenantSpec extends BaseIntegrationSpec {
 
     val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, mockedUUID)
 
-    val (randomAttr, randomAttributeSeed) = randomAttributeAndSeed(mockedTime, UUID.randomUUID())
+    val (randomAttr, randomAttributeSeed) = randomAttributeAndSeed(mockedTime, mockedUUID)
 
     val expected = tenant.copy(attributes = randomAttr :: Nil, updatedAt = mockedTime.some)
 
