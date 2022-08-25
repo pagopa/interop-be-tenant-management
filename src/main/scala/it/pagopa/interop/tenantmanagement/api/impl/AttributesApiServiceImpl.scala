@@ -29,15 +29,13 @@ import akka.util.Timeout
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContextExecutor
 import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
-import it.pagopa.interop.tenantmanagement.model.TenantAttributeSeed
-import it.pagopa.interop.commons.utils.service.UUIDSupplier
+import it.pagopa.interop.tenantmanagement.model.TenantAttribute
 
 class AttributesApiServiceImpl(
   system: ActorSystem[_],
   sharding: ClusterSharding,
   entity: Entity[Command, ShardingEnvelope[Command]],
-  offsetDateTimeSupplier: OffsetDateTimeSupplier,
-  uuidSupplier: UUIDSupplier
+  offsetDateTimeSupplier: OffsetDateTimeSupplier
 ) extends AttributesApiService {
 
   private val logger                            = Logger.takingImplicit[ContextFieldsToLog](this.getClass())
@@ -54,13 +52,13 @@ class AttributesApiServiceImpl(
   private def commander(id: String): EntityRef[Command] =
     sharding.entityRefFor(TenantPersistentBehavior.TypeKey, getShard(id, settings.numberOfShards))
 
-  override def addTenantAttribute(tenantId: String, tenantAttribute: TenantAttributeSeed)(implicit
+  override def addTenantAttribute(tenantId: String, tenantAttribute: TenantAttribute)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerTenant: ToEntityMarshaller[Tenant],
     contexts: Seq[(String, String)]
   ): Route = authorize(ADMIN_ROLE, M2M_ROLE, INTERNAL_ROLE) {
     val result: Future[PersistentTenant] = for {
-      attribute     <- PersistentTenantAttribute.fromAPI(tenantAttribute, uuidSupplier).toFuture
+      attribute     <- PersistentTenantAttribute.fromAPI(tenantAttribute).toFuture
       actorResponse <- commander(tenantId).askWithStatus(ref =>
         AddAttribute(tenantId, attribute, offsetDateTimeSupplier.get, ref)
       )
@@ -108,15 +106,14 @@ class AttributesApiServiceImpl(
     }
   }
 
-  override def updateTenantAttribute(tenantId: String, attributeId: String, tenantAttribute: TenantAttributeSeed)(
-    implicit
+  override def updateTenantAttribute(tenantId: String, attributeId: String, tenantAttribute: TenantAttribute)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerTenant: ToEntityMarshaller[Tenant],
     contexts: Seq[(String, String)]
   ): Route = authorize(ADMIN_ROLE, M2M_ROLE) {
     val result: Future[PersistentTenant] = for {
       attrId        <- attributeId.toFutureUUID
-      attribute     <- PersistentTenantAttribute.fromAPI(tenantAttribute, uuidSupplier).toFuture
+      attribute     <- PersistentTenantAttribute.fromAPI(tenantAttribute).toFuture
       actorResponse <- commander(tenantId).askWithStatus(ref =>
         UpdateAttribute(tenantId, attrId, attribute, offsetDateTimeSupplier.get, ref)
       )

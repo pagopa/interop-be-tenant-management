@@ -140,7 +140,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TenantAttributeSeed'
+              $ref: '#/components/schemas/TenantAttribute'
         required: true
       responses:
         '200':
@@ -191,7 +191,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TenantAttributeSeed'
+              $ref: '#/components/schemas/TenantAttribute'
         required: true
       responses:
         '200':
@@ -344,31 +344,6 @@ components:
       required:
         - code
         - detail
-    TenantAttributeSeed:
-      type: object
-      properties:
-        kind:
-          type: string
-          $ref: '#/components/schemas/TenantAttributeKind'
-        assignmentTimestamp:
-          type: string
-          format: date-time
-        revocationTimestamp:
-          type: string
-          format: date-time
-        renewal:
-          $ref: '#/components/schemas/VerificationRenewal'
-        verifiedBy:
-          type: array
-          items:
-            $ref: '#/components/schemas/TenantVerifier'
-        revokedBy:
-          type: array
-          items:
-            $ref: '#/components/schemas/TenantRevoker'
-      required:
-        - kind
-        - assignmentTimestamp
     TenantAttribute:
       type: object
       properties:
@@ -519,7 +494,7 @@ components:
         attributes:
           type: array
           items:
-            $ref: '#/components/schemas/TenantAttributeSeed'
+            $ref: '#/components/schemas/TenantAttribute'
       required:
         - externalId
         - features

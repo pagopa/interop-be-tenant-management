@@ -29,23 +29,20 @@ trait SpecHelper {
     `X-Forwarded-For`(RemoteAddress(InetAddress.getByName("127.0.0.1")))
   )
 
-  def randomAttributeAndSeed(offsetDateTime: OffsetDateTime, uuid: UUID): (TenantAttribute, TenantAttributeSeed) =
-    (
-      TenantAttribute(id = uuid, kind = TenantAttributeKind.CERTIFIED, assignmentTimestamp = offsetDateTime),
-      TenantAttributeSeed(kind = TenantAttributeKind.CERTIFIED, assignmentTimestamp = offsetDateTime)
-    )
+  def attribute(offsetDateTime: OffsetDateTime, uuid: UUID): TenantAttribute =
+    TenantAttribute(id = uuid, kind = TenantAttributeKind.CERTIFIED, assignmentTimestamp = offsetDateTime)
 
   def randomTenantAndSeed(offsetDateTime: OffsetDateTime, uuid: UUID): (Tenant, TenantSeed) = {
     val tenantId: UUID         = UUID.randomUUID()
     val externalId: ExternalId = ExternalId(UUID.randomUUID().toString(), UUID.randomUUID().toString())
 
-    val (attribute, attributeSeed) = randomAttributeAndSeed(offsetDateTime, uuid)
+    val attr: TenantAttribute = attribute(offsetDateTime, uuid)
 
     val tenantSeed: TenantSeed = TenantSeed(
       id = tenantId.some,
       externalId = externalId,
       features = TenantFeature(Certifier("foo").some) :: Nil,
-      attributes = attributeSeed :: Nil
+      attributes = attr :: Nil
     )
 
     val tenant: Tenant = Tenant(
@@ -53,7 +50,7 @@ trait SpecHelper {
       selfcareId = None,
       externalId = externalId,
       features = TenantFeature(Certifier("foo").some) :: Nil,
-      attributes = attribute :: Nil,
+      attributes = attr :: Nil,
       createdAt = offsetDateTime,
       updatedAt = None
     )
@@ -91,7 +88,7 @@ trait SpecHelper {
     } yield result
   }
 
-  def addTenantAttribute[T](tenantId: String, attributeSeed: TenantAttributeSeed)(implicit
+  def addTenantAttribute[T](tenantId: String, attributeSeed: TenantAttribute)(implicit
     actorSystem: ActorSystem[_],
     um: Unmarshaller[HttpResponse, T]
   ): Future[T] = {
@@ -102,7 +99,7 @@ trait SpecHelper {
     } yield result
   }
 
-  def updateTenantAttribute[T](tenantId: String, attributeId: String, attributeSeed: TenantAttributeSeed)(implicit
+  def updateTenantAttribute[T](tenantId: String, attributeId: String, attributeSeed: TenantAttribute)(implicit
     actorSystem: ActorSystem[_],
     um: Unmarshaller[HttpResponse, T]
   ): Future[T] = {

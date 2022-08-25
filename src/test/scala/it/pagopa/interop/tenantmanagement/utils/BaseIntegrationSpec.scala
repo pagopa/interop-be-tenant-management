@@ -25,7 +25,6 @@ import akka.actor
 import java.time.OffsetDateTime
 import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
 import java.util.UUID
-import it.pagopa.interop.commons.utils.service.UUIDSupplier
 
 abstract class BaseIntegrationSpec extends FunSuite with SpecHelper {
 
@@ -56,18 +55,8 @@ abstract class BaseIntegrationSpec extends FunSuite with SpecHelper {
           def get: OffsetDateTime = mockedTime
         }
 
-        val uuidSupplier: UUIDSupplier = new UUIDSupplier {
-          def get: UUID = mockedUUID
-        }
-
         val attributesApi: AttributesApi = new AttributesApi(
-          new AttributesApiServiceImpl(
-            actorTestKit.internalSystem,
-            sharding,
-            persistentEntity,
-            offsetDateTimeSupplier,
-            uuidSupplier
-          ),
+          new AttributesApiServiceImpl(actorTestKit.internalSystem, sharding, persistentEntity, offsetDateTimeSupplier),
           AttributesApiMarshallerImpl,
           SecurityDirectives.authenticateOAuth2(
             "SecurityRealm",
@@ -79,13 +68,7 @@ abstract class BaseIntegrationSpec extends FunSuite with SpecHelper {
         )
 
         val tenantApi: TenantApi = new TenantApi(
-          new TenantApiServiceImpl(
-            actorTestKit.internalSystem,
-            sharding,
-            persistentEntity,
-            offsetDateTimeSupplier,
-            uuidSupplier
-          ),
+          new TenantApiServiceImpl(actorTestKit.internalSystem, sharding, persistentEntity, offsetDateTimeSupplier),
           TenantApiMarshallerImpl,
           SecurityDirectives.authenticateOAuth2(
             "SecurityRealm",

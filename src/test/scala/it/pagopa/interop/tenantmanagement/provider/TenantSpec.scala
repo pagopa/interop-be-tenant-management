@@ -108,9 +108,9 @@ class TenantSpec extends BaseIntegrationSpec {
     implicit val s: ActorSystem[_]       = system
     implicit val ec: ExecutionContext    = system.executionContext
 
-    val (_, randomAttributeSeed) = randomAttributeAndSeed(mockedTime, mockedUUID)
+    val attr: TenantAttribute = attribute(mockedTime, mockedUUID)
 
-    addTenantAttribute[Problem]("fakeTenant", randomAttributeSeed).map { result =>
+    addTenantAttribute[Problem]("fakeTenant", attr).map { result =>
       assertEquals(result.status, 404)
       assertEquals(result.errors.map(_.code), Seq("018-0004"))
     }
@@ -121,10 +121,10 @@ class TenantSpec extends BaseIntegrationSpec {
     implicit val s: ActorSystem[_]       = system
     implicit val ec: ExecutionContext    = system.executionContext
 
-    val (tenant, tenantSeed)     = randomTenantAndSeed(mockedTime, mockedUUID)
-    val (_, randomAttributeSeed) = randomAttributeAndSeed(mockedTime, mockedUUID)
+    val (tenant, tenantSeed)  = randomTenantAndSeed(mockedTime, mockedUUID)
+    val attr: TenantAttribute = attribute(mockedTime, mockedUUID)
 
-    createTenant(tenantSeed) >> addTenantAttribute[Problem](tenant.id.toString, randomAttributeSeed).map { result =>
+    createTenant(tenantSeed) >> addTenantAttribute[Problem](tenant.id.toString, attr).map { result =>
       assertEquals(result.status, 409)
       assertEquals(result.errors.map(_.code), Seq("018-0006"))
     }
@@ -135,15 +135,14 @@ class TenantSpec extends BaseIntegrationSpec {
     implicit val s: ActorSystem[_]       = system
     implicit val ec: ExecutionContext    = system.executionContext
 
-    val (tenant, tenantSeed)              = randomTenantAndSeed(mockedTime, mockedUUID)
-    val (randomAttr, randomAttributeSeed) = randomAttributeAndSeed(mockedTime, mockedUUID)
+    val (tenant, tenantSeed)  = randomTenantAndSeed(mockedTime, mockedUUID)
+    val attr: TenantAttribute = attribute(mockedTime, mockedUUID)
 
-    val expected: Tenant = tenant.copy(attributes = randomAttr :: Nil, updatedAt = mockedTime.some)
+    val expected: Tenant = tenant.copy(attributes = attr :: Nil, updatedAt = mockedTime.some)
 
-    createTenant(tenantSeed.copy(attributes = Nil)) >> addTenantAttribute[Tenant](
-      tenant.id.toString,
-      randomAttributeSeed
-    ).map { result => assertEquals(result, expected) }
+    createTenant(tenantSeed.copy(attributes = Nil)) >> addTenantAttribute[Tenant](tenant.id.toString, attr).map {
+      result => assertEquals(result, expected)
+    }
   }
 
   test("Deleting an attribute must fail if tenant does not exist") {
@@ -188,9 +187,9 @@ class TenantSpec extends BaseIntegrationSpec {
     implicit val s: ActorSystem[_]       = system
     implicit val ec: ExecutionContext    = system.executionContext
 
-    val (_, randomAttributeSeed) = randomAttributeAndSeed(mockedTime, mockedUUID)
+    val attr: TenantAttribute = attribute(mockedTime, mockedUUID)
 
-    updateTenantAttribute[Problem]("fakeTenant", UUID.randomUUID.toString, randomAttributeSeed).map { result =>
+    updateTenantAttribute[Problem]("fakeTenant", UUID.randomUUID.toString, attr).map { result =>
       assertEquals(result.status, 404)
       assertEquals(result.errors.map(_.code), Seq("018-0004"))
     }
@@ -201,14 +200,10 @@ class TenantSpec extends BaseIntegrationSpec {
     implicit val s: ActorSystem[_]       = system
     implicit val ec: ExecutionContext    = system.executionContext
 
-    val (tenant, tenantSeed)     = randomTenantAndSeed(mockedTime, mockedUUID)
-    val (_, randomAttributeSeed) = randomAttributeAndSeed(mockedTime, UUID.randomUUID())
+    val (tenant, tenantSeed)  = randomTenantAndSeed(mockedTime, mockedUUID)
+    val attr: TenantAttribute = attribute(mockedTime, mockedUUID)
 
-    createTenant(tenantSeed) >> updateTenantAttribute[Problem](
-      tenant.id.toString,
-      UUID.randomUUID.toString,
-      randomAttributeSeed
-    )
+    createTenant(tenantSeed) >> updateTenantAttribute[Problem](tenant.id.toString, UUID.randomUUID.toString, attr)
       .map { result =>
         assertEquals(result.status, 404)
         assertEquals(result.errors.map(_.code), Seq("018-0007"))
@@ -220,16 +215,15 @@ class TenantSpec extends BaseIntegrationSpec {
     implicit val s: ActorSystem[_]       = system
     implicit val ec: ExecutionContext    = system.executionContext
 
-    val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, mockedUUID)
+    val (tenant, tenantSeed)  = randomTenantAndSeed(mockedTime, mockedUUID)
+    val attr: TenantAttribute = attribute(mockedTime, mockedUUID)
 
-    val (randomAttr, randomAttributeSeed) = randomAttributeAndSeed(mockedTime, mockedUUID)
-
-    val expected = tenant.copy(attributes = randomAttr :: Nil, updatedAt = mockedTime.some)
+    val expected = tenant.copy(attributes = attr :: Nil, updatedAt = mockedTime.some)
 
     createTenant(tenantSeed) >> updateTenantAttribute[Tenant](
       tenant.id.toString,
       tenant.attributes.head.id.toString,
-      randomAttributeSeed
+      attr
     ).map { result => assertEquals(result, expected) }
   }
 

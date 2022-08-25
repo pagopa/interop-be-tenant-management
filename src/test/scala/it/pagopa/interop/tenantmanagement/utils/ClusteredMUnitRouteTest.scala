@@ -41,12 +41,12 @@ trait ClusteredMUnitRouteTest extends FunSuite with RouteTest with TestFramework
   val testAkkaSharding: ClusterSharding = ClusterSharding(testTypedSystem)
   Cluster(testTypedSystem).manager ! Join(Cluster(testTypedSystem).selfMember.address)
 
-  def validateAuthorization(endpoint: Endpoint, r: Seq[(String, String)] => Route)(implicit loc: Location): Unit = {
+  def validateAuthorization(endpointName: String, r: Seq[(String, String)] => Route)(implicit loc: Location): Unit = {
+    val endpoint: Endpoint = AuthorizedRoutes.endpoints(endpointName)
     endpoint.rolesInContexts.foreach(contexts => {
       validRoleCheck(contexts.toMap.get(USER_ROLES).toString, endpoint.asRequest, r(contexts))
     })
 
-    // given a fake role, check that its invocation is forbidden
     endpoint.invalidRoles.foreach(contexts => {
       invalidRoleCheck(contexts.toMap.get(USER_ROLES).toString, endpoint.asRequest, r(contexts))
     })

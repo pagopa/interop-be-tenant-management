@@ -9,7 +9,6 @@ import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentVerificationRenewal.AUTOMATIC_RENEWAL
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentVerificationRenewal.REVOKE_ON_EXPIRATION
 import java.time.OffsetDateTime
-import it.pagopa.interop.commons.utils.service.UUIDSupplier
 
 object Adapters {
 
@@ -110,34 +109,32 @@ object Adapters {
   }
 
   implicit class PersistentAttributesObjectWrapper(private val p: PersistentTenantAttribute.type) extends AnyVal {
-    def fromAPI(attributes: TenantAttributeSeed, id: UUIDSupplier): Either[Throwable, PersistentTenantAttribute] =
-      attributes.kind match {
+    def fromAPI(attribute: TenantAttribute): Either[Throwable, PersistentTenantAttribute] =
+      attribute.kind match {
         case TenantAttributeKind.CERTIFIED =>
-          PersistentCertifiedAttribute(id.get, attributes.assignmentTimestamp, attributes.revocationTimestamp)
+          PersistentCertifiedAttribute(attribute.id, attribute.assignmentTimestamp, attribute.revocationTimestamp)
             .asRight[Throwable]
         case TenantAttributeKind.DECLARED  =>
-          PersistentDeclaredAttribute(id.get, attributes.assignmentTimestamp, attributes.revocationTimestamp)
+          PersistentDeclaredAttribute(attribute.id, attribute.assignmentTimestamp, attribute.revocationTimestamp)
             .asRight[Throwable]
         case TenantAttributeKind.VERIFIED  =>
           for {
-            renewal    <- attributes.renewal
+            renewal    <- attribute.renewal
               .toRight(InternalErrors.InvalidAttribute("verified", "renewal"))
               .map(PersistentVerificationRenewal.fromAPI)
-            verifiedBy <- attributes.verifiedBy
+            verifiedBy <- attribute.verifiedBy
               .toRight(InternalErrors.InvalidAttribute("verified", "verifiedBy"))
               .map(_.map(PersistentTenantVerifier.fromAPI).toList)
-            // ! TODO it doesn't validate the fact that the revoked must always have a revocationDate
-            revokedBy  <- attributes.revokedBy
+            revokedBy  <- attribute.revokedBy
               .toRight(InternalErrors.InvalidAttribute("verified", "revokedBy"))
               .map(_.map(PersistentTenantRevoker.fromAPI).toList)
           } yield PersistentVerifiedAttribute(
-            id = id.get,
-            assignmentTimestamp = attributes.assignmentTimestamp,
+            id = attribute.id,
+            assignmentTimestamp = attribute.assignmentTimestamp,
             renewal = renewal,
             verifiedBy = verifiedBy,
             revokedBy = revokedBy
           )
-
       }
   }
 
@@ -196,12 +193,8 @@ object Adapters {
   implicit class PersistentTenantObjectWrapper(private val p: PersistentTenant.type) extends AnyVal {
     // We'll remove the field "id" from api and use just UUID.randomUUID once
     // migrated the persistence of all the already created eservices
-    def fromAPI(
-      seed: TenantSeed,
-      supplier: OffsetDateTimeSupplier,
-      uuidSupplier: UUIDSupplier
-    ): Either[Throwable, PersistentTenant] = for {
-      attributes <- seed.attributes.toList.traverse(PersistentTenantAttribute.fromAPI(_, uuidSupplier))
+    def fromAPI(seed: TenantSeed, supplier: OffsetDateTimeSupplier): Either[Throwable, PersistentTenant] = for {
+      attributes <- seed.attributes.toList.traverse(PersistentTenantAttribute.fromAPI)
       features   <- seed.features.toList.traverse(PersistentTenantFeature.fromAPI)
     } yield PersistentTenant(
       id = seed.id.getOrElse(UUID.randomUUID()),

@@ -28,14 +28,12 @@ import akka.util.Timeout
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContextExecutor
 import cats.implicits._
-import it.pagopa.interop.commons.utils.service.UUIDSupplier
 
 class TenantApiServiceImpl(
   system: ActorSystem[_],
   sharding: ClusterSharding,
   entity: Entity[Command, ShardingEnvelope[Command]],
-  offsetDateTimeSupplier: OffsetDateTimeSupplier,
-  uuidSupplier: UUIDSupplier
+  offsetDateTimeSupplier: OffsetDateTimeSupplier
 ) extends TenantApiService {
 
   private val logger                            = Logger.takingImplicit[ContextFieldsToLog](this.getClass())
@@ -62,7 +60,7 @@ class TenantApiServiceImpl(
   ): Route = authorize(ADMIN_ROLE, API_ROLE, SECURITY_ROLE, M2M_ROLE, INTERNAL_ROLE) {
 
     val result: Future[PersistentTenant] = for {
-      tenant        <- PersistentTenant.fromAPI(tenantSeed, offsetDateTimeSupplier, uuidSupplier).toFuture
+      tenant        <- PersistentTenant.fromAPI(tenantSeed, offsetDateTimeSupplier).toFuture
       actorResponse <- commander(tenant.id.toString).askWithStatus(ref => CreateTenant(tenant, ref))
     } yield actorResponse
 
