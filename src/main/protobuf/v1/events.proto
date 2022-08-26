@@ -1,0 +1,17 @@
+syntax = "proto2";
+
+import "scalapb/scalapb.proto";
+import "v1/tenant.proto";
+
+option (scalapb.options) = {
+  package_name: "it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1"
+  no_default_values_in_constructor : true
+};
+
+message TenantCreatedV1 {
+  required TenantV1 tenant = 1;
+}
+
+message TenantUpdatedV1 {
+  required TenantV1 tenant = 1;
+}

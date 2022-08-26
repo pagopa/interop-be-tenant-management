@@ -1,0 +1,72 @@
+{
+  "endpoints": [
+    {
+      "route": "createTenant",
+      "verb": "POST",
+      "roles": [
+        "admin",
+        "security",
+        "api",
+        "m2m",
+        "internal"
+      ]
+    },
+    {
+      "route": "getTenant",
+      "verb": "GET",
+      "roles": [
+        "admin",
+        "security",
+        "api",
+        "m2m"
+      ]
+    },
+    {
+      "route": "getTenantByExternalId",
+      "verb": "GET",
+      "roles": [
+        "admin",
+        "security",
+        "api",
+        "m2m",
+        "internal"
+      ]
+    },
+    {
+      "route": "updateTenant",
+      "verb": "POST",
+      "roles": [
+        "admin",
+        "security",
+        "api",
+        "m2m"
+      ]
+    },
+    {
+      "route": "addTenantAttribute",
+      "verb": "POST",
+      "roles": [
+        "admin",
+        "m2m",
+        "internal"
+      ]
+    },
+    {
+      "route": "deleteTenantAttribute",
+      "verb": "DELETE",
+      "roles": [
+        "admin",
+        "m2m",
+        "internal"
+      ]
+    },
+    {
+      "route": "updateTenantAttribute",
+      "verb": "POST",
+      "roles": [
+        "admin",
+        "m2m"
+      ]
+    }
+  ]
+}
