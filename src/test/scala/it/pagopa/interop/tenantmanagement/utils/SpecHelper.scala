@@ -30,7 +30,7 @@ trait SpecHelper {
   )
 
   def attribute(offsetDateTime: OffsetDateTime, uuid: UUID): TenantAttribute =
-    TenantAttribute(id = uuid, kind = TenantAttributeKind.CERTIFIED, assignmentTimestamp = offsetDateTime)
+    TenantAttribute(certified = CertifiedTenantAttribute(id = uuid, assignmentTimestamp = offsetDateTime).some)
 
   def randomTenantAndSeed(offsetDateTime: OffsetDateTime, uuid: UUID): (Tenant, TenantSeed) = {
     val tenantId: UUID         = UUID.randomUUID()
