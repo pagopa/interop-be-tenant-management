@@ -73,6 +73,9 @@ class AttributesApiServiceImpl(
       case Failure(ex @ NotFoundTenant(_))         =>
         logger.error(s"Error while adding the attribute ${tenantAttribute}", ex)
         addTenantAttribute404(problemOf(StatusCodes.NotFound, GetTenantNotFound))
+      case Failure(ex @ InvalidAttribute)          =>
+        logger.error(s"Error while adding the attribute ${tenantAttribute}: Invalid Structure", ex)
+        addTenantAttribute400(problemOf(StatusCodes.BadRequest, InvalidAttributeStructure))
       case Failure(ex)                             =>
         logger.error(s"Error while adding the attribute ${tenantAttribute}", ex)
         complete(problemOf(StatusCodes.InternalServerError, GenericError("Error while adding the attribute")))
@@ -128,6 +131,9 @@ class AttributesApiServiceImpl(
       case Failure(ex @ NotFoundAttribute(_)) =>
         logger.error(s"Error while updating the attribute $attributeId", ex)
         addTenantAttribute404(problemOf(StatusCodes.NotFound, AttributeNotFound))
+      case Failure(ex @ InvalidAttribute)     =>
+        logger.error(s"Error while adding the attribute ${tenantAttribute}: Invalid Structure", ex)
+        addTenantAttribute400(problemOf(StatusCodes.BadRequest, InvalidAttributeStructure))
       case Failure(ex)                        =>
         logger.error(s"Error while updating the attribute $attributeId", ex)
         complete(problemOf(StatusCodes.InternalServerError, GenericError("Error while adding the attribute")))
