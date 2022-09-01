@@ -347,16 +347,51 @@ components:
     TenantAttribute:
       type: object
       properties:
+        declared:
+          $ref: '#/components/schemas/DeclaredTenantAttribute'
+        certified:
+          $ref: '#/components/schemas/CertifiedTenantAttribute'
+        verified:
+          $ref: '#/components/schemas/VerifiedTenantAttribute'
+    DeclaredTenantAttribute:
+      type: object
+      properties:
         id:
           type: string
           format: uuid
-        kind:
-          type: string
-          $ref: '#/components/schemas/TenantAttributeKind'
         assignmentTimestamp:
           type: string
           format: date-time
         revocationTimestamp:
+          type: string
+          format: date-time
+      required:
+        - id
+        - kind
+        - assignmentTimestamp
+    CertifiedTenantAttribute:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        assignmentTimestamp:
+          type: string
+          format: date-time
+        revocationTimestamp:
+          type: string
+          format: date-time
+      required:
+        - id
+        - kind
+        - assignmentTimestamp
+    VerifiedTenantAttribute:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        assignmentTimestamp:
           type: string
           format: date-time
         renewal:
@@ -373,12 +408,9 @@ components:
         - id
         - kind
         - assignmentTimestamp
-    TenantAttributeKind:
-      type: string
-      enum:
-        - CERTIFIED
-        - DECLARED
-        - VERIFIED
+        - renewal
+        - verifiedBy
+        - revokedBy
     VerificationRenewal:
       type: string
       enum:

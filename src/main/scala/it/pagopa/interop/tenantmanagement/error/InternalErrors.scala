@@ -6,6 +6,7 @@ object InternalErrors {
   final case class InvalidAttribute(attribute: String, field: String)
       extends Throwable(s"Invalid field $field in $attribute attribute")
   case object InvalidFeature                              extends Throwable(s"Invalid feature")
+  case object InvalidAttribute                            extends Throwable(s"Invalid attribute")
   case object MultipleTenantsForExternalId                extends Throwable(s"Internal server error")
   final case class NotFoundAttribute(attributeId: String) extends Throwable(s"Attribute $attributeId not found")
   final case class AttributeAlreadyExists(attributeId: String)

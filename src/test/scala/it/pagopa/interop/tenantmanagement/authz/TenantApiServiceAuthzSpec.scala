@@ -44,17 +44,13 @@ class TenantApiServiceAuthzSpec extends ClusteredMUnitRouteTest {
     id = UUID.randomUUID().some,
     externalId = ExternalId("IPA", "pippo"),
     features = Nil,
-    attributes = TenantAttribute(
-      id = UUID.randomUUID,
-      kind = TenantAttributeKind.CERTIFIED,
-      assignmentTimestamp = OffsetDateTime.now()
+    attributes = TenantAttribute(certified =
+      CertifiedTenantAttribute(id = UUID.randomUUID, assignmentTimestamp = OffsetDateTime.now()).some
     ) :: Nil
   )
 
-  val fakeAttribute: TenantAttribute = TenantAttribute(
-    id = UUID.randomUUID,
-    kind = TenantAttributeKind.CERTIFIED,
-    assignmentTimestamp = OffsetDateTime.now()
+  val fakeAttribute: TenantAttribute = TenantAttribute(certified =
+    CertifiedTenantAttribute(id = UUID.randomUUID, assignmentTimestamp = OffsetDateTime.now()).some
   )
 
   test("Tenant api operation authorization spec should accept authorized roles for createTenant") {

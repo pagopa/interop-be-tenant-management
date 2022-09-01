@@ -178,7 +178,10 @@ class TenantSpec extends BaseIntegrationSpec {
     val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, mockedUUID)
     val expected             = tenant.copy(attributes = Nil, updatedAt = mockedTime.some)
 
-    createTenant(tenantSeed) >> deleteTenantAttribute[Tenant](tenant.id.toString, tenant.attributes.head.id.toString)
+    createTenant(tenantSeed) >> deleteTenantAttribute[Tenant](
+      tenant.id.toString,
+      tenant.attributes.head.certified.get.id.toString
+    )
       .map { result => assertEquals(result, expected) }
   }
 
@@ -222,7 +225,7 @@ class TenantSpec extends BaseIntegrationSpec {
 
     createTenant(tenantSeed) >> updateTenantAttribute[Tenant](
       tenant.id.toString,
-      tenant.attributes.head.id.toString,
+      tenant.attributes.head.certified.get.id.toString,
       attr
     ).map { result => assertEquals(result, expected) }
   }

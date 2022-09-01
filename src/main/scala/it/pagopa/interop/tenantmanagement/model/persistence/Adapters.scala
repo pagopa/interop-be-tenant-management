@@ -53,7 +53,7 @@ object Adapters {
   }
 
   implicit class PersistentVerificationTenantRevokerWrapper(private val p: PersistentTenantRevoker) extends AnyVal {
-    def toAPI(): PersistentTenantRevoker = PersistentTenantRevoker(
+    def toAPI(): TenantRevoker = TenantRevoker(
       id = p.id,
       verificationDate = p.verificationDate,
       expirationDate = p.expirationDate,
@@ -76,66 +76,38 @@ object Adapters {
   implicit class PersistentAttributesWrapper(private val p: PersistentTenantAttribute) extends AnyVal {
     def toAPI: TenantAttribute = p match {
       case a: PersistentCertifiedAttribute =>
-        TenantAttribute(
-          id = a.id,
-          kind = TenantAttributeKind.CERTIFIED,
-          assignmentTimestamp = a.assignmentTimestamp,
-          revocationTimestamp = a.revocationTimestamp,
-          renewal = None,
-          verifiedBy = None,
-          revokedBy = None
-        )
+        TenantAttribute(certified = CertifiedTenantAttribute(a.id, a.assignmentTimestamp, a.revocationTimestamp).some)
       case a: PersistentDeclaredAttribute  =>
-        TenantAttribute(
-          id = a.id,
-          kind = TenantAttributeKind.DECLARED,
-          assignmentTimestamp = a.assignmentTimestamp,
-          revocationTimestamp = a.revocationTimestamp,
-          renewal = None,
-          verifiedBy = None,
-          revokedBy = None
-        )
+        TenantAttribute(declared = DeclaredTenantAttribute(a.id, a.assignmentTimestamp, a.revocationTimestamp).some)
       case a: PersistentVerifiedAttribute  =>
-        TenantAttribute(
-          id = a.id,
-          kind = TenantAttributeKind.VERIFIED,
-          assignmentTimestamp = a.assignmentTimestamp,
-          revocationTimestamp = None,
-          renewal = a.renewal.toAPI().some,
-          verifiedBy = None,
-          revokedBy = None
+        TenantAttribute(verified =
+          VerifiedTenantAttribute(
+            a.id,
+            a.assignmentTimestamp,
+            a.renewal.toAPI(),
+            a.verifiedBy.map(_.toAPI()),
+            a.revokedBy.map(_.toAPI())
+          ).some
         )
     }
   }
 
   implicit class PersistentAttributesObjectWrapper(private val p: PersistentTenantAttribute.type) extends AnyVal {
-    def fromAPI(attribute: TenantAttribute): Either[Throwable, PersistentTenantAttribute] =
-      attribute.kind match {
-        case TenantAttributeKind.CERTIFIED =>
-          PersistentCertifiedAttribute(attribute.id, attribute.assignmentTimestamp, attribute.revocationTimestamp)
-            .asRight[Throwable]
-        case TenantAttributeKind.DECLARED  =>
-          PersistentDeclaredAttribute(attribute.id, attribute.assignmentTimestamp, attribute.revocationTimestamp)
-            .asRight[Throwable]
-        case TenantAttributeKind.VERIFIED  =>
-          for {
-            renewal    <- attribute.renewal
-              .toRight(InternalErrors.InvalidAttribute("verified", "renewal"))
-              .map(PersistentVerificationRenewal.fromAPI)
-            verifiedBy <- attribute.verifiedBy
-              .toRight(InternalErrors.InvalidAttribute("verified", "verifiedBy"))
-              .map(_.map(PersistentTenantVerifier.fromAPI).toList)
-            revokedBy  <- attribute.revokedBy
-              .toRight(InternalErrors.InvalidAttribute("verified", "revokedBy"))
-              .map(_.map(PersistentTenantRevoker.fromAPI).toList)
-          } yield PersistentVerifiedAttribute(
-            id = attribute.id,
-            assignmentTimestamp = attribute.assignmentTimestamp,
-            renewal = renewal,
-            verifiedBy = verifiedBy,
-            revokedBy = revokedBy
-          )
-      }
+    def fromAPI(attribute: TenantAttribute): Either[Throwable, PersistentTenantAttribute] = attribute match {
+      case TenantAttribute(Some(declared), None, None)  =>
+        PersistentDeclaredAttribute(declared.id, declared.assignmentTimestamp, declared.revocationTimestamp).asRight
+      case TenantAttribute(None, Some(certified), None) =>
+        PersistentCertifiedAttribute(certified.id, certified.assignmentTimestamp, certified.revocationTimestamp).asRight
+      case TenantAttribute(None, None, Some(verified))  =>
+        PersistentVerifiedAttribute(
+          id = verified.id,
+          assignmentTimestamp = verified.assignmentTimestamp,
+          renewal = PersistentVerificationRenewal.fromAPI(verified.renewal),
+          verifiedBy = verified.verifiedBy.toList.toList.map(PersistentTenantVerifier.fromAPI),
+          revokedBy = verified.revokedBy.toList.map(PersistentTenantRevoker.fromAPI)
+        ).asRight
+      case _                                            => InternalErrors.InvalidAttribute.asLeft
+    }
   }
 
   implicit class PersistentTenantExternalIdWrapper(private val p: PersistentExternalId) extends AnyVal {
