@@ -17,26 +17,22 @@ import it.pagopa.interop.commons.jwt.{JWTConfiguration, KID, PublicKeysHolder, S
 import it.pagopa.interop.commons.queue.QueueWriter
 import it.pagopa.interop.commons.utils.OpenapiUtils
 import it.pagopa.interop.commons.utils.TypeConversions._
-import it.pagopa.interop.commons.utils.errors.GenericComponentErrors.ValidationRequestError
 import it.pagopa.interop.commons.utils.service.UUIDSupplier
-import it.pagopa.interop.commons.utils.service.impl.UUIDSupplierImpl
-import it.pagopa.interop.tenantmanagement.api.TenantApi
-import it.pagopa.interop.tenantmanagement.api.impl.{TenantApiMarshallerImpl, TenantApiServiceImpl, problemOf}
+import it.pagopa.interop.commons.utils.service.impl.{OffsetDateTimeSupplierImpl, UUIDSupplierImpl}
+import it.pagopa.interop.tenantmanagement.api.{AttributesApi, TenantApi}
+import it.pagopa.interop.tenantmanagement.api.impl._
 import it.pagopa.interop.tenantmanagement.common.system.ApplicationConfiguration
 import it.pagopa.interop.tenantmanagement.common.system.ApplicationConfiguration.{numberOfProjectionTags, projectionTag}
 import it.pagopa.interop.tenantmanagement.model.persistence.{
   Command,
   TenantEventsSerde,
-  TenantPersistentBehavior,
-  TenantNotificationsProjection
+  TenantNotificationsProjection,
+  TenantPersistentBehavior
 }
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
-import it.pagopa.interop.commons.utils.service.impl.OffsetDateTimeSupplierImpl
-import it.pagopa.interop.tenantmanagement.api.AttributesApi
-import it.pagopa.interop.tenantmanagement.api.impl._
 
 trait Dependencies {
 
@@ -83,8 +79,8 @@ trait Dependencies {
 
   val validationExceptionToRoute: ValidationReport => Route = report => {
     val error =
-      problemOf(StatusCodes.BadRequest, ValidationRequestError(OpenapiUtils.errorFromRequestValidationReport(report)))
-    complete(error.status, error)(TenantApiMarshallerImpl.toEntityMarshallerProblem)
+      problemOf(StatusCodes.BadRequest, OpenapiUtils.errorFromRequestValidationReport(report))
+    complete(error.status, error)(entityMarshallerProblem)
   }
 
   def tenantApi(sharding: ClusterSharding, jwtReader: JWTReader)(implicit actorSystem: ActorSystem[_]) =
