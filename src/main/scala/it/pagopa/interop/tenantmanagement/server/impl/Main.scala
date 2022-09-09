@@ -1,6 +1,6 @@
 package it.pagopa.interop.tenantmanagement.server.impl
 
-import akka.actor.typed.{ActorSystem, DispatcherSelector}
+import akka.actor.typed.{ActorRef, ActorSystem}
 import akka.actor.typed.scaladsl.Behaviors
 import akka.cluster.ClusterEvent
 import akka.cluster.sharding.typed.scaladsl.ClusterSharding
@@ -12,12 +12,11 @@ import buildinfo.BuildInfo
 import cats.syntax.all._
 import com.typesafe.scalalogging.Logger
 import it.pagopa.interop.commons.logging.renderBuildInfo
-import it.pagopa.interop.tenantmanagement.server.Controller
 import it.pagopa.interop.tenantmanagement.common.system.ApplicationConfiguration
+import it.pagopa.interop.tenantmanagement.server.Controller
 
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success}
-import akka.actor.typed.ActorRef
 
 object Main extends App with Dependencies {
 
@@ -28,8 +27,8 @@ object Main extends App with Dependencies {
       implicit val actorSystem: ActorSystem[Nothing]          = context.system
       implicit val executionContext: ExecutionContextExecutor = actorSystem.executionContext
 
-      val selector: DispatcherSelector         = DispatcherSelector.fromConfig("futures-dispatcher")
-      val blockingEc: ExecutionContextExecutor = actorSystem.dispatchers.lookup(selector)
+//      val selector: DispatcherSelector = DispatcherSelector.fromConfig("futures-dispatcher")
+//      val blockingEc: ExecutionContextExecutor = actorSystem.dispatchers.lookup(selector)
 
       AkkaManagement.get(actorSystem).start()
 
@@ -49,7 +48,7 @@ object Main extends App with Dependencies {
 
       cluster.subscriptions ! Subscribe(listener, classOf[ClusterEvent.MemberEvent])
 
-      if (ApplicationConfiguration.projectionsEnabled) initProjections(blockingEc)
+      if (ApplicationConfiguration.projectionsEnabled) initProjections() // (blockingEc)
 
       logger.info(renderBuildInfo(BuildInfo))
       logger.info(s"Started cluster at ${cluster.selfMember.address}")

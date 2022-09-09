@@ -23,12 +23,11 @@ import it.pagopa.interop.tenantmanagement.api.{AttributesApi, TenantApi}
 import it.pagopa.interop.tenantmanagement.api.impl._
 import it.pagopa.interop.tenantmanagement.common.system.ApplicationConfiguration
 import it.pagopa.interop.tenantmanagement.common.system.ApplicationConfiguration.{numberOfProjectionTags, projectionTag}
-import it.pagopa.interop.tenantmanagement.model.persistence.{
-  Command,
-  TenantEventsSerde,
-  TenantNotificationsProjection,
-  TenantPersistentBehavior
+import it.pagopa.interop.tenantmanagement.model.persistence.projection.{
+  TenantCqrsProjection,
+  TenantNotificationsProjection
 }
+import it.pagopa.interop.tenantmanagement.model.persistence.{Command, TenantEventsSerde, TenantPersistentBehavior}
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
@@ -49,6 +48,13 @@ trait Dependencies {
     Entity(TenantPersistentBehavior.TypeKey)(behaviorFactory)
 
   def initProjections(
+//    blockingEc: ExecutionContextExecutor
+  )(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): Unit = {
+//    initNotificationProjection(blockingEc)
+    initCqrsProjection()
+  }
+
+  def initNotificationProjection(
     blockingEc: ExecutionContextExecutor
   )(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): Unit = {
     val queueWriter: QueueWriter =
@@ -62,6 +68,24 @@ trait Dependencies {
       name = "tenant-notification-projections",
       numberOfInstances = numberOfProjectionTags,
       behaviorFactory = (i: Int) => ProjectionBehavior(tenantNotificationsProjection.projection(projectionTag(i))),
+      stopMessage = ProjectionBehavior.Stop
+    )
+  }
+
+  def initCqrsProjection()(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): Unit = {
+    val dbConfig: DatabaseConfig[JdbcProfile] =
+      DatabaseConfig.forConfig("akka-persistence-jdbc.shared-databases.slick")
+
+    val mongoDbConfig = ApplicationConfiguration.mongoDb
+
+    val cqrsProjectionId = "tenant-cqrs-projections"
+
+    val tenantCqrsProjection = TenantCqrsProjection.projection(dbConfig, mongoDbConfig, cqrsProjectionId)
+
+    ShardedDaemonProcess(actorSystem).init[ProjectionBehavior.Command](
+      name = cqrsProjectionId,
+      numberOfInstances = numberOfProjectionTags,
+      behaviorFactory = (i: Int) => ProjectionBehavior(tenantCqrsProjection.projection(projectionTag(i))),
       stopMessage = ProjectionBehavior.Stop
     )
   }

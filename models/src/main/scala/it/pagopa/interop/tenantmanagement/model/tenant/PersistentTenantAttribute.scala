@@ -5,7 +5,7 @@ import java.util.UUID
 
 object PersistentTenantAttribute
 
-sealed trait PersistentTenantAttribute {
+sealed trait PersistentTenantAttribute extends Product {
   def id: UUID
   def assignmentTimestamp: OffsetDateTime
 }

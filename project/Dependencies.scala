@@ -89,6 +89,7 @@ object Dependencies {
     lazy val commons      = namespace %% "interop-commons-utils"         % commonsVersion
     lazy val commonsJWT   = namespace %% "interop-commons-jwt"           % commonsVersion
     lazy val commonsQueue = namespace %% "interop-commons-queue-manager" % commonsVersion
+    lazy val commonsCqrs  = namespace %% "interop-commons-cqrs"          % commonsVersion
   }
 
   object Jars {
@@ -126,6 +127,7 @@ object Dependencies {
       pagopa.commons              % Compile,
       pagopa.commonsJWT           % Compile,
       pagopa.commonsQueue         % Compile,
+      pagopa.commonsCqrs          % Compile,
       postgres.jdbc               % Compile,
       scalaprotobuf.core          % Compile,
       scalaprotobuf.core          % Protobuf,
