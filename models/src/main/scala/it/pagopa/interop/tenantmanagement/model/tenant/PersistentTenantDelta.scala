@@ -1,3 +1,9 @@
 package it.pagopa.interop.tenantmanagement.model.tenant
 
-final case class PersistentTenantDelta(id: String, selfcareId: Option[String], features: List[PersistentTenantFeature])
+import java.util.UUID
+
+final case class PersistentTenantDelta(
+  id: UUID,
+  selfcareId: Option[String],
+  features: Option[List[PersistentTenantFeature]]
+)

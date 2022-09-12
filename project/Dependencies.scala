@@ -48,6 +48,16 @@ object Dependencies {
     lazy val core      = namespace %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion
   }
 
+  private[this] object scalatest {
+    lazy val namespace = "org.scalatest"
+    lazy val core      = namespace %% "scalatest" % scalatestVersion
+  }
+
+  private[this] object scalamock {
+    lazy val namespace = "org.scalamock"
+    lazy val core      = namespace %% "scalamock" % scalaMockVersion
+  }
+
   private[this] object json4s {
     lazy val namespace = "org.json4s"
     lazy val jackson   = namespace %% "json4s-jackson" % json4sVersion
@@ -97,7 +107,7 @@ object Dependencies {
       Seq(jackson.annotations % Compile, jackson.core % Compile, jackson.databind % Compile)
     lazy val `server`: Seq[ModuleID]  = Seq(
       // For making Java 12 happy
-      "javax.annotation"          % "javax.annotation-api" % "1.3.2"  % "compile",
+      "javax.annotation"          % "javax.annotation-api"           % "1.3.2"                    % "compile",
       //
       akka.actorTyped             % Compile,
       akka.clusterBootstrap       % Compile,
@@ -124,18 +134,21 @@ object Dependencies {
       cats.core                   % Compile,
       logback.classic             % Compile,
       mustache.mustache           % Compile,
-      pagopa.commons              % Compile,
+      pagopa.commons              % "compile,it",
       pagopa.commonsJWT           % Compile,
       pagopa.commonsQueue         % Compile,
-      pagopa.commonsCqrs          % Compile,
-      postgres.jdbc               % Compile,
+      pagopa.commonsCqrs          % "compile,it",
+      postgres.jdbc               % "compile,it",
       scalaprotobuf.core          % Compile,
       scalaprotobuf.core          % Protobuf,
-      akka.httpTestkit            % Test,
-      akka.testkit                % Test,
-      "org.scalameta"            %% "munit"                % "0.7.29" % Test,
-      "org.scalameta"            %% "munit-scalacheck"     % "0.7.29" % Test,
-      "com.softwaremill.diffx"   %% "diffx-munit"          % "0.7.0"  % Test
+      akka.httpTestkit            % "test,it",
+      akka.testkit                % "test,it",
+      scalatest.core              % "test,it",
+      scalamock.core              % "test,it",
+      "org.scalameta"            %% "munit"                          % "0.7.29"                   % Test,
+      "org.scalameta"            %% "munit-scalacheck"               % "0.7.29"                   % Test,
+      "com.softwaremill.diffx"   %% "diffx-munit"                    % "0.7.0"                    % Test,
+      "com.dimafeng"             %% "testcontainers-scala-scalatest" % testcontainersScalaVersion % IntegrationTest
     )
 
     val models: Seq[ModuleID] = Seq(spray.core, cats.core, pagopa.commons, pagopa.commonsQueue).map(_ % Compile)
