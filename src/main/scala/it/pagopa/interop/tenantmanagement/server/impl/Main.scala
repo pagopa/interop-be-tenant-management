@@ -1,7 +1,7 @@
 package it.pagopa.interop.tenantmanagement.server.impl
 
-import akka.actor.typed.{ActorRef, ActorSystem}
 import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.{ActorRef, ActorSystem}
 import akka.cluster.ClusterEvent
 import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 import akka.cluster.typed.{Cluster, Subscribe}
@@ -27,9 +27,6 @@ object Main extends App with Dependencies {
       implicit val actorSystem: ActorSystem[Nothing]          = context.system
       implicit val executionContext: ExecutionContextExecutor = actorSystem.executionContext
 
-//      val selector: DispatcherSelector = DispatcherSelector.fromConfig("futures-dispatcher")
-//      val blockingEc: ExecutionContextExecutor = actorSystem.dispatchers.lookup(selector)
-
       AkkaManagement.get(actorSystem).start()
 
       val sharding: ClusterSharding = ClusterSharding(context.system)
@@ -48,7 +45,7 @@ object Main extends App with Dependencies {
 
       cluster.subscriptions ! Subscribe(listener, classOf[ClusterEvent.MemberEvent])
 
-      if (ApplicationConfiguration.projectionsEnabled) initProjections() // (blockingEc)
+      if (ApplicationConfiguration.projectionsEnabled) initProjections()
 
       logger.info(renderBuildInfo(BuildInfo))
       logger.info(s"Started cluster at ${cluster.selfMember.address}")

@@ -17,10 +17,11 @@ object JsonFormats {
         case PersistentVerificationRenewal.AUTOMATIC_RENEWAL    => JsString("AUTOMATIC_RENEWAL")
       }
     def read(json: JsValue): PersistentVerificationRenewal =
-      json.asJsObject.getFields("type") match {
-        case Seq(JsString("REVOKE_ON_EXPIRATION")) => PersistentVerificationRenewal.REVOKE_ON_EXPIRATION
-        case Seq(JsString("AUTOMATIC_RENEWAL"))    => PersistentVerificationRenewal.AUTOMATIC_RENEWAL
-        case _                                     => throw new RuntimeException
+      json match {
+        case JsString("REVOKE_ON_EXPIRATION") => PersistentVerificationRenewal.REVOKE_ON_EXPIRATION
+        case JsString("AUTOMATIC_RENEWAL")    => PersistentVerificationRenewal.AUTOMATIC_RENEWAL
+        case unrecognized                     =>
+          deserializationError(s"PersistentTenantFeature deserialization error ${unrecognized.toString}")
       }
   }
 
@@ -37,7 +38,8 @@ object JsonFormats {
     def read(json: JsValue): PersistentTenantFeature =
       json.asJsObject.getFields("type") match {
         case Seq(JsString("PersistentCertifier")) => json.convertTo[PersistentCertifier]
-        case _                                    => throw new RuntimeException
+        case unrecognized                         =>
+          deserializationError(s"PersistentTenantFeature deserialization error ${unrecognized.toString}")
       }
   }
 
@@ -62,7 +64,8 @@ object JsonFormats {
         case Seq(JsString("PersistentCertifiedAttribute")) => json.convertTo[PersistentCertifiedAttribute]
         case Seq(JsString("PersistentDeclaredAttribute"))  => json.convertTo[PersistentDeclaredAttribute]
         case Seq(JsString("PersistentVerifiedAttribute"))  => json.convertTo[PersistentVerifiedAttribute]
-        case _                                             => throw new RuntimeException
+        case unrecognized                                  =>
+          deserializationError(s"PersistentTenantAttribute deserialization error ${unrecognized.toString}")
       }
   }
 

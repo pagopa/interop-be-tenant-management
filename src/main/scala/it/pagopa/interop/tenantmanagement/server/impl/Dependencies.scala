@@ -14,24 +14,20 @@ import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier
 import it.pagopa.interop.commons.jwt.service.JWTReader
 import it.pagopa.interop.commons.jwt.service.impl.{DefaultJWTReader, getClaimsVerifier}
 import it.pagopa.interop.commons.jwt.{JWTConfiguration, KID, PublicKeysHolder, SerializedKey}
-import it.pagopa.interop.commons.queue.QueueWriter
 import it.pagopa.interop.commons.utils.OpenapiUtils
 import it.pagopa.interop.commons.utils.TypeConversions._
 import it.pagopa.interop.commons.utils.service.UUIDSupplier
 import it.pagopa.interop.commons.utils.service.impl.{OffsetDateTimeSupplierImpl, UUIDSupplierImpl}
-import it.pagopa.interop.tenantmanagement.api.{AttributesApi, TenantApi}
 import it.pagopa.interop.tenantmanagement.api.impl._
+import it.pagopa.interop.tenantmanagement.api.{AttributesApi, TenantApi}
 import it.pagopa.interop.tenantmanagement.common.system.ApplicationConfiguration
 import it.pagopa.interop.tenantmanagement.common.system.ApplicationConfiguration.{numberOfProjectionTags, projectionTag}
-import it.pagopa.interop.tenantmanagement.model.persistence.projection.{
-  TenantCqrsProjection,
-  TenantNotificationsProjection
-}
-import it.pagopa.interop.tenantmanagement.model.persistence.{Command, TenantEventsSerde, TenantPersistentBehavior}
+import it.pagopa.interop.tenantmanagement.model.persistence.projection.TenantCqrsProjection
+import it.pagopa.interop.tenantmanagement.model.persistence.{Command, TenantPersistentBehavior}
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
+import scala.concurrent.{ExecutionContext, Future}
 
 trait Dependencies {
 
@@ -47,30 +43,8 @@ trait Dependencies {
   val tenantPersistenceEntity: Entity[Command, ShardingEnvelope[Command]] =
     Entity(TenantPersistentBehavior.TypeKey)(behaviorFactory)
 
-  def initProjections(
-//    blockingEc: ExecutionContextExecutor
-  )(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): Unit = {
-//    initNotificationProjection(blockingEc)
+  def initProjections()(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): Unit =
     initCqrsProjection()
-  }
-
-  def initNotificationProjection(
-    blockingEc: ExecutionContextExecutor
-  )(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): Unit = {
-    val queueWriter: QueueWriter =
-      QueueWriter.get(ApplicationConfiguration.queueUrl)(TenantEventsSerde.tenantToJson)(blockingEc)
-
-    val dbConfig: DatabaseConfig[JdbcProfile] = DatabaseConfig.forConfig("akka-persistence-jdbc.shared-databases.slick")
-
-    val tenantNotificationsProjection = new TenantNotificationsProjection(dbConfig, queueWriter)
-
-    ShardedDaemonProcess(actorSystem).init[ProjectionBehavior.Command](
-      name = "tenant-notification-projections",
-      numberOfInstances = numberOfProjectionTags,
-      behaviorFactory = (i: Int) => ProjectionBehavior(tenantNotificationsProjection.projection(projectionTag(i))),
-      stopMessage = ProjectionBehavior.Stop
-    )
-  }
 
   def initCqrsProjection()(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): Unit = {
     val dbConfig: DatabaseConfig[JdbcProfile] =

@@ -31,7 +31,7 @@ object Adapters {
   implicit class PersistentTenantDeltaObjectWrapper(private val p: PersistentTenantDelta.type) extends AnyVal {
     def fromAPI(tenantId: String, td: TenantDelta): Either[Throwable, PersistentTenantDelta] = for {
       uuid     <- tenantId.toUUID.toEither
-      features <- td.features.traverse(_.toList.traverse(PersistentTenantFeature.fromAPI))
+      features <- td.features.toList.traverse(PersistentTenantFeature.fromAPI)
     } yield PersistentTenantDelta(id = uuid, selfcareId = td.selfcareId, features = features)
   }
 
@@ -146,7 +146,7 @@ object Adapters {
     )
 
     def update(ptd: PersistentTenantDelta): PersistentTenant =
-      p.copy(selfcareId = ptd.selfcareId, features = ptd.features.getOrElse(p.features))
+      p.copy(selfcareId = ptd.selfcareId, features = ptd.features)
 
     def getAttribute(id: UUID): Option[PersistentTenantAttribute] = p.attributes.find(_.id == id)
     def addAttribute(attr: PersistentTenantAttribute, time: OffsetDateTime): PersistentTenant = {

@@ -57,7 +57,7 @@ class TenantSpec extends BaseIntegrationSpec {
     implicit val s: ActorSystem[_]    = system
     implicit val ec: ExecutionContext = system.executionContext
 
-    val tenantDelta: TenantDelta = TenantDelta(None, None)
+    val tenantDelta: TenantDelta = TenantDelta(None, List.empty)
 
     updateTenant[Problem](UUID.randomUUID(), tenantDelta).map { result =>
       assertEquals(result.status, 404)
@@ -72,7 +72,7 @@ class TenantSpec extends BaseIntegrationSpec {
 
     val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, mockedUUID)
 
-    val tenantDelta: TenantDelta = TenantDelta(None, Some(Nil))
+    val tenantDelta: TenantDelta = TenantDelta(None, List.empty)
 
     createTenant(tenantSeed) >> updateTenant[Tenant](tenant.id, tenantDelta).map { result =>
       assertEquals(result, tenant.copy(selfcareId = None, features = Nil))
