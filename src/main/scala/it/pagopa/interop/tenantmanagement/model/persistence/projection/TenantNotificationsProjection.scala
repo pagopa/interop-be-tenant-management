@@ -1,4 +1,4 @@
-package it.pagopa.interop.tenantmanagement.model.persistence
+package it.pagopa.interop.tenantmanagement.model.persistence.projection
 
 import akka.Done
 import akka.actor.typed.ActorSystem
@@ -13,10 +13,10 @@ import cats.syntax.all._
 import com.typesafe.scalalogging.Logger
 import it.pagopa.interop.commons.queue.QueueWriter
 import it.pagopa.interop.commons.queue.message.{Message, ProjectableEvent}
+import it.pagopa.interop.tenantmanagement.model.persistence.{Event, TenantEventsSerde}
 import slick.basic.DatabaseConfig
 import slick.dbio._
 import slick.jdbc.JdbcProfile
-
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}

@@ -1,22 +1,19 @@
 package it.pagopa.interop.tenantmanagement.authz
 
-import cats.implicits._
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.cluster.sharding.typed.scaladsl.Entity
+import cats.implicits._
+import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
 import it.pagopa.interop.tenantmanagement.api._
-import it.pagopa.interop.tenantmanagement.api.impl._
 import it.pagopa.interop.tenantmanagement.api.impl.AttributesApiMarshallerImpl._
+import it.pagopa.interop.tenantmanagement.api.impl.{AttributesApiServiceImpl, _}
+import it.pagopa.interop.tenantmanagement.model._
 import it.pagopa.interop.tenantmanagement.model.persistence.Command
-import it.pagopa.interop.tenantmanagement.model.{TenantSeed}
 import it.pagopa.interop.tenantmanagement.server.impl.Main.tenantPersistenceEntity
 import it.pagopa.interop.tenantmanagement.utils.ClusteredMUnitRouteTest
 
-import java.util.UUID
-import it.pagopa.interop.tenantmanagement.model.ExternalId
 import java.time.OffsetDateTime
-import it.pagopa.interop.tenantmanagement.model._
-import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
-import it.pagopa.interop.tenantmanagement.api.impl.AttributesApiServiceImpl
+import java.util.UUID
 
 class TenantApiServiceAuthzSpec extends ClusteredMUnitRouteTest {
   override val testPersistentEntity: Entity[Command, ShardingEnvelope[Command]] = tenantPersistenceEntity
@@ -71,7 +68,7 @@ class TenantApiServiceAuthzSpec extends ClusteredMUnitRouteTest {
   test("Tenant api operation authorization spec should accept authorized roles for updateTenant") {
     validateAuthorization(
       "updateTenant",
-      { implicit c: Seq[(String, String)] => tenantService.updateTenant("tenantId", TenantDelta(None, Nil)) }
+      { implicit c: Seq[(String, String)] => tenantService.updateTenant("tenantId", TenantDelta(None, List.empty)) }
     )
   }
 

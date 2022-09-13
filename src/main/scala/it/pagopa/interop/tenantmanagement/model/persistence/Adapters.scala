@@ -6,6 +6,7 @@ import it.pagopa.interop.tenantmanagement.model._
 import it.pagopa.interop.tenantmanagement.error.InternalErrors
 import java.util.UUID
 import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
+import it.pagopa.interop.commons.utils.TypeConversions.StringOps
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentVerificationRenewal.AUTOMATIC_RENEWAL
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentVerificationRenewal.REVOKE_ON_EXPIRATION
 import java.time.OffsetDateTime
@@ -29,8 +30,9 @@ object Adapters {
 
   implicit class PersistentTenantDeltaObjectWrapper(private val p: PersistentTenantDelta.type) extends AnyVal {
     def fromAPI(tenantId: String, td: TenantDelta): Either[Throwable, PersistentTenantDelta] = for {
+      uuid     <- tenantId.toUUID.toEither
       features <- td.features.toList.traverse(PersistentTenantFeature.fromAPI)
-    } yield PersistentTenantDelta(id = tenantId, selfcareId = td.selfcareId, features = features)
+    } yield PersistentTenantDelta(id = uuid, selfcareId = td.selfcareId, features = features)
   }
 
   implicit class PersistentVerificationTenantVerifierWrapper(private val p: PersistentTenantVerifier) extends AnyVal {

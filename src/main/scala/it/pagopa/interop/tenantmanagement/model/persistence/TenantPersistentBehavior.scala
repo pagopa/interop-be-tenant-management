@@ -103,7 +103,7 @@ object TenantPersistentBehavior {
       emptyState = State.empty,
       commandHandler = commandHandler(shard, context),
       eventHandler = eventHandler
-    ).withRetention(RetentionCriteria.snapshotEvery(numberOfEvents = numberOfEvents, keepNSnapshots = 1))
+    ).withRetention(RetentionCriteria.snapshotEvery(numberOfEvents = numberOfEvents, keepNSnapshots = 10))
       .withTagger(_ => Set(persistenceTag))
       .onPersistFailure(SupervisorStrategy.restartWithBackoff(200 millis, 5 seconds, 0.1))
   }
