@@ -6,7 +6,6 @@ import it.pagopa.interop.commons.cqrs.model.MongoDbConfig
 object ApplicationConfiguration {
   val config: Config = ConfigFactory.load()
 
-  lazy val queueUrl: String    = config.getString("tenant-management.persistence-events-queue-url")
   lazy val serverPort: Int     = config.getInt("tenant-management.port")
   val jwtAudience: Set[String] = config.getString("tenant-management.jwt.audience").split(",").toSet.filter(_.nonEmpty)
 
