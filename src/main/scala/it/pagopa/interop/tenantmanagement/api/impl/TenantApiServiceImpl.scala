@@ -50,8 +50,10 @@ class TenantApiServiceImpl(
   private def commander(id: String): EntityRef[Command] =
     sharding.entityRefFor(TenantPersistentBehavior.TypeKey, getShard(id, settings.numberOfShards))
 
-  private def commanders: List[EntityRef[Command]] =
-    (0 until settings.numberOfShards).map(_.toString).toList.map(commander)
+  private def commanders: List[EntityRef[Command]] = (0 until settings.numberOfShards)
+    .map(_.toString)
+    .toList
+    .map(sharding.entityRefFor(TenantPersistentBehavior.TypeKey, _))
 
   override def createTenant(tenantSeed: TenantSeed)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
