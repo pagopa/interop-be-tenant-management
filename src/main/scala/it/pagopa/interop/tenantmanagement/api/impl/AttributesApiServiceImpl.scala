@@ -4,6 +4,7 @@ import it.pagopa.interop.tenantmanagement.api.AttributesApiService
 import it.pagopa.interop.tenantmanagement.model.{Problem, Tenant}
 import it.pagopa.interop.tenantmanagement.model.persistence.Command
 
+import cats.implicits._
 import akka.actor.typed.ActorSystem
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity, EntityRef}
 import akka.cluster.sharding.typed.{ClusterShardingSettings, ShardingEnvelope}
@@ -116,7 +117,10 @@ class AttributesApiServiceImpl(
   ): Route = authorize(ADMIN_ROLE, M2M_ROLE) {
     val result: Future[PersistentTenant] = for {
       attrId        <- attributeId.toFutureUUID
-      attribute     <- PersistentTenantAttribute.fromAPI(tenantAttribute).toFuture
+      attribute     <- PersistentTenantAttribute
+        .fromAPI(tenantAttribute)
+        .ensure(InvalidAttribute)(a => a.id.toString == attributeId)
+        .toFuture
       actorResponse <- commander(tenantId).askWithStatus(ref =>
         UpdateAttribute(tenantId, attrId, attribute, offsetDateTimeSupplier.get, ref)
       )

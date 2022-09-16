@@ -192,7 +192,7 @@ class TenantSpec extends BaseIntegrationSpec {
 
     val attr: TenantAttribute = attribute(mockedTime, mockedUUID)
 
-    updateTenantAttribute[Problem]("fakeTenant", UUID.randomUUID.toString, attr).map { result =>
+    updateTenantAttribute[Problem]("fakeTenant", attr.certified.map(_.id.toString).get, attr).map { result =>
       assertEquals(result.status, 404)
       assertEquals(result.errors.map(_.code), Seq("018-0004"))
     }
@@ -204,9 +204,13 @@ class TenantSpec extends BaseIntegrationSpec {
     implicit val ec: ExecutionContext    = system.executionContext
 
     val (tenant, tenantSeed)  = randomTenantAndSeed(mockedTime, mockedUUID)
-    val attr: TenantAttribute = attribute(mockedTime, mockedUUID)
+    val attrId                = UUID.randomUUID()
+    val attr: TenantAttribute = {
+      val attr = attribute(mockedTime, mockedUUID)
+      attr.copy(certified = attr.certified.map(_.copy(id = attrId)))
+    }
 
-    createTenant(tenantSeed) >> updateTenantAttribute[Problem](tenant.id.toString, UUID.randomUUID.toString, attr)
+    createTenant(tenantSeed) >> updateTenantAttribute[Problem](tenant.id.toString, attrId.toString, attr)
       .map { result =>
         assertEquals(result.status, 404)
         assertEquals(result.errors.map(_.code), Seq("018-0007"))

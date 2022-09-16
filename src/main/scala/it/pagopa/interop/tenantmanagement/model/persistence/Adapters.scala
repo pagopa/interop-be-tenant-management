@@ -149,18 +149,14 @@ object Adapters {
       p.copy(selfcareId = ptd.selfcareId, features = ptd.features)
 
     def getAttribute(id: UUID): Option[PersistentTenantAttribute] = p.attributes.find(_.id == id)
-    def addAttribute(attr: PersistentTenantAttribute, time: OffsetDateTime): PersistentTenant = {
-      val attribute: PersistentTenantAttribute = attr match {
-        case x: PersistentCertifiedAttribute => x.copy(assignmentTimestamp = time)
-        case x: PersistentDeclaredAttribute  => x.copy(assignmentTimestamp = time)
-        case x: PersistentVerifiedAttribute  => x.copy(assignmentTimestamp = time)
-      }
-      p.copy(attributes = attribute :: p.attributes, updatedAt = time.some)
-    }
+
+    def addAttribute(attr: PersistentTenantAttribute, time: OffsetDateTime): PersistentTenant =
+      p.copy(attributes = attr :: p.attributes, updatedAt = time.some)
 
     def updateAttribute(attr: PersistentTenantAttribute, time: OffsetDateTime): PersistentTenant =
-      p.copy(attributes = attr :: p.attributes, updatedAt = time.some)
-    def deleteAttribute(id: UUID, time: OffsetDateTime): PersistentTenant                        =
+      deleteAttribute(attr.id, time).addAttribute(attr, time)
+
+    def deleteAttribute(id: UUID, time: OffsetDateTime): PersistentTenant =
       p.copy(attributes = p.attributes.filterNot(_.id == id), updatedAt = time.some)
   }
 
