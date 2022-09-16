@@ -58,9 +58,10 @@ object TenantPersistentBehavior {
 
       case UpdateAttribute(tenantId, attributeId, attribute, dateTime, replyTo) =>
         val result: Either[Throwable, PersistentTenant] = for {
-          maybeTenant <- state.tenants.get(tenantId).toRight(NotFoundTenant(tenantId))
-          _           <- maybeTenant.getAttribute(attributeId).toRight(NotFoundAttribute(attribute.id.toString))
-        } yield maybeTenant.deleteAttribute(attributeId, dateTime).addAttribute(attribute, dateTime)
+          tenant <- state.tenants.get(tenantId).toRight(NotFoundTenant(tenantId))
+          _      <- tenant.getAttribute(attributeId).toRight(NotFoundAttribute(attribute.id.toString))
+        } yield tenant.updateAttribute(attribute, dateTime)
+
         result.fold(fail(_)(replyTo), t => persistAndReply(t, TenantUpdated)(replyTo))
 
       case DeleteAttribute(tenantId, attributeId, dateTime, replyTo) =>
