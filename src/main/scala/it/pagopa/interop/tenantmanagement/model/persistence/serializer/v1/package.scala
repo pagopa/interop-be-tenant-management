@@ -1,28 +1,34 @@
 package it.pagopa.interop.tenantmanagement.model.persistence.serializer
 
-import cats.implicits.toTraverseOps
+import cats.implicits._
 import it.pagopa.interop.tenantmanagement.model.persistence._
 import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.events._
 import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.protobufUtils.{
   toPersistentTenant,
   toProtobufTenant
 }
-import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.state.{StateV1, TenantsV1}
+import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.state.{StateV1, TenantsV1, TenantMappingV1}
+import java.util.UUID
+import scala.util.Try
 
 package object v1 {
 
   implicit def stateV1PersistEventDeserializer: PersistEventDeserializer[StateV1, State] = state =>
     for {
-      tenants <- state.tenants.toList
+      tenants          <- state.tenants.toList
         .traverse(entry => toPersistentTenant(entry.value).map(tenant => (entry.key, tenant)))
-    } yield State(tenants.toMap)
+      selfcareMappings <- state.selcareMappings.traverse(tm =>
+        Try(UUID.fromString(tm.tenantId)).toEither.map((tm.selfcareId, _))
+      )
+    } yield State(tenants.toMap, selfcareMappings.toMap)
 
   implicit def stateV1PersistEventSerializer: PersistEventSerializer[State, StateV1] = state =>
     for {
       tenantsV1 <- state.tenants.toList.traverse { case (key, tenant) =>
-        toProtobufTenant(tenant).map(value => TenantsV1(key, value))
+        toProtobufTenant(tenant).map(value => TenantsV1(key.toString(), value))
       }
-    } yield StateV1(tenantsV1)
+      tenantMappinsV1 = state.selfcareMappings.toList.map { case (k, v) => TenantMappingV1(k, v.toString()) }
+    } yield StateV1(tenantsV1, tenantMappinsV1)
 
   implicit def tenantCreatedV1PersistEventDeserializer: PersistEventDeserializer[TenantCreatedV1, TenantCreated] =
     event => toPersistentTenant(event.tenant).map(TenantCreated)

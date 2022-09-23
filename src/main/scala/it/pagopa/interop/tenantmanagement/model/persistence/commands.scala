@@ -5,6 +5,7 @@ import akka.pattern.StatusReply
 import it.pagopa.interop.tenantmanagement.model.tenant._
 import java.util.UUID
 import java.time.OffsetDateTime
+import akka.Done
 
 sealed trait Command
 
@@ -40,4 +41,13 @@ final case class DeleteAttribute(
   attributeId: UUID,
   dateTime: OffsetDateTime,
   replyTo: ActorRef[StatusReply[PersistentTenant]]
+) extends Command
+
+final case class GetTenantIdBySelfcareId(selfcareId: String, replyTo: ActorRef[StatusReply[PersistentTenant]])
+    extends Command
+
+final case class AddSelfcareIdTenantMapping(
+  selfcareId: String,
+  tenantId: UUID,
+  replyTo: ActorRef[StatusReply[Done.type]]
 ) extends Command

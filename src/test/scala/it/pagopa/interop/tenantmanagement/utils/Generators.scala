@@ -9,6 +9,7 @@ import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.tenant
 import cats.implicits._
 import org.scalacheck.Gen
 import java.time.{OffsetDateTime, ZoneOffset}
+import java.util.UUID
 
 object Generators {
 
@@ -125,14 +126,28 @@ object Generators {
     TenantV1(id.toString(), selfcareId, externalIdV1, featuresV1, tenantAttributesV1, createdAtV1, updatedAtV1)
   )
 
-  val stateGen: Gen[(State, StateV1)] = listOf(tenantGen).map(_.separate).map { case (ps, psv1) =>
-    val state   = State(ps.map(p => p.id.toString -> p).toMap)
-    val stateV1 = StateV1(psv1.map(pV1 => TenantsV1(pV1.id, pV1)))
-    (state, stateV1)
+  val tenantsGen: Gen[(Map[String, PersistentTenant], List[TenantsV1])] = listOf(tenantGen).map(_.separate).map {
+    case (pt, tv1) => (pt.map(t => (t.id.toString() -> t)).toMap, tv1.map(t1 => TenantsV1(t1.id, t1)))
   }
 
+  val mappingsGen: Gen[(Map[String, UUID], List[TenantMappingV1])] = {
+    val mappings: Gen[(String, UUID)] = for {
+      selfcareId <- stringGen
+      tenantId   <- Gen.uuid
+    } yield (selfcareId, tenantId)
+
+    for {
+      entries <- listOf(mappings)
+    } yield (entries.toMap, entries.map { case (k, v) => TenantMappingV1(k, v.toString()) })
+  }
+
+  val stateGen: Gen[(State, StateV1)] = for {
+    (tenants, tenantsV1)                 <- tenantsGen
+    (selcareMappings, selcareMappingsV1) <- mappingsGen
+  } yield (State(tenants, selcareMappings), StateV1(tenantsV1, selcareMappingsV1))
+
   implicit class PimpedStateV1(val stateV1: StateV1) extends AnyVal {
-    def sorted: StateV1 = stateV1.copy(stateV1.tenants.sortBy(_.key))
+    def sorted: StateV1 = stateV1.copy(stateV1.tenants.sortBy(_.key), stateV1.selcareMappings.sortBy(_.selfcareId))
   }
 
   val tenantCreatedGen: Gen[(TenantCreated, TenantCreatedV1)] = tenantGen.map { case (a, b) =>

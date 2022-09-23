@@ -11,4 +11,7 @@ object InternalErrors {
   final case class NotFoundAttribute(attributeId: String) extends Throwable(s"Attribute $attributeId not found")
   final case class AttributeAlreadyExists(attributeId: String)
       extends Throwable(s"Attribute $attributeId already exists")
+  final case class NotFoundTenantBySelfcareId(selfcareId: String)
+      extends Throwable(s"Tenant with selfcareId $selfcareId not found")
+
 }

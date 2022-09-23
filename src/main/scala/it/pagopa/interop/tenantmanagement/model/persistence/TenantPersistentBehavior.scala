@@ -15,6 +15,7 @@ import cats.implicits._
 import java.time.temporal.ChronoUnit
 import scala.concurrent.duration.{DurationInt, DurationLong}
 import scala.language.postfixOps
+import akka.Done
 
 object TenantPersistentBehavior {
 
@@ -71,6 +72,15 @@ object TenantPersistentBehavior {
         } yield maybeTenant.deleteAttribute(attributeId, dateTime)
         result.fold(fail(_)(replyTo), t => persistAndReply(t, TenantUpdated)(replyTo))
 
+      case AddSelfcareIdTenantMapping(selfcareId, tenantId, replyTo) =>
+        Effect.persist(SelfCareMappingCreated(selfcareId, tenantId)).thenReply(replyTo)(_ => success(Done))
+
+      case GetTenantIdBySelfcareId(selfcareId, replyTo) =>
+        val maybeTenant: Option[PersistentTenant] = state.getTenantBySelfcareId(selfcareId)
+        val reply: StatusReply[PersistentTenant]  =
+          maybeTenant.fold(error[PersistentTenant](NotFoundTenantBySelfcareId(selfcareId)))(success)
+        Effect.reply(replyTo)(reply)
+
       case Idle =>
         context.log.debug(s"Passivate shard: ${shard.path.name}")
         Effect.reply(shard)(ClusterSharding.Passivate(context.self))
@@ -86,8 +96,9 @@ object TenantPersistentBehavior {
 
   private val eventHandler: (State, Event) => State = (state, event) =>
     event match {
-      case TenantCreated(tenant) => state.addTenant(tenant)
-      case TenantUpdated(tenant) => state.addTenant(tenant)
+      case TenantCreated(tenant)                        => state.addTenant(tenant)
+      case TenantUpdated(tenant)                        => state.addTenant(tenant)
+      case SelfCareMappingCreated(selfcareId, tenantId) => state.addSelfcareMapping(selfcareId, tenantId)
     }
 
   val TypeKey: EntityTypeKey[Command] = EntityTypeKey[Command]("interop-be-tenant-management-persistence")

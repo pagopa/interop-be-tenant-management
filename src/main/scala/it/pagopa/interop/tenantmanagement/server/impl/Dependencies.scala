@@ -21,13 +21,13 @@ import it.pagopa.interop.commons.utils.service.impl.{OffsetDateTimeSupplierImpl,
 import it.pagopa.interop.tenantmanagement.api.impl._
 import it.pagopa.interop.tenantmanagement.api.{AttributesApi, TenantApi}
 import it.pagopa.interop.tenantmanagement.common.system.ApplicationConfiguration
-import it.pagopa.interop.tenantmanagement.common.system.ApplicationConfiguration.{numberOfProjectionTags, projectionTag}
-import it.pagopa.interop.tenantmanagement.model.persistence.projection.TenantCqrsProjection
-import it.pagopa.interop.tenantmanagement.model.persistence.{Command, TenantPersistentBehavior}
+import it.pagopa.interop.tenantmanagement.model.persistence.projection._
+import it.pagopa.interop.tenantmanagement.model.persistence._
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.{ExecutionContext, Future}
+import it.pagopa.interop.commons.cqrs.model.MongoDbConfig
 
 trait Dependencies {
 
@@ -37,29 +37,27 @@ trait Dependencies {
     TenantPersistentBehavior(
       entityContext.shard,
       PersistenceId(entityContext.entityTypeKey.name, entityContext.entityId),
-      projectionTag(math.abs(entityContext.entityId.hashCode % numberOfProjectionTags))
+      ApplicationConfiguration.projectionTag(
+        math.abs(entityContext.entityId.hashCode % ApplicationConfiguration.numberOfProjectionTags)
+      )
     )
 
   val tenantPersistenceEntity: Entity[Command, ShardingEnvelope[Command]] =
     Entity(TenantPersistentBehavior.TypeKey)(behaviorFactory)
 
-  def initProjections()(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): Unit =
-    initCqrsProjection()
+  def initProjections()(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): Unit = initCqrsProjection()
 
   def initCqrsProjection()(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): Unit = {
-    val dbConfig: DatabaseConfig[JdbcProfile] =
-      DatabaseConfig.forConfig("akka-persistence-jdbc.shared-databases.slick")
-
-    val mongoDbConfig = ApplicationConfiguration.mongoDb
-
-    val cqrsProjectionId = "tenant-cqrs-projections"
-
+    val dbConfig: DatabaseConfig[JdbcProfile] = DatabaseConfig.forConfig("akka-persistence-jdbc.shared-databases.slick")
+    val mongoDbConfig: MongoDbConfig          = ApplicationConfiguration.mongoDb
+    val cqrsProjectionId: String              = "tenant-cqrs-projections"
     val tenantCqrsProjection = TenantCqrsProjection.projection(dbConfig, mongoDbConfig, cqrsProjectionId)
 
     ShardedDaemonProcess(actorSystem).init[ProjectionBehavior.Command](
       name = cqrsProjectionId,
-      numberOfInstances = numberOfProjectionTags,
-      behaviorFactory = (i: Int) => ProjectionBehavior(tenantCqrsProjection.projection(projectionTag(i))),
+      numberOfInstances = ApplicationConfiguration.numberOfProjectionTags,
+      behaviorFactory =
+        (i: Int) => ProjectionBehavior(tenantCqrsProjection.projection(ApplicationConfiguration.projectionTag(i))),
       stopMessage = ProjectionBehavior.Stop
     )
   }
