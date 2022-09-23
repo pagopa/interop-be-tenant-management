@@ -11,6 +11,7 @@ import com.typesafe.scalalogging.Logger
 import it.pagopa.interop.commons.jwt._
 import it.pagopa.interop.commons.logging._
 import it.pagopa.interop.commons.utils.AkkaUtils.getShard
+import it.pagopa.interop.commons.utils.TypeConversions._
 import it.pagopa.interop.commons.utils.errors.GenericComponentErrors._
 import it.pagopa.interop.tenantmanagement.api.TenantApiService
 import it.pagopa.interop.tenantmanagement.error.InternalErrors._
@@ -28,6 +29,7 @@ import akka.util.Timeout
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContextExecutor
 import cats.implicits._
+import java.util.UUID
 
 class TenantApiServiceImpl(
   system: ActorSystem[_],
@@ -47,13 +49,22 @@ class TenantApiServiceImpl(
   )(implicit contexts: Seq[(String, String)], toEntityMarshallerProblem: ToEntityMarshaller[Problem]): Route =
     authorizeInterop(hasPermissions(roles: _*), problemOf(StatusCodes.Forbidden, OperationForbidden))(route)
 
-  private def commander(id: String): EntityRef[Command] =
-    sharding.entityRefFor(TenantPersistentBehavior.TypeKey, getShard(id, settings.numberOfShards))
+  private def commanderForTenantId(tenantId: String): EntityRef[Command] =
+    sharding.entityRefFor(TenantPersistentBehavior.TypeKey, getShard(tenantId, settings.numberOfShards))
+
+  private def commanderForSelfcareId(tenantId: String): EntityRef[Command] =
+    sharding.entityRefFor(TenantPersistentBehavior.TypeKey, getShard(tenantId, settings.numberOfShards))
 
   private def commanders: List[EntityRef[Command]] = (0 until settings.numberOfShards)
     .map(_.toString)
     .toList
     .map(sharding.entityRefFor(TenantPersistentBehavior.TypeKey, _))
+
+  private def addMapping(selfcareId: String, tenantUUID: UUID): Future[Unit] =
+    commanderForSelfcareId(selfcareId).askWithStatus(AddSelfcareIdTenantMapping(selfcareId, tenantUUID, _))
+
+  private def getTenantBySelfacareId(selfcareId: String): Future[Option[PersistentTenant]] =
+    commanderForSelfcareId(selfcareId).askWithStatus(GetTenantBySelfcareId(selfcareId, _))
 
   override def createTenant(tenantSeed: TenantSeed)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
@@ -63,7 +74,8 @@ class TenantApiServiceImpl(
 
     val result: Future[PersistentTenant] = for {
       tenant        <- PersistentTenant.fromAPI(tenantSeed, offsetDateTimeSupplier).toFuture
-      actorResponse <- commander(tenant.id.toString).askWithStatus(ref => CreateTenant(tenant, ref))
+      actorResponse <- commanderForTenantId(tenant.id.toString).askWithStatus(CreateTenant(tenant, _))
+      _             <- tenant.selfcareId.fold(Future.unit)(addMapping(_, tenant.id))
     } yield actorResponse
 
     onComplete(result) {
@@ -87,7 +99,7 @@ class TenantApiServiceImpl(
     contexts: Seq[(String, String)]
   ): Route = authorize(ADMIN_ROLE, API_ROLE, M2M_ROLE, SECURITY_ROLE) {
 
-    val result: Future[PersistentTenant] = commander(tenantId).askWithStatus(ref => GetTenant(tenantId, ref))
+    val result: Future[PersistentTenant] = commanderForTenantId(tenantId).askWithStatus(ref => GetTenant(tenantId, ref))
 
     onComplete(result) {
       case Success(tenant)             => getTenant200(tenant.toAPI)
@@ -123,8 +135,8 @@ class TenantApiServiceImpl(
   def findFirstTenantWithExternalId(
     externalId: PersistentExternalId
   )(implicit contexts: Seq[(String, String)]): Future[Option[PersistentTenant]] = {
-    def askAction(commander: EntityRef[Command]) =
-      commander.askWithStatus[List[PersistentTenant]](r => GetTenantsWithExternalId(externalId, r))
+    def askAction(commanderForTenantId: EntityRef[Command]) =
+      commanderForTenantId.askWithStatus[List[PersistentTenant]](r => GetTenantsWithExternalId(externalId, r))
 
     Future.traverse(commanders)(askAction).map(_.flatten).flatMap {
       case Nil           => Future.successful(None)
@@ -142,8 +154,10 @@ class TenantApiServiceImpl(
   ): Route = authorize(ADMIN_ROLE, API_ROLE, M2M_ROLE, SECURITY_ROLE) {
 
     val result: Future[PersistentTenant] = for {
-      delta  <- PersistentTenantDelta.fromAPI(tenantId, tenantDelta).toFuture
-      result <- commander(tenantId).askWithStatus(r => UpdateTenant(delta, r))
+      tenantUUID <- tenantId.toFutureUUID
+      delta      <- PersistentTenantDelta.fromAPI(tenantId, tenantDelta).toFuture
+      result     <- commanderForTenantId(tenantId).askWithStatus(r => UpdateTenant(delta, r))
+      _          <- delta.selfcareId.fold(Future.unit)(addMapping(_, tenantUUID))
     } yield result
 
     onComplete(result) {
@@ -153,6 +167,24 @@ class TenantApiServiceImpl(
         getTenant404(problemOf(StatusCodes.NotFound, GetTenantNotFound))
       case Failure(ex)                     =>
         logger.error(s"Error while updating tenant $tenantId", ex)
+        complete(problemOf(StatusCodes.InternalServerError, GenericError(ex.getMessage)))
+    }
+  }
+
+  override def getTenantBySelfcareId(selfcareId: String)(implicit
+    toEntityMarshallerProblem: ToEntityMarshaller[Problem],
+    toEntityMarshallerTenant: ToEntityMarshaller[Tenant],
+    contexts: Seq[(String, String)]
+  ): Route = authorize(INTERNAL_ROLE) {
+    val result: Future[Option[PersistentTenant]] = getTenantBySelfacareId(selfcareId)
+
+    onComplete(result) {
+      case Success(Some(tenant)) => getTenantBySelfcareId200(tenant.toAPI)
+      case Success(None)         =>
+        logger.info(s"Tenant with selfcareId $selfcareId not found")
+        getTenant404(problemOf(StatusCodes.NotFound, GetTenantNotFound))
+      case Failure(ex)           =>
+        logger.error(s"Error while getting the tenant with selfcareId $selfcareId", ex)
         complete(problemOf(StatusCodes.InternalServerError, GenericError(ex.getMessage)))
     }
   }

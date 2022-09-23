@@ -15,7 +15,6 @@ import cats.implicits._
 import java.time.temporal.ChronoUnit
 import scala.concurrent.duration.{DurationInt, DurationLong}
 import scala.language.postfixOps
-import akka.Done
 
 object TenantPersistentBehavior {
 
@@ -73,13 +72,10 @@ object TenantPersistentBehavior {
         result.fold(fail(_)(replyTo), t => persistAndReply(t, TenantUpdated)(replyTo))
 
       case AddSelfcareIdTenantMapping(selfcareId, tenantId, replyTo) =>
-        Effect.persist(SelfCareMappingCreated(selfcareId, tenantId)).thenReply(replyTo)(_ => success(Done))
+        Effect.persist(SelfCareMappingCreated(selfcareId, tenantId)).thenReply(replyTo)(_ => success(()))
 
-      case GetTenantIdBySelfcareId(selfcareId, replyTo) =>
-        val maybeTenant: Option[PersistentTenant] = state.getTenantBySelfcareId(selfcareId)
-        val reply: StatusReply[PersistentTenant]  =
-          maybeTenant.fold(error[PersistentTenant](NotFoundTenantBySelfcareId(selfcareId)))(success)
-        Effect.reply(replyTo)(reply)
+      case GetTenantBySelfcareId(selfcareId, replyTo) =>
+        Effect.reply(replyTo)(success(state.getTenantBySelfcareId(selfcareId)))
 
       case Idle =>
         context.log.debug(s"Passivate shard: ${shard.path.name}")
