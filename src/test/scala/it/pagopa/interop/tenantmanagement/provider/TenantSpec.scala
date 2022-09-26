@@ -190,7 +190,7 @@ class TenantSpec extends BaseIntegrationSpec {
     implicit val s: ActorSystem[_]    = system
     implicit val ec: ExecutionContext = system.executionContext
 
-    deleteTenantAttribute[Problem]("fakeTenant", UUID.randomUUID.toString).map { result =>
+    deleteTenantAttribute[Problem](UUID.randomUUID.toString, UUID.randomUUID.toString).map { result =>
       assertEquals(result.status, 404)
       assertEquals(result.errors.map(_.code), Seq("018-0004"))
     }
@@ -232,9 +232,10 @@ class TenantSpec extends BaseIntegrationSpec {
 
     val attr: TenantAttribute = attribute(mockedTime, mockedUUID)
 
-    updateTenantAttribute[Problem]("fakeTenant", attr.certified.map(_.id.toString).get, attr).map { result =>
-      assertEquals(result.status, 404)
-      assertEquals(result.errors.map(_.code), Seq("018-0004"))
+    updateTenantAttribute[Problem](UUID.randomUUID().toString, attr.certified.map(_.id.toString).get, attr).map {
+      result =>
+        assertEquals(result.status, 404)
+        assertEquals(result.errors.map(_.code), Seq("018-0004"))
     }
   }
 

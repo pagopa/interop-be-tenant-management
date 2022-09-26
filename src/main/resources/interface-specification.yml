@@ -176,6 +176,7 @@ paths:
         required: true
         schema:
           type: string
+          format: uuid
       - name: attributeId
         in: path
         required: true

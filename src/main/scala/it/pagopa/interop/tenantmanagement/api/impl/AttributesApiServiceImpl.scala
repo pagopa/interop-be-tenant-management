@@ -69,10 +69,10 @@ class AttributesApiServiceImpl(
         getTenantAttribute200(attribute.toAPI)
       case Failure(ex: NotFoundTenant)     =>
         logger.error(s"Error while retrieving attribute $attributeId for tenant $tenantId", ex)
-        addTenantAttribute404(problemOf(StatusCodes.NotFound, GetTenantNotFound))
+        getTenantAttribute404(problemOf(StatusCodes.NotFound, GetTenantNotFound))
       case Failure(ex @ AttributeNotFound) =>
         logger.error(s"Error while retrieving attribute $attributeId for tenant $tenantId", ex)
-        addTenantAttribute404(problemOf(StatusCodes.NotFound, AttributeNotFound))
+        getTenantAttribute404(problemOf(StatusCodes.NotFound, AttributeNotFound))
       case Failure(ex)                     =>
         logger.error(s"Error while retrieving attribute $attributeId for tenant $tenantId", ex)
         complete(problemOf(StatusCodes.InternalServerError, GenericError("Error while retrieving the attribute")))
