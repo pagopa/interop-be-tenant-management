@@ -63,7 +63,7 @@ class TenantApiServiceImpl(
   private def addMapping(selfcareId: String, tenantUUID: UUID): Future[Unit] =
     commanderForSelfcareId(selfcareId).askWithStatus(AddSelfcareIdTenantMapping(selfcareId, tenantUUID, _))
 
-  private def getTenantBySelfacareId(selfcareId: String): Future[Option[PersistentTenant]] =
+  private def getTenantIdBySelfcareId(selfcareId: String): Future[UUID] =
     commanderForSelfcareId(selfcareId).askWithStatus(GetTenantBySelfcareId(selfcareId, _))
 
   override def createTenant(tenantSeed: TenantSeed)(implicit
@@ -175,15 +175,18 @@ class TenantApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerTenant: ToEntityMarshaller[Tenant],
     contexts: Seq[(String, String)]
-  ): Route = authorize(INTERNAL_ROLE) {
-    val result: Future[Option[PersistentTenant]] = getTenantBySelfacareId(selfcareId)
+  ): Route = authorize(ADMIN_ROLE, INTERNAL_ROLE) {
+    val result: Future[PersistentTenant] = for {
+      tenantId <- getTenantIdBySelfcareId(selfcareId).map(_.toString())
+      response <- commanderForTenantId(tenantId).askWithStatus(ref => GetTenant(tenantId, ref))
+    } yield response
 
     onComplete(result) {
-      case Success(Some(tenant)) => getTenantBySelfcareId200(tenant.toAPI)
-      case Success(None)         =>
+      case Success(tenant)                                            => getTenantBySelfcareId200(tenant.toAPI)
+      case Failure(NotFoundTenantBySelfcareId(_) | NotFoundTenant(_)) =>
         logger.info(s"Tenant with selfcareId $selfcareId not found")
         getTenant404(problemOf(StatusCodes.NotFound, GetTenantNotFound))
-      case Failure(ex)           =>
+      case Failure(ex)                                                =>
         logger.error(s"Error while getting the tenant with selfcareId $selfcareId", ex)
         complete(problemOf(StatusCodes.InternalServerError, GenericError(ex.getMessage)))
     }

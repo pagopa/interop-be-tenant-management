@@ -15,6 +15,7 @@ import cats.implicits._
 import java.time.temporal.ChronoUnit
 import scala.concurrent.duration.{DurationInt, DurationLong}
 import scala.language.postfixOps
+import java.util.UUID
 
 object TenantPersistentBehavior {
 
@@ -75,7 +76,10 @@ object TenantPersistentBehavior {
         Effect.persist(SelfCareMappingCreated(selfcareId, tenantId)).thenReply(replyTo)(_ => success(()))
 
       case GetTenantBySelfcareId(selfcareId, replyTo) =>
-        Effect.reply(replyTo)(success(state.getTenantBySelfcareId(selfcareId)))
+        val reply: StatusReply[UUID] = state
+          .getTenantIdBySelfcareId(selfcareId)
+          .fold(error[UUID](NotFoundTenantBySelfcareId(selfcareId)))(success)
+        Effect.reply(replyTo)(reply)
 
       case Idle =>
         context.log.debug(s"Passivate shard: ${shard.path.name}")

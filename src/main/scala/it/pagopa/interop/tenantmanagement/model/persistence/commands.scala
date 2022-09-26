@@ -42,8 +42,7 @@ final case class DeleteAttribute(
   replyTo: ActorRef[StatusReply[PersistentTenant]]
 ) extends Command
 
-final case class GetTenantBySelfcareId(selfcareId: String, replyTo: ActorRef[StatusReply[Option[PersistentTenant]]])
-    extends Command
+final case class GetTenantBySelfcareId(selfcareId: String, replyTo: ActorRef[StatusReply[UUID]]) extends Command
 
 final case class AddSelfcareIdTenantMapping(selfcareId: String, tenantId: UUID, replyTo: ActorRef[StatusReply[Unit]])
     extends Command
