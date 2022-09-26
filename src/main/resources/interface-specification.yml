@@ -134,7 +134,7 @@ paths:
     get:
       tags:
         - tenant
-      summary: Get a tenant
+      summary: Get a tenant by selfcareId
       operationId: getTenantBySelfcareId
       responses:
         '200':

@@ -36,8 +36,10 @@
       "route": "getTenantBySelfcareId",
       "verb": "GET",
       "roles": [
-        "internal",
-        "admin"
+        "admin",
+        "security",
+        "api",
+        "internal"
       ]
     },
     {

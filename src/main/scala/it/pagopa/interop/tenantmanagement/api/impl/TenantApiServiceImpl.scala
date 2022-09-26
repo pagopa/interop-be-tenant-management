@@ -52,8 +52,8 @@ class TenantApiServiceImpl(
   private def commanderForTenantId(tenantId: String): EntityRef[Command] =
     sharding.entityRefFor(TenantPersistentBehavior.TypeKey, getShard(tenantId, settings.numberOfShards))
 
-  private def commanderForSelfcareId(tenantId: String): EntityRef[Command] =
-    sharding.entityRefFor(TenantPersistentBehavior.TypeKey, getShard(tenantId, settings.numberOfShards))
+  private def commanderForSelfcareId(selfcareId: String): EntityRef[Command] =
+    sharding.entityRefFor(TenantPersistentBehavior.TypeKey, getShard(selfcareId, settings.numberOfShards))
 
   private def commanders: List[EntityRef[Command]] = (0 until settings.numberOfShards)
     .map(_.toString)
@@ -175,7 +175,7 @@ class TenantApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerTenant: ToEntityMarshaller[Tenant],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE, INTERNAL_ROLE) {
+  ): Route = authorize(ADMIN_ROLE, API_ROLE, SECURITY_ROLE, INTERNAL_ROLE) {
     val result: Future[PersistentTenant] = for {
       tenantId <- getTenantIdBySelfcareId(selfcareId).map(_.toString())
       response <- commanderForTenantId(tenantId).askWithStatus(ref => GetTenant(tenantId, ref))

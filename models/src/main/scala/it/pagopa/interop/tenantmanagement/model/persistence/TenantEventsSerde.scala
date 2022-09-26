@@ -17,7 +17,7 @@ object TenantEventsSerde {
 
   private val tenantCreated: String          = "tenant-created"
   private val tenantUpdated: String          = "tenant-updated"
-  private val selfCareMappingCreated: String = "selfCareMappingCreated"
+  private val selfCareMappingCreated: String = "selfcare-mapping-created"
 
   val jsonToTenant: PartialFunction[String, JsValue => ProjectableEvent] = {
     case `tenantCreated`          => _.convertTo[TenantCreated]
@@ -117,10 +117,10 @@ object TenantEventsSerde {
     }
   }
 
-  private implicit val pexFormat: RootJsonFormat[PersistentExternalId] = jsonFormat2(PersistentExternalId.apply)
-  private implicit val ptFormat: RootJsonFormat[PersistentTenant]      = jsonFormat7(PersistentTenant.apply)
-  private implicit val tcFormat: RootJsonFormat[TenantCreated]         = jsonFormat1(TenantCreated.apply)
-  private implicit val tuFormat: RootJsonFormat[TenantUpdated]         = jsonFormat1(TenantUpdated.apply)
-  implicit val scmcFormat: RootJsonFormat[SelfCareMappingCreated]      = jsonFormat2(SelfCareMappingCreated.apply)
+  private implicit val pexFormat: RootJsonFormat[PersistentExternalId]    = jsonFormat2(PersistentExternalId.apply)
+  private implicit val ptFormat: RootJsonFormat[PersistentTenant]         = jsonFormat7(PersistentTenant.apply)
+  private implicit val tcFormat: RootJsonFormat[TenantCreated]            = jsonFormat1(TenantCreated.apply)
+  private implicit val tuFormat: RootJsonFormat[TenantUpdated]            = jsonFormat1(TenantUpdated.apply)
+  private implicit val scmcFormat: RootJsonFormat[SelfCareMappingCreated] = jsonFormat2(SelfCareMappingCreated.apply)
 
 }

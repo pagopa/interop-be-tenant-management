@@ -119,7 +119,7 @@ class TenantSpec extends BaseIntegrationSpec {
     }
   }
 
-  test("Getting a tenant by selfcareId must fail if not tenant has that selfcareId") {
+  test("Getting a tenant by selfcareId must fail if no tenant has that selfcareId") {
     val (system, mockedTime, mockedUUID) = suiteState()
     implicit val s: ActorSystem[_]       = system
     implicit val ec: ExecutionContext    = system.executionContext
