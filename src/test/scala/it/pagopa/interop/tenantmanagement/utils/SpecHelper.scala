@@ -88,6 +88,11 @@ trait SpecHelper {
     } yield result
   }
 
+  def getTenantAttribute[T](tenantId: String, attributeId: String)(implicit
+    actorSystem: ActorSystem[_],
+    um: Unmarshaller[HttpResponse, T]
+  ): Future[T] = performCall[T](HttpMethods.GET, s"tenants/$tenantId/attributes/$attributeId", None)
+
   def addTenantAttribute[T](tenantId: String, attributeSeed: TenantAttribute)(implicit
     actorSystem: ActorSystem[_],
     um: Unmarshaller[HttpResponse, T]

@@ -103,6 +103,46 @@ class TenantSpec extends BaseIntegrationSpec {
     }
   }
 
+  test("Retrieving an attribute must fail if tenant does not exist") {
+    val (system, _, _)                = suiteState()
+    implicit val s: ActorSystem[_]    = system
+    implicit val ec: ExecutionContext = system.executionContext
+
+    getTenantAttribute[Problem](UUID.randomUUID().toString, UUID.randomUUID().toString).map { result =>
+      assertEquals(result.status, 404)
+      assertEquals(result.errors.map(_.code), Seq("018-0004"))
+    }
+  }
+
+  test("Retrieving an attribute must fail if attribute in the tenant does not exist") {
+    val (system, mockedTime, mockedUUID) = suiteState()
+    implicit val s: ActorSystem[_]       = system
+    implicit val ec: ExecutionContext    = system.executionContext
+
+    val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, mockedUUID)
+
+    createTenant(tenantSeed) >> getTenantAttribute[Problem](tenant.id.toString, UUID.randomUUID.toString).map {
+      result =>
+        assertEquals(result.status, 404)
+        assertEquals(result.errors.map(_.code), Seq("018-0007"))
+    }
+  }
+
+  test("Retrieving an attribute must succeed if tenant and attribute exist") {
+    val (system, mockedTime, mockedUUID) = suiteState()
+    implicit val s: ActorSystem[_]       = system
+    implicit val ec: ExecutionContext    = system.executionContext
+
+    val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, mockedUUID)
+    val expected             = tenant.attributes.head
+
+    createTenant(tenantSeed) >> getTenantAttribute[TenantAttribute](
+      tenant.id.toString,
+      tenant.attributes.head.certified.get.id.toString
+    )
+      .map { result => assertEquals(result, expected) }
+  }
+
   test("Adding an attribute must fail if tenant does not exist") {
     val (system, mockedTime, mockedUUID) = suiteState()
     implicit val s: ActorSystem[_]       = system

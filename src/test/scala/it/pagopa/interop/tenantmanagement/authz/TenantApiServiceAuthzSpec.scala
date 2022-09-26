@@ -18,24 +18,15 @@ import java.util.UUID
 class TenantApiServiceAuthzSpec extends ClusteredMUnitRouteTest {
   override val testPersistentEntity: Entity[Command, ShardingEnvelope[Command]] = tenantPersistenceEntity
 
-  val iCallConstructorsBecauseOOPIsNeverDead = new OffsetDateTimeSupplier {
+  val offsetDateTimeSupplierStub = new OffsetDateTimeSupplier {
     def get: OffsetDateTime = OffsetDateTime.now()
   }
 
-  val tenantService: TenantApiService = new TenantApiServiceImpl(
-    testKit.system,
-    testAkkaSharding,
-    testPersistentEntity,
-    iCallConstructorsBecauseOOPIsNeverDead
-  )
+  val tenantService: TenantApiService =
+    new TenantApiServiceImpl(testKit.system, testAkkaSharding, testPersistentEntity, offsetDateTimeSupplierStub)
 
   val attributesService: AttributesApiService =
-    new AttributesApiServiceImpl(
-      testKit.system,
-      testAkkaSharding,
-      testPersistentEntity,
-      iCallConstructorsBecauseOOPIsNeverDead
-    )
+    new AttributesApiServiceImpl(testKit.system, testAkkaSharding, testPersistentEntity, offsetDateTimeSupplierStub)
 
   val fakeSeed: TenantSeed = TenantSeed(
     id = UUID.randomUUID().some,
@@ -91,6 +82,15 @@ class TenantApiServiceAuthzSpec extends ClusteredMUnitRouteTest {
       "updateTenantAttribute",
       { implicit c: Seq[(String, String)] =>
         attributesService.updateTenantAttribute("tenantId", "fakeAttributeId", fakeAttribute)
+      }
+    )
+  }
+
+  test("Attributes api operation authorization spec should accept authorized roles for getTenantAttribute") {
+    validateAuthorization(
+      "getTenantAttribute",
+      { implicit c: Seq[(String, String)] =>
+        attributesService.getTenantAttribute("tenantId", "attributeId")
       }
     )
   }

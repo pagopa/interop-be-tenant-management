@@ -53,6 +53,32 @@ class AttributesApiServiceImpl(
   private def commander(id: String): EntityRef[Command] =
     sharding.entityRefFor(TenantPersistentBehavior.TypeKey, getShard(id, settings.numberOfShards))
 
+  override def getTenantAttribute(tenantId: String, attributeId: String)(implicit
+    toEntityMarshallerTenantAttribute: ToEntityMarshaller[TenantAttribute],
+    toEntityMarshallerProblem: ToEntityMarshaller[Problem],
+    contexts: Seq[(String, String)]
+  ): Route = authorize(ADMIN_ROLE, API_ROLE, SECURITY_ROLE, M2M_ROLE, INTERNAL_ROLE) {
+
+    val result: Future[PersistentTenantAttribute] = for {
+      tenant    <- commander(tenantId).askWithStatus(ref => GetTenant(tenantId, ref))
+      attribute <- tenant.attributes.find(_.id.toString == attributeId).toFuture(AttributeNotFound)
+    } yield attribute
+
+    onComplete(result) {
+      case Success(attribute)              =>
+        getTenantAttribute200(attribute.toAPI)
+      case Failure(ex: NotFoundTenant)     =>
+        logger.error(s"Error while retrieving attribute $attributeId for tenant $tenantId", ex)
+        addTenantAttribute404(problemOf(StatusCodes.NotFound, GetTenantNotFound))
+      case Failure(ex @ AttributeNotFound) =>
+        logger.error(s"Error while retrieving attribute $attributeId for tenant $tenantId", ex)
+        addTenantAttribute404(problemOf(StatusCodes.NotFound, AttributeNotFound))
+      case Failure(ex)                     =>
+        logger.error(s"Error while retrieving attribute $attributeId for tenant $tenantId", ex)
+        complete(problemOf(StatusCodes.InternalServerError, GenericError("Error while retrieving the attribute")))
+    }
+  }
+
   override def addTenantAttribute(tenantId: String, tenantAttribute: TenantAttribute)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerTenant: ToEntityMarshaller[Tenant],
