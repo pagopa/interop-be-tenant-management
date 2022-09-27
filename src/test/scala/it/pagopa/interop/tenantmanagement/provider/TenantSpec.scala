@@ -103,6 +103,39 @@ class TenantSpec extends BaseIntegrationSpec {
     }
   }
 
+  test("Getting a tenant by selfcareId must succeed if a tenant has that selfcareId") {
+    val (system, mockedTime, mockedUUID) = suiteState()
+    implicit val s: ActorSystem[_]       = system
+    implicit val ec: ExecutionContext    = system.executionContext
+
+    val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, mockedUUID)
+    val selfcareId: String   = UUID.randomUUID().toString()
+    val delta: TenantDelta   = TenantDelta(selfcareId.some, TenantFeature(Certifier("foo").some) :: Nil)
+
+    createTenant[Tenant](tenantSeed) >> updateTenant[Tenant](tenant.id, delta) >> getTenantBySelfcareId[Tenant](
+      selfcareId
+    ).map { result =>
+      assertEquals(result, tenant.copy(selfcareId = selfcareId.some))
+    }
+  }
+
+  test("Getting a tenant by selfcareId must fail if no tenant has that selfcareId") {
+    val (system, mockedTime, mockedUUID) = suiteState()
+    implicit val s: ActorSystem[_]       = system
+    implicit val ec: ExecutionContext    = system.executionContext
+
+    val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, mockedUUID)
+    val selfcareId: String   = UUID.randomUUID().toString()
+    val delta: TenantDelta   = TenantDelta(selfcareId.some, TenantFeature(Certifier("foo").some) :: Nil)
+
+    createTenant[Tenant](tenantSeed) >> updateTenant[Tenant](tenant.id, delta) >> getTenantBySelfcareId[Problem](
+      UUID.randomUUID().toString()
+    ).map { result =>
+      assertEquals(result.status, 404)
+      assertEquals(result.errors.map(_.code).toList, List("018-0004"))
+    }
+  }
+
   test("Adding an attribute must fail if tenant does not exist") {
     val (system, mockedTime, mockedUUID) = suiteState()
     implicit val s: ActorSystem[_]       = system

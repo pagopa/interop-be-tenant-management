@@ -15,3 +15,8 @@ message TenantCreatedV1 {
 message TenantUpdatedV1 {
   required TenantV1 tenant = 1;
 }
+
+message SelfcareMappingCreatedV1 {
+  required string selfcareId = 1;
+  required string tenantId = 2;
+}
