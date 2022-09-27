@@ -53,6 +53,17 @@
       ]
     },
     {
+      "route": "getTenantAttribute",
+      "verb": "GET",
+      "roles": [
+        "admin",
+        "api",
+        "security",
+        "m2m",
+        "internal"
+      ]
+    },
+    {
       "route": "addTenantAttribute",
       "verb": "POST",
       "roles": [

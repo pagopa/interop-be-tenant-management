@@ -210,12 +210,37 @@ paths:
         required: true
         schema:
           type: string
+          format: uuid
       - name: attributeId
         in: path
         required: true
         schema:
           type: string
           format: uuid
+    get:
+      tags:
+        - attributes
+      summary: Retrieves an attribute within a tenant
+      operationId: getTenantAttribute
+      responses:
+        '200':
+          description: Tenant attribute
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantAttribute'
+        '400':
+          description: Invalid input
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Tenant or Attribute not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
     post:
       tags:
         - attributes
