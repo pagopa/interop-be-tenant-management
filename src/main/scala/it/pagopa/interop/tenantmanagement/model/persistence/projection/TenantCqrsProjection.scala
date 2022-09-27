@@ -13,6 +13,8 @@ import slick.jdbc.JdbcProfile
 import spray.json.enrichAny
 
 import scala.concurrent.ExecutionContext
+import it.pagopa.interop.tenantmanagement.model.persistence.SelfCareMappingCreated
+import it.pagopa.interop.commons.cqrs.model.NoOpAction
 
 object TenantCqrsProjection {
   def projection(offsetDbConfig: DatabaseConfig[JdbcProfile], mongoDbConfig: MongoDbConfig, projectionId: String)(
@@ -22,13 +24,12 @@ object TenantCqrsProjection {
   ): CqrsProjection[Event] =
     CqrsProjection[Event](offsetDbConfig, mongoDbConfig, projectionId = projectionId, eventHandler)
 
-  private def eventHandler(collection: MongoCollection[Document], event: Event): PartialMongoAction = {
-    event match {
-      case TenantCreated(t) =>
-        ActionWithDocument(collection.insertOne, Document(s"{ data: ${t.toJson.compactPrint} }"))
-      case TenantUpdated(t) =>
-        ActionWithBson(collection.updateOne(Filters.eq("data.id", t.id.toString), _), Updates.set("data", t.toDocument))
-    }
-
+  private def eventHandler(collection: MongoCollection[Document], event: Event): PartialMongoAction = event match {
+    case TenantCreated(t)             =>
+      ActionWithDocument(collection.insertOne, Document(s"{ data: ${t.toJson.compactPrint} }"))
+    case TenantUpdated(t)             =>
+      ActionWithBson(collection.updateOne(Filters.eq("data.id", t.id.toString), _), Updates.set("data", t.toDocument))
+    case SelfCareMappingCreated(_, _) => NoOpAction
   }
+
 }

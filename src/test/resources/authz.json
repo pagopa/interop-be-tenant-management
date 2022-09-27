@@ -33,6 +33,16 @@
       ]
     },
     {
+      "route": "getTenantBySelfcareId",
+      "verb": "GET",
+      "roles": [
+        "admin",
+        "security",
+        "api",
+        "internal"
+      ]
+    },
+    {
       "route": "updateTenant",
       "verb": "POST",
       "roles": [

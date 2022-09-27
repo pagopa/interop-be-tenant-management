@@ -77,6 +77,11 @@ trait SpecHelper {
   ): Future[T] =
     performCall[T](HttpMethods.GET, s"tenants/origin/$origin/code/$code", None)
 
+  def getTenantBySelfcareId[T](
+    selfcareId: String
+  )(implicit actorSystem: ActorSystem[_], um: Unmarshaller[HttpResponse, T]): Future[T] =
+    performCall[T](HttpMethods.GET, s"tenants/selfcareId/${selfcareId}", None)
+
   def updateTenant[T](id: UUID, tenantDelta: TenantDelta)(implicit
     actorSystem: ActorSystem[_],
     um: Unmarshaller[HttpResponse, T]
@@ -127,7 +132,10 @@ trait SpecHelper {
     implicit val ec: ExecutionContext = actorSystem.executionContext
     for {
       responseBytes <- request(verb, path, data)
-      result        <- Unmarshal(responseBytes).to[T]
+      result        <- Unmarshal(responseBytes).to[T].recoverWith { e =>
+        println(s"$verb -> $path")
+        responseBytes.entity.dataBytes.map(_.decodeString("UTF-8")).runForeach(println) >> Future.failed(e)
+      }
     } yield result
   }
 
