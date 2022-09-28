@@ -16,8 +16,7 @@ import it.pagopa.interop.commons.jwt.service.impl.{DefaultJWTReader, getClaimsVe
 import it.pagopa.interop.commons.jwt.{JWTConfiguration, KID, PublicKeysHolder, SerializedKey}
 import it.pagopa.interop.commons.utils.OpenapiUtils
 import it.pagopa.interop.commons.utils.TypeConversions._
-import it.pagopa.interop.commons.utils.service.UUIDSupplier
-import it.pagopa.interop.commons.utils.service.impl.{OffsetDateTimeSupplierImpl, UUIDSupplierImpl}
+import it.pagopa.interop.commons.utils.service.{OffsetDateTimeSupplier, UUIDSupplier}
 import it.pagopa.interop.tenantmanagement.api.impl._
 import it.pagopa.interop.tenantmanagement.api.{AttributesApi, TenantApi}
 import it.pagopa.interop.tenantmanagement.common.system.ApplicationConfiguration
@@ -31,7 +30,7 @@ import it.pagopa.interop.commons.cqrs.model.MongoDbConfig
 
 trait Dependencies {
 
-  val uuidSupplier: UUIDSupplier = new UUIDSupplierImpl
+  val uuidSupplier: UUIDSupplier = UUIDSupplier
 
   val behaviorFactory: EntityContext[Command] => Behavior[Command] = entityContext =>
     TenantPersistentBehavior(
@@ -81,14 +80,14 @@ trait Dependencies {
 
   def tenantApi(sharding: ClusterSharding, jwtReader: JWTReader)(implicit actorSystem: ActorSystem[_]) =
     new TenantApi(
-      new TenantApiServiceImpl(actorSystem, sharding, tenantPersistenceEntity, OffsetDateTimeSupplierImpl),
+      new TenantApiServiceImpl(actorSystem, sharding, tenantPersistenceEntity, OffsetDateTimeSupplier),
       TenantApiMarshallerImpl,
       jwtReader.OAuth2JWTValidatorAsContexts
     )
 
   def attributesApi(sharding: ClusterSharding, jwtReader: JWTReader)(implicit actorSystem: ActorSystem[_]) =
     new AttributesApi(
-      new AttributesApiServiceImpl(actorSystem, sharding, tenantPersistenceEntity, OffsetDateTimeSupplierImpl),
+      new AttributesApiServiceImpl(actorSystem, sharding, tenantPersistenceEntity, OffsetDateTimeSupplier),
       AttributesApiMarshallerImpl,
       jwtReader.OAuth2JWTValidatorAsContexts
     )

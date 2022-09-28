@@ -18,9 +18,7 @@ import java.util.UUID
 class TenantApiServiceAuthzSpec extends ClusteredMUnitRouteTest {
   override val testPersistentEntity: Entity[Command, ShardingEnvelope[Command]] = tenantPersistenceEntity
 
-  val offsetDateTimeSupplierStub = new OffsetDateTimeSupplier {
-    def get: OffsetDateTime = OffsetDateTime.now()
-  }
+  val offsetDateTimeSupplierStub: OffsetDateTimeSupplier = () => OffsetDateTime.now()
 
   val tenantService: TenantApiService =
     new TenantApiServiceImpl(testKit.system, testAkkaSharding, testPersistentEntity, offsetDateTimeSupplierStub)

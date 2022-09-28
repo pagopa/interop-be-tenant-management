@@ -172,7 +172,7 @@ object Adapters {
       externalId = PersistentExternalId.fromAPI(seed.externalId),
       features = features,
       attributes = attributes,
-      createdAt = supplier.get,
+      createdAt = supplier.get(),
       updatedAt = None
     )
 

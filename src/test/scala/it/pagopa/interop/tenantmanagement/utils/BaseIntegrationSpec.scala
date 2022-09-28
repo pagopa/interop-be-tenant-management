@@ -51,9 +51,7 @@ abstract class BaseIntegrationSpec extends FunSuite with SpecHelper {
         mockedTime = OffsetDateTime.now()
         mockedUUID = UUID.randomUUID()
 
-        val offsetDateTimeSupplier: OffsetDateTimeSupplier = new OffsetDateTimeSupplier {
-          def get: OffsetDateTime = mockedTime
-        }
+        val offsetDateTimeSupplier: OffsetDateTimeSupplier = () => mockedTime
 
         val attributesApi: AttributesApi = new AttributesApi(
           new AttributesApiServiceImpl(actorTestKit.internalSystem, sharding, persistentEntity, offsetDateTimeSupplier),
