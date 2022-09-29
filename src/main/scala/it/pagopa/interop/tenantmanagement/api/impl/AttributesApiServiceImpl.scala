@@ -87,7 +87,7 @@ class AttributesApiServiceImpl(
     val result: Future[PersistentTenant] = for {
       attribute     <- PersistentTenantAttribute.fromAPI(tenantAttribute).toFuture
       actorResponse <- commander(tenantId).askWithStatus(ref =>
-        AddAttribute(tenantId, attribute, offsetDateTimeSupplier.get, ref)
+        AddAttribute(tenantId, attribute, offsetDateTimeSupplier.get(), ref)
       )
     } yield actorResponse
 
@@ -117,7 +117,7 @@ class AttributesApiServiceImpl(
     val result: Future[PersistentTenant] = for {
       attributeUUID <- attributeId.toFutureUUID
       actorResponse <- commander(tenantId).askWithStatus(ref =>
-        DeleteAttribute(tenantId, attributeUUID, offsetDateTimeSupplier.get, ref)
+        DeleteAttribute(tenantId, attributeUUID, offsetDateTimeSupplier.get(), ref)
       )
     } yield actorResponse
 
@@ -148,7 +148,7 @@ class AttributesApiServiceImpl(
         .ensure(InvalidAttribute)(a => a.id.toString == attributeId)
         .toFuture
       actorResponse <- commander(tenantId).askWithStatus(ref =>
-        UpdateAttribute(tenantId, attrId, attribute, offsetDateTimeSupplier.get, ref)
+        UpdateAttribute(tenantId, attrId, attribute, offsetDateTimeSupplier.get(), ref)
       )
     } yield actorResponse
 
