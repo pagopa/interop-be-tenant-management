@@ -33,8 +33,21 @@ object TenantEventsSerde {
 
   // Serdes
 
-  implicit val ptvFormat: RootJsonFormat[PersistentTenantVerifier] = jsonFormat4(PersistentTenantVerifier.apply)
-  implicit val ptrFormat: RootJsonFormat[PersistentTenantRevoker]  = jsonFormat5(PersistentTenantRevoker.apply)
+  implicit val pvsFormat: RootJsonFormat[PersistentVerificationRenewal] =
+    new RootJsonFormat[PersistentVerificationRenewal] {
+      override def read(json: JsValue): PersistentVerificationRenewal = json match {
+        case JsString("REVOKE_ON_EXPIRATION") => PersistentVerificationRenewal.REVOKE_ON_EXPIRATION
+        case JsString("AUTOMATIC_RENEWAL")    => PersistentVerificationRenewal.AUTOMATIC_RENEWAL
+        case x => throw new DeserializationException(s"Unable to deserialize PersistentTenantKind: unmapped kind $x")
+      }
+      override def write(obj: PersistentVerificationRenewal): JsValue = obj match {
+        case PersistentVerificationRenewal.REVOKE_ON_EXPIRATION => JsString("REVOKE_ON_EXPIRATION")
+        case PersistentVerificationRenewal.AUTOMATIC_RENEWAL    => JsString("AUTOMATIC_RENEWAL")
+      }
+    }
+
+  implicit val ptvFormat: RootJsonFormat[PersistentTenantVerifier] = jsonFormat5(PersistentTenantVerifier.apply)
+  implicit val ptrFormat: RootJsonFormat[PersistentTenantRevoker]  = jsonFormat6(PersistentTenantRevoker.apply)
 
   implicit val ptfFormat: RootJsonFormat[PersistentTenantFeature] = new RootJsonFormat[PersistentTenantFeature] {
 
@@ -64,25 +77,12 @@ object TenantEventsSerde {
     }
   }
 
-  implicit val pvsFormat: RootJsonFormat[PersistentVerificationRenewal] =
-    new RootJsonFormat[PersistentVerificationRenewal] {
-      override def read(json: JsValue): PersistentVerificationRenewal = json match {
-        case JsString("REVOKE_ON_EXPIRATION") => PersistentVerificationRenewal.REVOKE_ON_EXPIRATION
-        case JsString("AUTOMATIC_RENEWAL")    => PersistentVerificationRenewal.AUTOMATIC_RENEWAL
-        case x => throw new DeserializationException(s"Unable to deserialize PersistentTenantKind: unmapped kind $x")
-      }
-      override def write(obj: PersistentVerificationRenewal): JsValue = obj match {
-        case PersistentVerificationRenewal.REVOKE_ON_EXPIRATION => JsString("REVOKE_ON_EXPIRATION")
-        case PersistentVerificationRenewal.AUTOMATIC_RENEWAL    => JsString("AUTOMATIC_RENEWAL")
-      }
-    }
-
   private implicit val pasFormat: RootJsonFormat[PersistentTenantAttribute] = {
     implicit val pcaFormat: RootJsonFormat[PersistentCertifiedAttribute] = jsonFormat3(
       PersistentCertifiedAttribute.apply
     )
     implicit val pdaFormat: RootJsonFormat[PersistentDeclaredAttribute] = jsonFormat3(PersistentDeclaredAttribute.apply)
-    implicit val pvaFormat: RootJsonFormat[PersistentVerifiedAttribute] = jsonFormat5(PersistentVerifiedAttribute.apply)
+    implicit val pvaFormat: RootJsonFormat[PersistentVerifiedAttribute] = jsonFormat4(PersistentVerifiedAttribute.apply)
 
     new RootJsonFormat[PersistentTenantAttribute] {
       override def read(json: JsValue): PersistentTenantAttribute = {

@@ -37,16 +37,18 @@ enum PersistentVerificationRenewalV1 {
 message TenantVerifierV1 {
   required string id = 1;
   required int64 verificationDate = 2;
-  optional int64 expirationDate = 3;
-  optional int64 extensionDate = 4;
+  required PersistentVerificationRenewalV1 renewal = 3;
+  optional int64 expirationDate = 4;
+  optional int64 extensionDate = 5;
 }
 
 message TenantRevokerV1 {
   required string id = 1;
   required int64 verificationDate = 2;
-  optional int64 expirationDate = 3;
-  optional int64 extentionDate = 4;
-  required int64 revocationDate = 5;
+  required PersistentVerificationRenewalV1 renewal = 3;
+  optional int64 expirationDate = 4;
+  optional int64 extensionDate = 5;
+  required int64 revocationDate = 6;
 }
 
 message ExternalIdV1 {
@@ -69,9 +71,8 @@ message DeclaredAttributeV1 {
 message VerifiedAttributeV1 {
   required string id = 1;
   required int64 assignmentTimestamp = 2;
-  required PersistentVerificationRenewalV1 renewal = 3;
-  repeated TenantVerifierV1 verifiedBy = 4;
-  repeated TenantRevokerV1 revokedBy = 5;
+  repeated TenantVerifierV1 verifiedBy = 3;
+  repeated TenantRevokerV1 revokedBy = 4;
 }
 
 message TenantAttributeV1 {

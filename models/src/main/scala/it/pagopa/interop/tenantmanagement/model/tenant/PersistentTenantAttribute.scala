@@ -25,7 +25,6 @@ final case class PersistentDeclaredAttribute(
 final case class PersistentVerifiedAttribute(
   id: UUID,
   assignmentTimestamp: OffsetDateTime,
-  renewal: PersistentVerificationRenewal,
   verifiedBy: List[PersistentTenantVerifier],
   revokedBy: List[PersistentTenantRevoker]
 ) extends PersistentTenantAttribute

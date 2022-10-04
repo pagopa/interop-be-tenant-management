@@ -54,29 +54,6 @@ object Generators {
     DeclaredAttributeV1(id.toString(), assignmentLong, revocationLong)
   )
 
-  val verifiedAttributeGen: Gen[(PersistentVerifiedAttribute, VerifiedAttributeV1)] = for {
-    id                                    <- Gen.uuid
-    (assignmentTimestamp, assignmentLong) <- offsetDatetimeGen
-    (renewal, renewalV1)                  <- verificationRenewalGen
-    (verifiedBy, verifiedByV1)            <- listOf(tenantVerifierGen).map(_.separate)
-    (revokedBy, revokedByV1)              <- listOf(tenantRevokerGen).map(_.separate)
-  } yield (
-    PersistentVerifiedAttribute(
-      id = id,
-      assignmentTimestamp = assignmentTimestamp,
-      renewal = renewal,
-      verifiedBy = verifiedBy,
-      revokedBy = revokedBy
-    ),
-    VerifiedAttributeV1(
-      id = id.toString(),
-      assignmentTimestamp = assignmentLong,
-      renewal = renewalV1,
-      verifiedBy = verifiedByV1,
-      revokedBy = revokedByV1
-    )
-  )
-
   val verificationRenewalGen: Gen[(PersistentVerificationRenewal, PersistentVerificationRenewalV1)] = Gen.oneOf(
     (PersistentVerificationRenewal.AUTOMATIC_RENEWAL, PersistentVerificationRenewalV1.AUTOMATIC_RENEWAL),
     (PersistentVerificationRenewal.REVOKE_ON_EXPIRATION, PersistentVerificationRenewalV1.REVOKE_ON_EXPIRATION)
@@ -85,22 +62,44 @@ object Generators {
   val tenantVerifierGen: Gen[(PersistentTenantVerifier, TenantVerifierV1)] = for {
     id                                     <- Gen.uuid
     (verificationDate, verificationDateV1) <- offsetDatetimeGen
+    (renewal, renewalV1)                   <- verificationRenewalGen
     (expirationDate, expirationDateV1)     <- Gen.option(offsetDatetimeGen).map(_.separate)
-    (extentionDate, extentionDateV1)       <- Gen.option(offsetDatetimeGen).map(_.separate)
+    (extensionDate, extensionDateV1)       <- Gen.option(offsetDatetimeGen).map(_.separate)
   } yield (
-    PersistentTenantVerifier(id, verificationDate, expirationDate, extentionDate),
-    TenantVerifierV1(id.toString(), verificationDateV1, expirationDateV1, extentionDateV1)
+    PersistentTenantVerifier(id, verificationDate, renewal, expirationDate, extensionDate),
+    TenantVerifierV1(id.toString(), verificationDateV1, renewalV1, expirationDateV1, extensionDateV1)
   )
 
   val tenantRevokerGen: Gen[(PersistentTenantRevoker, TenantRevokerV1)] = for {
     id                                     <- Gen.uuid
     (verificationDate, verificationDateV1) <- offsetDatetimeGen
+    (renewal, renewalV1)                   <- verificationRenewalGen
     (expirationDate, expirationDateV1)     <- Gen.option(offsetDatetimeGen).map(_.separate)
-    (extentionDate, extentionDateV1)       <- Gen.option(offsetDatetimeGen).map(_.separate)
+    (extensionDate, extensionDateV1)       <- Gen.option(offsetDatetimeGen).map(_.separate)
     (revocationDate, revocationDateV1)     <- offsetDatetimeGen
   } yield (
-    PersistentTenantRevoker(id, verificationDate, expirationDate, extentionDate, revocationDate),
-    TenantRevokerV1(id.toString(), verificationDateV1, expirationDateV1, extentionDateV1, revocationDateV1)
+    PersistentTenantRevoker(id, verificationDate, renewal, expirationDate, extensionDate, revocationDate),
+    TenantRevokerV1(id.toString(), verificationDateV1, renewalV1, expirationDateV1, extensionDateV1, revocationDateV1)
+  )
+
+  val verifiedAttributeGen: Gen[(PersistentVerifiedAttribute, VerifiedAttributeV1)] = for {
+    id                                    <- Gen.uuid
+    (assignmentTimestamp, assignmentLong) <- offsetDatetimeGen
+    (verifiedBy, verifiedByV1)            <- listOf(tenantVerifierGen).map(_.separate)
+    (revokedBy, revokedByV1)              <- listOf(tenantRevokerGen).map(_.separate)
+  } yield (
+    PersistentVerifiedAttribute(
+      id = id,
+      assignmentTimestamp = assignmentTimestamp,
+      verifiedBy = verifiedBy,
+      revokedBy = revokedBy
+    ),
+    VerifiedAttributeV1(
+      id = id.toString(),
+      assignmentTimestamp = assignmentLong,
+      verifiedBy = verifiedByV1,
+      revokedBy = revokedByV1
+    )
   )
 
   val attributeGen: Gen[(PersistentTenantAttribute, TenantAttributeV1)] =

@@ -45,9 +45,9 @@ object JsonFormats {
 
   implicit val pcaFormat: RootJsonFormat[PersistentCertifiedAttribute] = jsonFormat3(PersistentCertifiedAttribute.apply)
   implicit val pdaFormat: RootJsonFormat[PersistentDeclaredAttribute]  = jsonFormat3(PersistentDeclaredAttribute.apply)
-  implicit val ptvFormat: RootJsonFormat[PersistentTenantVerifier]     = jsonFormat4(PersistentTenantVerifier.apply)
-  implicit val ptrFormat: RootJsonFormat[PersistentTenantRevoker]      = jsonFormat5(PersistentTenantRevoker.apply)
-  implicit val pvaFormat: RootJsonFormat[PersistentVerifiedAttribute]  = jsonFormat5(PersistentVerifiedAttribute.apply)
+  implicit val ptvFormat: RootJsonFormat[PersistentTenantVerifier]     = jsonFormat5(PersistentTenantVerifier.apply)
+  implicit val ptrFormat: RootJsonFormat[PersistentTenantRevoker]      = jsonFormat6(PersistentTenantRevoker.apply)
+  implicit val pvaFormat: RootJsonFormat[PersistentVerifiedAttribute]  = jsonFormat4(PersistentVerifiedAttribute.apply)
 
   implicit val ptaFormat: RootJsonFormat[PersistentTenantAttribute] = new RootJsonFormat[PersistentTenantAttribute] {
     def write(obj: PersistentTenantAttribute): JsValue = {

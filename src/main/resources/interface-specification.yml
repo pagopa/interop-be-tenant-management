@@ -451,8 +451,6 @@ components:
         assignmentTimestamp:
           type: string
           format: date-time
-        renewal:
-          $ref: '#/components/schemas/VerificationRenewal'
         verifiedBy:
           type: array
           items:
@@ -464,7 +462,6 @@ components:
       required:
         - id
         - assignmentTimestamp
-        - renewal
         - verifiedBy
         - revokedBy
     VerificationRenewal:
@@ -494,15 +491,18 @@ components:
         verificationDate:
           type: string
           format: date-time
+        renewal:
+          $ref: '#/components/schemas/VerificationRenewal'
         expirationDate:
           type: string
           format: date-time
-        extentionDate:
+        extensionDate:
           type: string
           format: date-time
       required:
         - id
         - verificationDate
+        - renewal
     TenantRevoker:
       type: object
       properties:
@@ -512,10 +512,12 @@ components:
         verificationDate:
           type: string
           format: date-time
+        renewal:
+          $ref: '#/components/schemas/VerificationRenewal'
         expirationDate:
           type: string
           format: date-time
-        extentionDate:
+        extensionDate:
           type: string
           format: date-time
         revocationDate:
@@ -525,6 +527,7 @@ components:
         - id
         - verificationDate
         - revocationDate
+        - renewal
     Tenant:
       description: Tenant model
       type: object
