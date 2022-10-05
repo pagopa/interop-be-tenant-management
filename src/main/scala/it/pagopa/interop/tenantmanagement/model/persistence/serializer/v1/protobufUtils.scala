@@ -72,8 +72,9 @@ object protobufUtils {
     }
 
   def toProtobufTenantVerifier(verifier: PersistentTenantVerifier): TenantVerifierV1 = TenantVerifierV1(
-    id = verifier.id.toString(),
+    id = verifier.id.toString,
     verificationDate = verifier.verificationDate.toMillis,
+    renewal = toProtobufRenewal(verifier.renewal),
     expirationDate = verifier.expirationDate.map(_.toMillis),
     extensionDate = verifier.extensionDate.map(_.toMillis)
   )
@@ -81,34 +82,39 @@ object protobufUtils {
   def toPersistentTenantVerifier(verifier: TenantVerifierV1): Either[Throwable, PersistentTenantVerifier] = for {
     id               <- verifier.id.toUUID.toEither
     verificationDate <- verifier.verificationDate.toOffsetDateTime.toEither
+    renewal          <- toPersistentRenewal(verifier.renewal)
     expirationDate   <- verifier.expirationDate.traverse(_.toOffsetDateTime.toEither)
     extensionDate    <- verifier.extensionDate.traverse(_.toOffsetDateTime.toEither)
   } yield PersistentTenantVerifier(
     id = id,
     verificationDate = verificationDate,
+    renewal = renewal,
     expirationDate = expirationDate,
     extensionDate = extensionDate
   )
 
-  def toProtobufTenantRevoker(verifier: PersistentTenantRevoker): TenantRevokerV1 = TenantRevokerV1(
-    id = verifier.id.toString(),
-    verificationDate = verifier.verificationDate.toMillis,
-    expirationDate = verifier.expirationDate.map(_.toMillis),
-    extentionDate = verifier.extentionDate.map(_.toMillis),
-    revocationDate = verifier.revocationDate.toMillis
+  def toProtobufTenantRevoker(revoker: PersistentTenantRevoker): TenantRevokerV1 = TenantRevokerV1(
+    id = revoker.id.toString,
+    verificationDate = revoker.verificationDate.toMillis,
+    renewal = toProtobufRenewal(revoker.renewal),
+    expirationDate = revoker.expirationDate.map(_.toMillis),
+    extensionDate = revoker.extensionDate.map(_.toMillis),
+    revocationDate = revoker.revocationDate.toMillis
   )
 
   def toPersistentTenantRevoker(verifier: TenantRevokerV1): Either[Throwable, PersistentTenantRevoker] = for {
     id               <- verifier.id.toUUID.toEither
     verificationDate <- verifier.verificationDate.toOffsetDateTime.toEither
+    renewal          <- toPersistentRenewal(verifier.renewal)
     expirationDate   <- verifier.expirationDate.traverse(_.toOffsetDateTime.toEither)
-    extentionDate    <- verifier.extentionDate.traverse(_.toOffsetDateTime.toEither)
+    extensionDate    <- verifier.extensionDate.traverse(_.toOffsetDateTime.toEither)
     revocationDate   <- verifier.revocationDate.toOffsetDateTime.toEither
   } yield PersistentTenantRevoker(
     id = id,
     verificationDate = verificationDate,
+    renewal = renewal,
     expirationDate = expirationDate,
-    extentionDate = extentionDate,
+    extensionDate = extensionDate,
     revocationDate = revocationDate
   )
 
@@ -128,17 +134,15 @@ object protobufUtils {
         at   <- assignmentTimestamp.toOffsetDateTime.toEither
         rt   <- revocationTimestamp.traverse(_.toOffsetDateTime.toEither)
       } yield PersistentDeclaredAttribute(id = uuid, assignmentTimestamp = at, revocationTimestamp = rt)
-    case VerifiedAttributeV1(id, assignmentTimestamp, ren, vBy, rBy)        =>
+    case VerifiedAttributeV1(id, assignmentTimestamp, vBy, rBy)             =>
       for {
         uuid       <- id.toUUID.toEither
         at         <- assignmentTimestamp.toOffsetDateTime.toEither
         verifiedBy <- vBy.traverse(toPersistentTenantVerifier)
         revokedBy  <- rBy.traverse(toPersistentTenantRevoker)
-        renewal    <- toPersistentRenewal(ren)
       } yield PersistentVerifiedAttribute(
         id = uuid,
         assignmentTimestamp = at,
-        renewal = renewal,
         verifiedBy = verifiedBy,
         revokedBy = revokedBy
       )
@@ -158,11 +162,10 @@ object protobufUtils {
           assignmentTimestamp = assignmentTimestamp.toMillis,
           revocationTimestamp = revocationTimestamp.map(_.toMillis)
         )
-      case PersistentVerifiedAttribute(id, assignmentTimestamp, renewal, vBy, rBy)    =>
+      case PersistentVerifiedAttribute(id, assignmentTimestamp, vBy, rBy)             =>
         VerifiedAttributeV1(
           id = id.toString,
           assignmentTimestamp = assignmentTimestamp.toMillis,
-          renewal = toProtobufRenewal(renewal),
           verifiedBy = vBy.map(toProtobufTenantVerifier),
           revokedBy = rBy.map(toProtobufTenantRevoker)
         )

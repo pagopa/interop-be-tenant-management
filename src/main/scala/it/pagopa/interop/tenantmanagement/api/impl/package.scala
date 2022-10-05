@@ -11,13 +11,13 @@ import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 package object impl extends SprayJsonSupport with DefaultJsonProtocol {
 
   implicit val externalIdFormat: RootJsonFormat[ExternalId]                      = jsonFormat2(ExternalId)
-  implicit val verifierFormat: RootJsonFormat[TenantVerifier]                    = jsonFormat4(TenantVerifier)
-  implicit val revokerFormat: RootJsonFormat[TenantRevoker]                      = jsonFormat5(TenantRevoker)
+  implicit val verifierFormat: RootJsonFormat[TenantVerifier]                    = jsonFormat5(TenantVerifier)
+  implicit val revokerFormat: RootJsonFormat[TenantRevoker]                      = jsonFormat6(TenantRevoker)
   implicit val declaredAttributesFormat: RootJsonFormat[DeclaredTenantAttribute] = jsonFormat3(DeclaredTenantAttribute)
   implicit val certifiedAttributesFormat: RootJsonFormat[CertifiedTenantAttribute] = jsonFormat3(
     CertifiedTenantAttribute
   )
-  implicit val verifiedAttributesFormat: RootJsonFormat[VerifiedTenantAttribute] = jsonFormat5(VerifiedTenantAttribute)
+  implicit val verifiedAttributesFormat: RootJsonFormat[VerifiedTenantAttribute] = jsonFormat4(VerifiedTenantAttribute)
   implicit val attributesFormat: RootJsonFormat[TenantAttribute]                 = jsonFormat3(TenantAttribute)
   implicit val certifierFormat: RootJsonFormat[Certifier]                        = jsonFormat1(Certifier)
   implicit val tenantFeatureFormat: RootJsonFormat[TenantFeature]                = jsonFormat1(TenantFeature)

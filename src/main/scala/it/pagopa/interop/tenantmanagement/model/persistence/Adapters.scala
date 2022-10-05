@@ -39,8 +39,9 @@ object Adapters {
     def toAPI(): TenantVerifier = TenantVerifier(
       id = p.id,
       verificationDate = p.verificationDate,
+      renewal = p.renewal.toAPI(),
       expirationDate = p.expirationDate,
-      extentionDate = p.expirationDate
+      extensionDate = p.expirationDate
     )
   }
 
@@ -49,6 +50,7 @@ object Adapters {
     def fromAPI(p: TenantVerifier): PersistentTenantVerifier = PersistentTenantVerifier(
       id = p.id,
       verificationDate = p.verificationDate,
+      renewal = PersistentVerificationRenewal.fromAPI(p.renewal),
       expirationDate = p.expirationDate,
       extensionDate = p.expirationDate
     )
@@ -58,8 +60,9 @@ object Adapters {
     def toAPI(): TenantRevoker = TenantRevoker(
       id = p.id,
       verificationDate = p.verificationDate,
+      renewal = p.renewal.toAPI(),
       expirationDate = p.expirationDate,
-      extentionDate = p.expirationDate,
+      extensionDate = p.expirationDate,
       revocationDate = p.revocationDate
     )
   }
@@ -69,8 +72,9 @@ object Adapters {
     def fromAPI(p: TenantRevoker): PersistentTenantRevoker = PersistentTenantRevoker(
       id = p.id,
       verificationDate = p.verificationDate,
+      renewal = PersistentVerificationRenewal.fromAPI(p.renewal),
       expirationDate = p.expirationDate,
-      extentionDate = p.expirationDate,
+      extensionDate = p.expirationDate,
       revocationDate = p.revocationDate
     )
   }
@@ -86,7 +90,6 @@ object Adapters {
           VerifiedTenantAttribute(
             a.id,
             a.assignmentTimestamp,
-            a.renewal.toAPI(),
             a.verifiedBy.map(_.toAPI()),
             a.revokedBy.map(_.toAPI())
           ).some
@@ -104,8 +107,7 @@ object Adapters {
         PersistentVerifiedAttribute(
           id = verified.id,
           assignmentTimestamp = verified.assignmentTimestamp,
-          renewal = PersistentVerificationRenewal.fromAPI(verified.renewal),
-          verifiedBy = verified.verifiedBy.toList.toList.map(PersistentTenantVerifier.fromAPI),
+          verifiedBy = verified.verifiedBy.toList.map(PersistentTenantVerifier.fromAPI),
           revokedBy = verified.revokedBy.toList.map(PersistentTenantRevoker.fromAPI)
         ).asRight
       case _                                            => InternalErrors.InvalidAttribute.asLeft
