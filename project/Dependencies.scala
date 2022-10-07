@@ -147,7 +147,7 @@ object Dependencies {
       scalamock.core              % "test,it",
       "org.scalameta"            %% "munit"                          % "0.7.29"                   % Test,
       "org.scalameta"            %% "munit-scalacheck"               % "0.7.29"                   % Test,
-      "com.softwaremill.diffx"   %% "diffx-munit"                    % "0.7.0"                    % Test,
+      "com.softwaremill.diffx"   %% "diffx-munit"                    % "0.7.1"                    % Test,
       "com.dimafeng"             %% "testcontainers-scala-scalatest" % testcontainersScalaVersion % IntegrationTest
     )
 
