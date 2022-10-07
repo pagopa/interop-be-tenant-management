@@ -73,7 +73,7 @@ object TenantPersistentBehavior {
         result.fold(fail(_)(replyTo), t => persistAndReply(t, TenantUpdated)(replyTo))
 
       case AddSelfcareIdTenantMapping(selfcareId, tenantId, replyTo) =>
-        Effect.persist(SelfCareMappingCreated(selfcareId, tenantId)).thenReply(replyTo)(_ => success(()))
+        Effect.persist(SelfcareMappingCreated(selfcareId, tenantId)).thenReply(replyTo)(_ => success(()))
 
       case GetTenantBySelfcareId(selfcareId, replyTo) =>
         val reply: StatusReply[UUID] = state
@@ -98,7 +98,7 @@ object TenantPersistentBehavior {
     event match {
       case TenantCreated(tenant)                        => state.addTenant(tenant)
       case TenantUpdated(tenant)                        => state.addTenant(tenant)
-      case SelfCareMappingCreated(selfcareId, tenantId) => state.addSelfcareMapping(selfcareId, tenantId)
+      case SelfcareMappingCreated(selfcareId, tenantId) => state.addSelfcareMapping(selfcareId, tenantId)
     }
 
   val TypeKey: EntityTypeKey[Command] = EntityTypeKey[Command]("interop-be-tenant-management-persistence")

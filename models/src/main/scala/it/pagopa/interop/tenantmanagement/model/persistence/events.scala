@@ -8,4 +8,4 @@ sealed trait Event extends Persistable with ProjectableEvent
 
 final case class TenantCreated(tenant: PersistentTenant)                    extends Event
 final case class TenantUpdated(tenant: PersistentTenant)                    extends Event
-final case class SelfCareMappingCreated(selfcareId: String, tenantId: UUID) extends Event
+final case class SelfcareMappingCreated(selfcareId: String, tenantId: UUID) extends Event

@@ -1,7 +1,7 @@
 package it.pagopa.interop.tenantmanagement.model.persistence.serializer
 
 import akka.serialization.SerializerWithStringManifest
-import it.pagopa.interop.tenantmanagement.model.persistence.SelfCareMappingCreated
+import it.pagopa.interop.tenantmanagement.model.persistence.SelfcareMappingCreated
 import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.selfcareMappingCreatedV1PersistEventSerializer
 
 import java.io.NotSerializableException
@@ -16,10 +16,10 @@ class SelfcareMappingCreatedSerializer extends SerializerWithStringManifest {
 
   override def manifest(o: AnyRef): String = s"${o.getClass.getName}|$currentVersion"
 
-  final val className: String = classOf[SelfCareMappingCreated].getName
+  final val className: String = classOf[SelfcareMappingCreated].getName
 
   override def toBinary(o: AnyRef): Array[Byte] = o match {
-    case event: SelfCareMappingCreated => serialize(event, className, currentVersion)
+    case event: SelfcareMappingCreated => serialize(event, className, currentVersion)
     case _                             =>
       throw new NotSerializableException(
         s"Unable to handle manifest: [[${manifest(o)}]], currentVersion: [[$currentVersion]] "
