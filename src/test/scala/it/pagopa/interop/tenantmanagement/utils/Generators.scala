@@ -157,9 +157,9 @@ object Generators {
     (TenantUpdated(a), TenantUpdatedV1(b))
   }
 
-  val selfcareMappingCreatedGen: Gen[(SelfCareMappingCreated, SelfcareMappingCreatedV1)] = for {
+  val selfcareMappingCreatedGen: Gen[(SelfcareMappingCreated, SelfcareMappingCreatedV1)] = for {
     selfcareId <- stringGen
     tenantId   <- Gen.uuid
-  } yield (SelfCareMappingCreated(selfcareId, tenantId), SelfcareMappingCreatedV1(selfcareId, tenantId.toString()))
+  } yield (SelfcareMappingCreated(selfcareId, tenantId), SelfcareMappingCreatedV1(selfcareId, tenantId.toString()))
 
 }

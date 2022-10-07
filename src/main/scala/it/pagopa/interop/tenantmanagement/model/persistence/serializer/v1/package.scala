@@ -43,10 +43,10 @@ package object v1 {
     event => toProtobufTenant(event.tenant).map(TenantUpdatedV1.of)
 
   implicit def selfcareMappingCreatedV1PersistEventDeserializer
-    : PersistEventDeserializer[SelfcareMappingCreatedV1, SelfCareMappingCreated] =
-    event => Try(UUID.fromString(event.tenantId)).toEither.map(uuid => SelfCareMappingCreated(event.selfcareId, uuid))
+    : PersistEventDeserializer[SelfcareMappingCreatedV1, SelfcareMappingCreated] =
+    event => Try(UUID.fromString(event.tenantId)).toEither.map(uuid => SelfcareMappingCreated(event.selfcareId, uuid))
 
   implicit def selfcareMappingCreatedV1PersistEventSerializer
-    : PersistEventSerializer[SelfCareMappingCreated, SelfcareMappingCreatedV1] =
+    : PersistEventSerializer[SelfcareMappingCreated, SelfcareMappingCreatedV1] =
     event => SelfcareMappingCreatedV1(event.selfcareId, event.tenantId.toString()).asRight[Throwable]
 }

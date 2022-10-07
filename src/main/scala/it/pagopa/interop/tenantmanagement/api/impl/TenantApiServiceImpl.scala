@@ -72,10 +72,11 @@ class TenantApiServiceImpl(
     contexts: Seq[(String, String)]
   ): Route = authorize(ADMIN_ROLE, API_ROLE, SECURITY_ROLE, M2M_ROLE, INTERNAL_ROLE) {
 
+    logger.info(s"Creating tenant with externalId (${tenantSeed.externalId.origin},${tenantSeed.externalId.value})")
+
     val result: Future[PersistentTenant] = for {
       tenant        <- PersistentTenant.fromAPI(tenantSeed, offsetDateTimeSupplier).toFuture
       actorResponse <- commanderForTenantId(tenant.id.toString).askWithStatus(CreateTenant(tenant, _))
-      _             <- tenant.selfcareId.fold(Future.unit)(addMapping(_, tenant.id))
     } yield actorResponse
 
     onComplete(result) {
@@ -151,7 +152,7 @@ class TenantApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerTenant: ToEntityMarshaller[Tenant],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE, API_ROLE, M2M_ROLE, SECURITY_ROLE) {
+  ): Route = authorize(ADMIN_ROLE, API_ROLE, M2M_ROLE, SECURITY_ROLE, INTERNAL_ROLE) {
 
     val result: Future[PersistentTenant] = for {
       tenantUUID <- tenantId.toFutureUUID
