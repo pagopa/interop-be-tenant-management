@@ -271,30 +271,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-    delete:
-      tags:
-        - attributes
-      summary: Deletes an attribute within a tenant
-      operationId: deleteTenantAttribute
-      responses:
-        '200':
-          description: the tenant corresponding to the external id
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Tenant'
-        '400':
-          description: Invalid input
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        '404':
-          description: Tenant or Attribute not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
   /tenants/origin/{origin}/code/{code}:
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'

@@ -65,13 +65,6 @@ object TenantPersistentBehavior {
 
         result.fold(fail(_)(replyTo), t => persistAndReply(t, TenantUpdated)(replyTo))
 
-      case DeleteAttribute(tenantId, attributeId, dateTime, replyTo) =>
-        val result: Either[Throwable, PersistentTenant] = for {
-          maybeTenant <- state.tenants.get(tenantId).toRight(NotFoundTenant(tenantId))
-          _           <- maybeTenant.getAttribute(attributeId).toRight(NotFoundAttribute(attributeId.toString))
-        } yield maybeTenant.deleteAttribute(attributeId, dateTime)
-        result.fold(fail(_)(replyTo), t => persistAndReply(t, TenantUpdated)(replyTo))
-
       case AddSelfcareIdTenantMapping(selfcareId, tenantId, replyTo) =>
         Effect.persist(SelfcareMappingCreated(selfcareId, tenantId)).thenReply(replyTo)(_ => success(()))
 

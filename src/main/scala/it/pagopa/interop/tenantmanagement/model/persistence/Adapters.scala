@@ -156,10 +156,7 @@ object Adapters {
       p.copy(attributes = attr :: p.attributes, updatedAt = time.some)
 
     def updateAttribute(attr: PersistentTenantAttribute, time: OffsetDateTime): PersistentTenant =
-      deleteAttribute(attr.id, time).addAttribute(attr, time)
-
-    def deleteAttribute(id: UUID, time: OffsetDateTime): PersistentTenant =
-      p.copy(attributes = p.attributes.filterNot(_.id == id), updatedAt = time.some)
+      p.copy(attributes = attr :: p.attributes.filterNot(_.id == attr.id), updatedAt = time.some)
   }
 
   implicit class PersistentTenantObjectWrapper(private val p: PersistentTenant.type) extends AnyVal {

@@ -109,33 +109,6 @@ class AttributesApiServiceImpl(
     }
   }
 
-  override def deleteTenantAttribute(tenantId: String, attributeId: String)(implicit
-    toEntityMarshallerProblem: ToEntityMarshaller[Problem],
-    toEntityMarshallerTenant: ToEntityMarshaller[Tenant],
-    contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE, M2M_ROLE, INTERNAL_ROLE) {
-    val result: Future[PersistentTenant] = for {
-      attributeUUID <- attributeId.toFutureUUID
-      actorResponse <- commander(tenantId).askWithStatus(ref =>
-        DeleteAttribute(tenantId, attributeUUID, offsetDateTimeSupplier.get(), ref)
-      )
-    } yield actorResponse
-
-    onComplete(result) {
-      case Success(tenant)                    =>
-        addTenantAttribute200(tenant.toAPI)
-      case Failure(ex @ NotFoundTenant(_))    =>
-        logger.error(s"Error while deleting the attribute $attributeId", ex)
-        addTenantAttribute404(problemOf(StatusCodes.NotFound, GetTenantNotFound))
-      case Failure(ex @ NotFoundAttribute(_)) =>
-        logger.error(s"Error while deleting the attribute $attributeId", ex)
-        addTenantAttribute404(problemOf(StatusCodes.NotFound, AttributeNotFound))
-      case Failure(ex)                        =>
-        logger.error(s"Error while deleting the attribute $attributeId", ex)
-        complete(problemOf(StatusCodes.InternalServerError, GenericError("Error while adding the attribute")))
-    }
-  }
-
   override def updateTenantAttribute(tenantId: String, attributeId: String, tenantAttribute: TenantAttribute)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerTenant: ToEntityMarshaller[Tenant],
