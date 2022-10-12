@@ -120,11 +120,6 @@ trait SpecHelper {
     } yield result
   }
 
-  def deleteTenantAttribute[T](tenantId: String, attributeId: String)(implicit
-    actorSystem: ActorSystem[_],
-    um: Unmarshaller[HttpResponse, T]
-  ): Future[T] = performCall[T](HttpMethods.DELETE, s"tenants/${tenantId}/attributes/${attributeId}", None)
-
   private def performCall[T](verb: HttpMethod, path: String, data: Option[Source[ByteString, Any]])(implicit
     actorSystem: ActorSystem[_],
     um: Unmarshaller[HttpResponse, T]

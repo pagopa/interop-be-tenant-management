@@ -218,46 +218,6 @@ class TenantSpec extends BaseIntegrationSpec {
     }
   }
 
-  test("Deleting an attribute must fail if tenant does not exist") {
-    val (system, _, _)                = suiteState()
-    implicit val s: ActorSystem[_]    = system
-    implicit val ec: ExecutionContext = system.executionContext
-
-    deleteTenantAttribute[Problem](UUID.randomUUID.toString, UUID.randomUUID.toString).map { result =>
-      assertEquals(result.status, 404)
-      assertEquals(result.errors.map(_.code), Seq("018-0004"))
-    }
-  }
-
-  test("Deleting an attribute must fail if attribute in the tenant doesn't exists") {
-    val (system, mockedTime, mockedUUID) = suiteState()
-    implicit val s: ActorSystem[_]       = system
-    implicit val ec: ExecutionContext    = system.executionContext
-
-    val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, mockedUUID)
-
-    createTenant(tenantSeed) >> deleteTenantAttribute[Problem](tenant.id.toString, UUID.randomUUID.toString).map {
-      result =>
-        assertEquals(result.status, 404)
-        assertEquals(result.errors.map(_.code), Seq("018-0007"))
-    }
-  }
-
-  test("Deleting an attribute must succeed if attribute exists in tenant") {
-    val (system, mockedTime, mockedUUID) = suiteState()
-    implicit val s: ActorSystem[_]       = system
-    implicit val ec: ExecutionContext    = system.executionContext
-
-    val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, mockedUUID)
-    val expected             = tenant.copy(attributes = Nil, updatedAt = mockedTime.some)
-
-    createTenant(tenantSeed) >> deleteTenantAttribute[Tenant](
-      tenant.id.toString,
-      tenant.attributes.head.certified.get.id.toString
-    )
-      .map { result => assertEquals(result, expected) }
-  }
-
   test("Updating an attribute must fail if tenant does not exist") {
     val (system, mockedTime, mockedUUID) = suiteState()
     implicit val s: ActorSystem[_]       = system
