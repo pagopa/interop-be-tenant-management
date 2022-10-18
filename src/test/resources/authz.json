@@ -87,7 +87,8 @@
       "verb": "POST",
       "roles": [
         "admin",
-        "m2m"
+        "m2m",
+        "internal"
       ]
     }
   ]
