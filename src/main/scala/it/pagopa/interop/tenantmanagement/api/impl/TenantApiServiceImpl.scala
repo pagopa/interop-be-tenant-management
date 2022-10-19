@@ -98,7 +98,7 @@ class TenantApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerTenant: ToEntityMarshaller[Tenant],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE, API_ROLE, M2M_ROLE, SECURITY_ROLE) {
+  ): Route = authorize(ADMIN_ROLE, INTERNAL_ROLE, API_ROLE, M2M_ROLE, SECURITY_ROLE) {
 
     val result: Future[PersistentTenant] = commanderForTenantId(tenantId).askWithStatus(ref => GetTenant(tenantId, ref))
 
