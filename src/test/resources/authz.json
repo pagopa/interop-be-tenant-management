@@ -18,7 +18,8 @@
         "admin",
         "security",
         "api",
-        "m2m"
+        "m2m",
+        "internal"
       ]
     },
     {
