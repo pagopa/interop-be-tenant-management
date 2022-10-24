@@ -112,6 +112,14 @@ object Generators {
     (certifier, certifierV1) <- certifierGen
   } yield (certifier, certifierV1)
 
+  val mailKindGenerator: Gen[(PersistentTenantMailKind, TenantMailKindV1)] =
+    Gen.const((PersistentTenantMailKind.TechSupportMail, TenantMailKindV1.TECH_SUPPORT_MAIL))
+
+  val mailGenerator: Gen[(PersistentTenantMail, TenantMailV1)] = for {
+    (persistentMailKind, protoMailKind) <- mailKindGenerator
+    address                             <- stringGen
+  } yield (PersistentTenantMail(persistentMailKind, address), TenantMailV1(protoMailKind, address))
+
   val tenantGen: Gen[(PersistentTenant, TenantV1)] = for {
     id                                               <- Gen.uuid
     selfcareId                                       <- Gen.option(stringGen)
@@ -120,9 +128,19 @@ object Generators {
     (persistentTenantAttributes, tenantAttributesV1) <- listOf(attributeGen).map(_.separate)
     (createdAt, createdAtV1)                         <- offsetDatetimeGen
     (updatedAt, updatedAtV1)                         <- Gen.option(offsetDatetimeGen).map(_.separate)
+    (mails, protoMails)                              <- listOf(mailGenerator).map(_.separate)
   } yield (
-    PersistentTenant(id, selfcareId, externalId, features, persistentTenantAttributes, createdAt, updatedAt),
-    TenantV1(id.toString(), selfcareId, externalIdV1, featuresV1, tenantAttributesV1, createdAtV1, updatedAtV1)
+    PersistentTenant(id, selfcareId, externalId, features, persistentTenantAttributes, createdAt, updatedAt, mails),
+    TenantV1(
+      id.toString(),
+      selfcareId,
+      externalIdV1,
+      featuresV1,
+      tenantAttributesV1,
+      createdAtV1,
+      updatedAtV1,
+      protoMails
+    )
   )
 
   val tenantsGen: Gen[(Map[String, PersistentTenant], List[TenantsV1])] = listOf(tenantGen).map(_.separate).map {

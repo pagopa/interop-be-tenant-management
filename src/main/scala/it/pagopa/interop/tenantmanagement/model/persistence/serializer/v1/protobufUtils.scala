@@ -1,6 +1,6 @@
 package it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1
 
-import cats.implicits._
+import cats.syntax.all._
 import it.pagopa.interop.commons.utils.TypeConversions._
 import it.pagopa.interop.tenantmanagement.model.tenant._
 import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.tenant.TenantAttributeV1.Empty
@@ -9,6 +9,7 @@ import it.pagopa.interop.commons.utils.TypeConversions.LongOps
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentVerificationRenewal._
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantFeature.PersistentCertifier
 import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.tenant.PersistentVerificationRenewalV1.Unrecognized
+import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantMailKind.TechSupportMail
 
 object protobufUtils {
 
@@ -35,6 +36,7 @@ object protobufUtils {
     features   <- protobufTenant.features.traverse(toPersistentTenantFeature)
     createdAt  <- protobufTenant.createdAt.toOffsetDateTime.toEither
     updatedAt  <- protobufTenant.updatedAt.traverse(_.toOffsetDateTime.toEither)
+    mails      <- protobufTenant.mails.traverse(toPersistentTenantMail)
   } yield PersistentTenant(
     id = id,
     selfcareId = protobufTenant.selfcareId,
@@ -42,7 +44,8 @@ object protobufUtils {
     features = features,
     attributes = attributes,
     createdAt = createdAt,
-    updatedAt = updatedAt
+    updatedAt = updatedAt,
+    mails = mails
   )
 
   def toProtobufTenant(persistentTenant: PersistentTenant): Either[Throwable, TenantV1] = for {
@@ -54,8 +57,30 @@ object protobufUtils {
     features = persistentTenant.features.map(toProtobufTenantFeature),
     attributes = persistentTenant.attributes.map(toProtobufTenantAttribute),
     createdAt = persistentTenant.createdAt.toMillis,
-    updatedAt = persistentTenant.updatedAt.map(_.toMillis)
+    updatedAt = persistentTenant.updatedAt.map(_.toMillis),
+    mails = persistentTenant.mails.map(toProtobufTenantMail)
   )
+
+  def toPersistentTenantMail(protobufTenantMail: TenantMailV1): Either[Throwable, PersistentTenantMail] = for {
+    kind <- toPersistentTenantMailKind(protobufTenantMail.kind)
+  } yield PersistentTenantMail(kind = kind, address = protobufTenantMail.address)
+
+  def toProtobufTenantMail(persistentTenantMail: PersistentTenantMail): TenantMailV1 =
+    TenantMailV1(kind = toProtobufTenantMailKind(persistentTenantMail.kind), address = persistentTenantMail.address)
+
+  def toPersistentTenantMailKind(
+    protobufTenantMailKind: TenantMailKindV1
+  ): Either[Throwable, PersistentTenantMailKind] =
+    protobufTenantMailKind match {
+      case TenantMailKindV1.TECH_SUPPORT_MAIL               => TechSupportMail.asRight[Throwable]
+      case TenantMailKindV1.Unrecognized(unrecognizedValue) =>
+        new Exception(s"Unable to deserialize TenantMailKindV1 $unrecognizedValue").asLeft[PersistentTenantMailKind]
+    }
+
+  def toProtobufTenantMailKind(persistentTenantMailKind: PersistentTenantMailKind): TenantMailKindV1 =
+    persistentTenantMailKind match {
+      case TechSupportMail => TenantMailKindV1.TECH_SUPPORT_MAIL
+    }
 
   def toProtobufRenewal(renewal: PersistentVerificationRenewal): PersistentVerificationRenewalV1 = renewal match {
     case AUTOMATIC_RENEWAL    => PersistentVerificationRenewalV1.AUTOMATIC_RENEWAL

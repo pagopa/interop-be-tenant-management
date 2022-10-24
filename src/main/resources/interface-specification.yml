@@ -529,6 +529,10 @@ components:
         updatedAt:
           type: string
           format: date-time
+        mails:
+          type: array
+          items:
+            $ref: '#/components/schemas/Mail'
       required:
         - id
         - certifier
@@ -536,6 +540,22 @@ components:
         - features
         - attributes
         - createdAt
+        - mails
+    Mail:
+      description: A specific kind of mail
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/MailKind'
+        address:
+          type: string
+      required:
+        - kind
+        - address
+    MailKind:
+      type: string
+      enum:
+        - TECH_SUPPORT_MAIL
     ExternalId:
       properties:
         origin:

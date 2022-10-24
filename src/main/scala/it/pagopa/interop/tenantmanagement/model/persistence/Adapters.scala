@@ -10,6 +10,7 @@ import it.pagopa.interop.commons.utils.TypeConversions.StringOps
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentVerificationRenewal.AUTOMATIC_RENEWAL
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentVerificationRenewal.REVOKE_ON_EXPIRATION
 import java.time.OffsetDateTime
+import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantMailKind.TechSupportMail
 
 object Adapters {
 
@@ -136,6 +137,16 @@ object Adapters {
     }
   }
 
+  implicit class PersistentTenantMailKindWrapper(private val ptmk: PersistentTenantMailKind) extends AnyVal {
+    def toApi: MailKind = ptmk match {
+      case TechSupportMail => MailKind.TECH_SUPPORT_MAIL
+    }
+  }
+
+  implicit class PersistentTenantMailWrapper(private val ptm: PersistentTenantMail) extends AnyVal {
+    def toApi: Mail = Mail(kind = ptm.kind.toApi, address = ptm.address)
+  }
+
   implicit class PersistentTenantWrapper(private val p: PersistentTenant) extends AnyVal {
     def toAPI: Tenant = Tenant(
       id = p.id,
@@ -144,7 +155,8 @@ object Adapters {
       attributes = p.attributes.map(_.toAPI),
       externalId = p.externalId.toAPI,
       createdAt = p.createdAt,
-      updatedAt = p.updatedAt
+      updatedAt = p.updatedAt,
+      mails = p.mails.map(_.toApi)
     )
 
     def update(ptd: PersistentTenantDelta): PersistentTenant =
@@ -172,9 +184,8 @@ object Adapters {
       features = features,
       attributes = attributes,
       createdAt = supplier.get(),
-      updatedAt = None
+      updatedAt = None,
+      mails = Nil
     )
-
   }
-
 }
