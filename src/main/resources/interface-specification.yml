@@ -596,8 +596,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/TenantFeature'
+        mails:
+          type: array
+          items:
+            $ref: '#/components/schemas/Mail'
       required:
         - features
+        - mails
   securitySchemes:
     bearerAuth:
       type: http

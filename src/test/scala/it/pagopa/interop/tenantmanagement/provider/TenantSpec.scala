@@ -57,7 +57,7 @@ class TenantSpec extends BaseIntegrationSpec {
     implicit val s: ActorSystem[_]    = system
     implicit val ec: ExecutionContext = system.executionContext
 
-    val tenantDelta: TenantDelta = TenantDelta(None, List.empty)
+    val tenantDelta: TenantDelta = TenantDelta(None, Nil, Nil)
 
     updateTenant[Problem](UUID.randomUUID(), tenantDelta).map { result =>
       assertEquals(result.status, 404)
@@ -72,7 +72,7 @@ class TenantSpec extends BaseIntegrationSpec {
 
     val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, mockedUUID)
 
-    val tenantDelta: TenantDelta = TenantDelta(None, List.empty)
+    val tenantDelta: TenantDelta = TenantDelta(None, Nil, Nil)
 
     createTenant(tenantSeed) >> updateTenant[Tenant](tenant.id, tenantDelta).map { result =>
       assertEquals(result, tenant.copy(selfcareId = None, features = Nil))
@@ -150,7 +150,7 @@ class TenantSpec extends BaseIntegrationSpec {
 
     val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, mockedUUID)
     val selfcareId: String   = UUID.randomUUID().toString()
-    val delta: TenantDelta   = TenantDelta(selfcareId.some, TenantFeature(Certifier("foo").some) :: Nil)
+    val delta: TenantDelta   = TenantDelta(selfcareId.some, TenantFeature(Certifier("foo").some) :: Nil, Nil)
 
     createTenant[Tenant](tenantSeed) >> updateTenant[Tenant](tenant.id, delta) >> getTenantBySelfcareId[Tenant](
       selfcareId
@@ -166,7 +166,7 @@ class TenantSpec extends BaseIntegrationSpec {
 
     val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, mockedUUID)
     val selfcareId: String   = UUID.randomUUID().toString()
-    val delta: TenantDelta   = TenantDelta(selfcareId.some, TenantFeature(Certifier("foo").some) :: Nil)
+    val delta: TenantDelta   = TenantDelta(selfcareId.some, TenantFeature(Certifier("foo").some) :: Nil, Nil)
 
     createTenant[Tenant](tenantSeed) >> updateTenant[Tenant](tenant.id, delta) >> getTenantBySelfcareId[Problem](
       UUID.randomUUID().toString()
