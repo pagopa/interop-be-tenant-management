@@ -79,6 +79,24 @@ class TenantSpec extends BaseIntegrationSpec {
     }
   }
 
+  test("Update of a tenant with mail too must succeed if tenant exists") {
+    val (system, mockedTime, mockedUUID) = suiteState()
+    implicit val s: ActorSystem[_]       = system
+    implicit val ec: ExecutionContext    = system.executionContext
+
+    val mails: List[Mail] =
+      List(Mail(MailKind.TECH_SUPPORT_MAIL, "foo@bar.it"), Mail(MailKind.TECH_SUPPORT_MAIL, "luke@theforce.com"))
+
+    val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, mockedUUID)
+    val expected: Tenant     = tenant.copy(selfcareId = None, features = Nil, mails = mails)
+
+    val tenantDelta: TenantDelta = TenantDelta(None, Nil, mails)
+
+    createTenant(tenantSeed) >> updateTenant[Tenant](tenant.id, tenantDelta).map { result =>
+      assertEquals(result, expected)
+    }
+  }
+
   test("Get of a tenant by externalId must succeed if tenant exist") {
     val (system, mockedTime, mockedUUID) = suiteState()
     implicit val s: ActorSystem[_]       = system
