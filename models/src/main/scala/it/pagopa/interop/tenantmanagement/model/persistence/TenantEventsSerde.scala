@@ -120,11 +120,11 @@ object TenantEventsSerde {
   private implicit val ptmkFormat: RootJsonFormat[PersistentTenantMailKind] =
     new RootJsonFormat[PersistentTenantMailKind] {
       override def read(json: JsValue): PersistentTenantMailKind = json match {
-        case JsString("TECH_SUPPORT_MAIL") => PersistentTenantMailKind.TechSupportMail
+        case JsString("CONTACT_EMAIL") => PersistentTenantMailKind.ContactEmail
         case x => throw new DeserializationException(s"Unable to deserialize PersistentTenantKind: unmapped kind $x")
       }
       override def write(obj: PersistentTenantMailKind): JsValue = obj match {
-        case PersistentTenantMailKind.TechSupportMail => JsString("TECH_SUPPORT_MAIL")
+        case PersistentTenantMailKind.ContactEmail => JsString("CONTACT_EMAIL")
       }
     }
 

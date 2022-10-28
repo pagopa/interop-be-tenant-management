@@ -85,7 +85,7 @@ class TenantSpec extends BaseIntegrationSpec {
     implicit val ec: ExecutionContext    = system.executionContext
 
     val mails: List[Mail] =
-      List(Mail(MailKind.TECH_SUPPORT_MAIL, "foo@bar.it"), Mail(MailKind.TECH_SUPPORT_MAIL, "luke@theforce.com"))
+      List(Mail(MailKind.CONTACT_EMAIL, "foo@bar.it"), Mail(MailKind.CONTACT_EMAIL, "luke@theforce.com"))
 
     val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, mockedUUID)
     val expected: Tenant     = tenant.copy(selfcareId = None, features = Nil, mails = mails)

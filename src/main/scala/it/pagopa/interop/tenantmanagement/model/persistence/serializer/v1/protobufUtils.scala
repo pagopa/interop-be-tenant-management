@@ -9,7 +9,7 @@ import it.pagopa.interop.commons.utils.TypeConversions.LongOps
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentVerificationRenewal._
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantFeature.PersistentCertifier
 import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.tenant.PersistentVerificationRenewalV1.Unrecognized
-import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantMailKind.TechSupportMail
+import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantMailKind.ContactEmail
 
 object protobufUtils {
 
@@ -72,14 +72,14 @@ object protobufUtils {
     protobufTenantMailKind: TenantMailKindV1
   ): Either[Throwable, PersistentTenantMailKind] =
     protobufTenantMailKind match {
-      case TenantMailKindV1.TECH_SUPPORT_MAIL               => TechSupportMail.asRight[Throwable]
+      case TenantMailKindV1.CONTACT_EMAIL                   => ContactEmail.asRight[Throwable]
       case TenantMailKindV1.Unrecognized(unrecognizedValue) =>
         new Exception(s"Unable to deserialize TenantMailKindV1 $unrecognizedValue").asLeft[PersistentTenantMailKind]
     }
 
   def toProtobufTenantMailKind(persistentTenantMailKind: PersistentTenantMailKind): TenantMailKindV1 =
     persistentTenantMailKind match {
-      case TechSupportMail => TenantMailKindV1.TECH_SUPPORT_MAIL
+      case ContactEmail => TenantMailKindV1.CONTACT_EMAIL
     }
 
   def toProtobufRenewal(renewal: PersistentVerificationRenewal): PersistentVerificationRenewalV1 = renewal match {

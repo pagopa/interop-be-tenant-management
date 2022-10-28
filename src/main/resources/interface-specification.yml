@@ -555,7 +555,7 @@ components:
     MailKind:
       type: string
       enum:
-        - TECH_SUPPORT_MAIL
+        - CONTACT_EMAIL
     ExternalId:
       properties:
         origin:

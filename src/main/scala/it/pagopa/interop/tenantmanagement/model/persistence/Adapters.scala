@@ -10,8 +10,8 @@ import it.pagopa.interop.commons.utils.TypeConversions.StringOps
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentVerificationRenewal.AUTOMATIC_RENEWAL
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentVerificationRenewal.REVOKE_ON_EXPIRATION
 import java.time.OffsetDateTime
-import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantMailKind.TechSupportMail
-import it.pagopa.interop.tenantmanagement.model.MailKind.TECH_SUPPORT_MAIL
+import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantMailKind.ContactEmail
+import it.pagopa.interop.tenantmanagement.model.MailKind.CONTACT_EMAIL
 
 object Adapters {
 
@@ -145,13 +145,13 @@ object Adapters {
 
   implicit class PersistentTenantMailKindWrapper(private val ptmk: PersistentTenantMailKind) extends AnyVal {
     def toApi: MailKind = ptmk match {
-      case TechSupportMail => MailKind.TECH_SUPPORT_MAIL
+      case ContactEmail => MailKind.CONTACT_EMAIL
     }
   }
 
   implicit class PersistentTenantMailKindObjectWrapper(private val p: PersistentTenantMailKind.type) extends AnyVal {
     def fromApi(mailKind: MailKind): PersistentTenantMailKind = mailKind match {
-      case TECH_SUPPORT_MAIL => TechSupportMail
+      case CONTACT_EMAIL => ContactEmail
     }
   }
 

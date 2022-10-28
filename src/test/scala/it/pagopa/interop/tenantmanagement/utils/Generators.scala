@@ -113,7 +113,7 @@ object Generators {
   } yield (certifier, certifierV1)
 
   val mailKindGenerator: Gen[(PersistentTenantMailKind, TenantMailKindV1)] =
-    Gen.const((PersistentTenantMailKind.TechSupportMail, TenantMailKindV1.TECH_SUPPORT_MAIL))
+    Gen.const((PersistentTenantMailKind.ContactEmail, TenantMailKindV1.CONTACT_EMAIL))
 
   val mailGenerator: Gen[(PersistentTenantMail, TenantMailV1)] = for {
     (persistentMailKind, protoMailKind) <- mailKindGenerator
