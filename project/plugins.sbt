@@ -12,6 +12,6 @@ addSbtPlugin("com.thesamet" % "sbt-protoc" % "1.0.6")
 
 addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.10.3")
 
-libraryDependencies += "com.thesamet.scalapb" %% "compilerplugin" % "0.11.11"
+libraryDependencies += "com.thesamet.scalapb" %% "compilerplugin" % "0.11.12"
 
 ThisBuild / libraryDependencySchemes ++= Seq("org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always)
