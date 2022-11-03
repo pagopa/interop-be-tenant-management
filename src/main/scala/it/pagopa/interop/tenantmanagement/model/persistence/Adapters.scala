@@ -31,15 +31,23 @@ object Adapters {
   }
 
   implicit class PersistentTenantDeltaObjectWrapper(private val p: PersistentTenantDelta.type) extends AnyVal {
-    def fromAPI(tenantId: String, td: TenantDelta): Either[Throwable, PersistentTenantDelta] = for {
+    def fromAPI(
+      tenantId: String,
+      td: TenantDelta,
+      timeSupplier: OffsetDateTimeSupplier
+    ): Either[Throwable, PersistentTenantDelta] = for {
       uuid     <- tenantId.toUUID.toEither
       features <- td.features.toList.traverse(PersistentTenantFeature.fromAPI)
     } yield PersistentTenantDelta(
       id = uuid,
       selfcareId = td.selfcareId,
       features = features,
-      mails = td.mails.toList.map(PersistentTenantMail.fromApi)
+      mails = td.mails.toList.map(_.toModel(timeSupplier.get())).map(PersistentTenantMail.fromApi)
     )
+  }
+
+  implicit class MailSeedWrapper(private val ms: MailSeed) extends AnyVal {
+    def toModel(createdAt: OffsetDateTime): Mail = Mail(kind = ms.kind, address = ms.address, createdAt = createdAt)
   }
 
   implicit class PersistentVerificationTenantVerifierWrapper(private val p: PersistentTenantVerifier) extends AnyVal {
@@ -156,12 +164,15 @@ object Adapters {
   }
 
   implicit class PersistentTenantMailWrapper(private val ptm: PersistentTenantMail) extends AnyVal {
-    def toApi: Mail = Mail(kind = ptm.kind.toApi, address = ptm.address)
+    def toApi: Mail = Mail(kind = ptm.kind.toApi, address = ptm.address, createdAt = ptm.createdAt)
   }
 
   implicit class PersistentTenantMailObjectWrapper(private val p: PersistentTenantMail.type) extends AnyVal {
-    def fromApi(mail: Mail): PersistentTenantMail =
-      PersistentTenantMail(kind = PersistentTenantMailKind.fromApi(mail.kind), address = mail.address)
+    def fromApi(mail: Mail): PersistentTenantMail = PersistentTenantMail(
+      kind = PersistentTenantMailKind.fromApi(mail.kind),
+      address = mail.address,
+      createdAt = mail.createdAt
+    )
   }
 
   implicit class PersistentTenantWrapper(private val p: PersistentTenant) extends AnyVal {

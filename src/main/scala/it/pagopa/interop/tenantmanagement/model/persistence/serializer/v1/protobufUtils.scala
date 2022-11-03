@@ -62,11 +62,15 @@ object protobufUtils {
   )
 
   def toPersistentTenantMail(protobufTenantMail: TenantMailV1): Either[Throwable, PersistentTenantMail] = for {
-    kind <- toPersistentTenantMailKind(protobufTenantMail.kind)
-  } yield PersistentTenantMail(kind = kind, address = protobufTenantMail.address)
+    kind      <- toPersistentTenantMailKind(protobufTenantMail.kind)
+    createdAt <- protobufTenantMail.createdAt.toOffsetDateTime.toEither
+  } yield PersistentTenantMail(kind = kind, address = protobufTenantMail.address, createdAt = createdAt)
 
-  def toProtobufTenantMail(persistentTenantMail: PersistentTenantMail): TenantMailV1 =
-    TenantMailV1(kind = toProtobufTenantMailKind(persistentTenantMail.kind), address = persistentTenantMail.address)
+  def toProtobufTenantMail(persistentTenantMail: PersistentTenantMail): TenantMailV1 = TenantMailV1(
+    kind = toProtobufTenantMailKind(persistentTenantMail.kind),
+    address = persistentTenantMail.address,
+    createdAt = persistentTenantMail.createdAt.toMillis
+  )
 
   def toPersistentTenantMailKind(
     protobufTenantMailKind: TenantMailKindV1

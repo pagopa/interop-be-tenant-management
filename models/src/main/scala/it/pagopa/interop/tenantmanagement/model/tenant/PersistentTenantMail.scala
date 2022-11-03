@@ -1,3 +1,5 @@
 package it.pagopa.interop.tenantmanagement.model.tenant
 
-final case class PersistentTenantMail(kind: PersistentTenantMailKind, address: String)
+import java.time.OffsetDateTime
+
+final case class PersistentTenantMail(kind: PersistentTenantMailKind, address: String, createdAt: OffsetDateTime)

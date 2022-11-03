@@ -541,7 +541,7 @@ components:
         - attributes
         - createdAt
         - mails
-    Mail:
+    MailSeed:
       description: A specific kind of mail
       type: object
       properties:
@@ -552,6 +552,21 @@ components:
       required:
         - kind
         - address
+    Mail:
+      description: A specific kind of mail
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/MailKind'
+        address:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - kind
+        - address
+        - createdAt
     MailKind:
       type: string
       enum:
@@ -599,7 +614,7 @@ components:
         mails:
           type: array
           items:
-            $ref: '#/components/schemas/Mail'
+            $ref: '#/components/schemas/MailSeed'
       required:
         - features
         - mails

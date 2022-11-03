@@ -23,6 +23,7 @@ message TenantV1 {
 message TenantMailV1 {
   required TenantMailKindV1 kind = 1;
   required string address = 2;
+  required int64 createdAt = 3;
 }
 
 enum TenantMailKindV1 {

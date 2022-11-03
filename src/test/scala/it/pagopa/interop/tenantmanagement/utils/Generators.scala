@@ -118,7 +118,8 @@ object Generators {
   val mailGenerator: Gen[(PersistentTenantMail, TenantMailV1)] = for {
     (persistentMailKind, protoMailKind) <- mailKindGenerator
     address                             <- stringGen
-  } yield (PersistentTenantMail(persistentMailKind, address), TenantMailV1(protoMailKind, address))
+    (time, long)                        <- offsetDatetimeGen
+  } yield (PersistentTenantMail(persistentMailKind, address, time), TenantMailV1(protoMailKind, address, long))
 
   val tenantGen: Gen[(PersistentTenant, TenantV1)] = for {
     id                                               <- Gen.uuid
