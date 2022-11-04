@@ -156,7 +156,8 @@ class TenantApiServiceImpl(
 
     val result: Future[PersistentTenant] = for {
       tenantUUID <- tenantId.toFutureUUID
-      delta      <- PersistentTenantDelta.fromAPI(tenantId, tenantDelta, offsetDateTimeSupplier).toFuture
+      tenant     <- commanderForTenantId(tenantId).askWithStatus(r => GetTenant(tenantId, r))
+      delta      <- PersistentTenantDelta.fromAPI(tenant, tenantDelta, offsetDateTimeSupplier).toFuture
       result     <- commanderForTenantId(tenantId).askWithStatus(r => UpdateTenant(delta, r))
       _          <- delta.selfcareId.fold(Future.unit)(addMapping(_, tenantUUID))
     } yield result
