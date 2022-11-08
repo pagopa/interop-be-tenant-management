@@ -24,19 +24,25 @@ import akka.actor.typed.ActorSystem
 import akka.actor
 import java.time.OffsetDateTime
 import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
-import java.util.UUID
+import cats.data.NonEmptyList
 
 abstract class BaseIntegrationSpec extends FunSuite with SpecHelper {
 
   override def munitFixtures = List(suiteState)
 
-  val suiteState: Fixture[(ActorSystem[_], OffsetDateTime, UUID)] =
-    new Fixture[(ActorSystem[_], OffsetDateTime, UUID)]("actorSystem") {
-      private var bindServer: Http.ServerBinding          = null
-      private var actorTestKit: ActorTestKit              = null
-      private var mockedTime: OffsetDateTime              = null
-      private var mockedUUID: UUID                        = null
-      def apply(): (ActorSystem[_], OffsetDateTime, UUID) = (actorTestKit.internalSystem, mockedTime, mockedUUID)
+  var mockedTimes: NonEmptyList[OffsetDateTime] = null
+
+  def mockedTime: OffsetDateTime = mockedTimes.head
+
+  val suiteState: Fixture[ActorSystem[_]] =
+    new Fixture[ActorSystem[_]]("actorSystem") {
+      private var bindServer: Http.ServerBinding = null
+      private var actorTestKit: ActorTestKit     = null
+      def apply(): ActorSystem[_]                = actorTestKit.internalSystem
+
+      override def beforeEach(context: BeforeEach): Unit = {
+        mockedTimes = NonEmptyList.one(OffsetDateTime.now())
+      }
 
       override def beforeAll(): Unit = {
         Logger(this.getClass()) // * A logger should be created before the one in akka to avoid the "replay" message
@@ -48,10 +54,11 @@ abstract class BaseIntegrationSpec extends FunSuite with SpecHelper {
 
         sharding.init(persistentEntity)
 
-        mockedTime = OffsetDateTime.now()
-        mockedUUID = UUID.randomUUID()
-
-        val offsetDateTimeSupplier: OffsetDateTimeSupplier = () => mockedTime
+        val offsetDateTimeSupplier: OffsetDateTimeSupplier = () =>
+          mockedTimes match {
+            case NonEmptyList(head, Nil)  => head
+            case NonEmptyList(head, tail) => mockedTimes = NonEmptyList.fromListUnsafe(tail); head
+          }
 
         val attributesApi: AttributesApi = new AttributesApi(
           new AttributesApiServiceImpl(actorTestKit.internalSystem, sharding, persistentEntity, offsetDateTimeSupplier),
