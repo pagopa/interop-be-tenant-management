@@ -80,7 +80,7 @@ object JsonFormats {
       }
     }
 
-  private implicit val ptmFormat: RootJsonFormat[PersistentTenantMail] = jsonFormat3(PersistentTenantMail.apply)
+  private implicit val ptmFormat: RootJsonFormat[PersistentTenantMail] = jsonFormat4(PersistentTenantMail.apply)
   implicit val ptFormat: RootJsonFormat[PersistentTenant]              = jsonFormat8(PersistentTenant.apply)
 
   implicit val pcFormat: RootJsonFormat[TenantCreated] = jsonFormat1(TenantCreated.apply)

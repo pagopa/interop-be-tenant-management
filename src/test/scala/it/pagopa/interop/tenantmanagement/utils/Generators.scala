@@ -119,7 +119,11 @@ object Generators {
     (persistentMailKind, protoMailKind) <- mailKindGenerator
     address                             <- stringGen
     (time, long)                        <- offsetDatetimeGen
-  } yield (PersistentTenantMail(persistentMailKind, address, time), TenantMailV1(protoMailKind, address, long))
+    description                         <- stringGen
+  } yield (
+    PersistentTenantMail(kind = persistentMailKind, address = address, description = description, createdAt = time),
+    TenantMailV1(kind = protoMailKind, address = address, createdAt = long, description = description)
+  )
 
   val tenantGen: Gen[(PersistentTenant, TenantV1)] = for {
     id                                               <- Gen.uuid

@@ -128,7 +128,7 @@ object TenantEventsSerde {
       }
     }
 
-  private implicit val ptmFormat: RootJsonFormat[PersistentTenantMail]    = jsonFormat3(PersistentTenantMail.apply)
+  private implicit val ptmFormat: RootJsonFormat[PersistentTenantMail]    = jsonFormat4(PersistentTenantMail.apply)
   private implicit val pexFormat: RootJsonFormat[PersistentExternalId]    = jsonFormat2(PersistentExternalId.apply)
   private implicit val ptFormat: RootJsonFormat[PersistentTenant]         = jsonFormat8(PersistentTenant.apply)
   private implicit val tcFormat: RootJsonFormat[TenantCreated]            = jsonFormat1(TenantCreated.apply)

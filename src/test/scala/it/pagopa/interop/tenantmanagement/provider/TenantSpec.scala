@@ -80,11 +80,14 @@ class TenantSpec extends BaseIntegrationSpec {
     implicit val ecs: ExecutionContext  = system.executionContext
 
     val mailseed: List[MailSeed] =
-      List(MailSeed(MailKind.CONTACT_EMAIL, "foo@bar.it"), MailSeed(MailKind.CONTACT_EMAIL, "luke@theforce.com"))
+      List(
+        MailSeed(MailKind.CONTACT_EMAIL, "foo@bar.it"),
+        MailSeed(MailKind.CONTACT_EMAIL, "luke@theforce.com", "use the force".some)
+      )
 
     val mails: List[Mail] = List(
       Mail(MailKind.CONTACT_EMAIL, "foo@bar.it", mockedTime),
-      Mail(MailKind.CONTACT_EMAIL, "luke@theforce.com", mockedTime)
+      Mail(MailKind.CONTACT_EMAIL, "luke@theforce.com", mockedTime, "use the force".some)
     )
 
     val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, UUID.randomUUID())
@@ -109,8 +112,10 @@ class TenantSpec extends BaseIntegrationSpec {
 
     val tenantDelta1: TenantDelta = TenantDelta(None, Nil, mailseed1)
 
-    val mailseed2: List[MailSeed] =
-      List(MailSeed(MailKind.CONTACT_EMAIL, "foo@bar.it"), MailSeed(MailKind.CONTACT_EMAIL, "luke@theforce.com"))
+    val mailseed2: List[MailSeed] = List(
+      MailSeed(MailKind.CONTACT_EMAIL, "foo@bar.it", "awe".some),
+      MailSeed(MailKind.CONTACT_EMAIL, "luke@theforce.com")
+    )
 
     val tenantDelta2: TenantDelta = TenantDelta(None, Nil, mailseed2)
 
@@ -123,7 +128,7 @@ class TenantSpec extends BaseIntegrationSpec {
       selfcareId = None,
       features = Nil,
       mails = List(
-        Mail(MailKind.CONTACT_EMAIL, "foo@bar.it", time1),
+        Mail(MailKind.CONTACT_EMAIL, "foo@bar.it", time1, "awe".some),
         Mail(MailKind.CONTACT_EMAIL, "luke@theforce.com", time2)
       )
     )

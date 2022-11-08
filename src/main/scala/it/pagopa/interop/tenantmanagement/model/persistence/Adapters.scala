@@ -51,11 +51,13 @@ object Adapters {
       actualMails
         .find(m => m.address == ms.address && m.kind == ms.kind)
         .getOrElse(ms.toModel(timeSupplier.get()))
+        .copy(description = ms.description)
     )
   }
 
   implicit class MailSeedWrapper(private val ms: MailSeed) extends AnyVal {
-    def toModel(createdAt: OffsetDateTime): Mail = Mail(kind = ms.kind, address = ms.address, createdAt = createdAt)
+    def toModel(createdAt: OffsetDateTime): Mail =
+      Mail(kind = ms.kind, address = ms.address, createdAt = createdAt, description = ms.description)
   }
 
   implicit class PersistentVerificationTenantVerifierWrapper(private val p: PersistentTenantVerifier) extends AnyVal {
@@ -172,14 +174,20 @@ object Adapters {
   }
 
   implicit class PersistentTenantMailWrapper(private val ptm: PersistentTenantMail) extends AnyVal {
-    def toApi: Mail = Mail(kind = ptm.kind.toApi, address = ptm.address, createdAt = ptm.createdAt)
+    def toApi: Mail = Mail(
+      kind = ptm.kind.toApi,
+      address = ptm.address,
+      createdAt = ptm.createdAt,
+      description = Option(ptm.description).filter(_.nonEmpty)
+    )
   }
 
   implicit class PersistentTenantMailObjectWrapper(private val p: PersistentTenantMail.type) extends AnyVal {
     def fromApi(mail: Mail): PersistentTenantMail = PersistentTenantMail(
       kind = PersistentTenantMailKind.fromApi(mail.kind),
-      address = mail.address,
-      createdAt = mail.createdAt
+      address = mail.address.trim(),
+      createdAt = mail.createdAt,
+      description = mail.description.getOrElse("")
     )
   }
 
