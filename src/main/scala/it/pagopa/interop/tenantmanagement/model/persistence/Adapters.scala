@@ -178,7 +178,7 @@ object Adapters {
       kind = ptm.kind.toApi,
       address = ptm.address,
       createdAt = ptm.createdAt,
-      description = Option(ptm.description).filter(_.nonEmpty)
+      description = ptm.description.map(_.trim).filter(_.nonEmpty)
     )
   }
 
@@ -187,7 +187,7 @@ object Adapters {
       kind = PersistentTenantMailKind.fromApi(mail.kind),
       address = mail.address.trim(),
       createdAt = mail.createdAt,
-      description = mail.description.getOrElse("")
+      description = mail.description.map(_.trim).filterNot(_.isEmpty)
     )
   }
 

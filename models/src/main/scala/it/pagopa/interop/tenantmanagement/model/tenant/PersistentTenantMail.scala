@@ -5,6 +5,6 @@ import java.time.OffsetDateTime
 final case class PersistentTenantMail(
   kind: PersistentTenantMailKind,
   address: String,
-  description: String,
+  description: Option[String],
   createdAt: OffsetDateTime
 )

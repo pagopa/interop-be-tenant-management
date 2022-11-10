@@ -119,7 +119,7 @@ object Generators {
     (persistentMailKind, protoMailKind) <- mailKindGenerator
     address                             <- stringGen
     (time, long)                        <- offsetDatetimeGen
-    description                         <- stringGen
+    description                         <- Gen.option(stringGen)
   } yield (
     PersistentTenantMail(kind = persistentMailKind, address = address, description = description, createdAt = time),
     TenantMailV1(kind = protoMailKind, address = address, createdAt = long, description = description)
