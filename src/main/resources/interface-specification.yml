@@ -529,6 +529,10 @@ components:
         updatedAt:
           type: string
           format: date-time
+        mails:
+          type: array
+          items:
+            $ref: '#/components/schemas/Mail'
       required:
         - id
         - certifier
@@ -536,6 +540,41 @@ components:
         - features
         - attributes
         - createdAt
+        - mails
+    MailSeed:
+      description: A specific kind of mail
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/MailKind'
+        address:
+          type: string
+        description:
+          type: string
+      required:
+        - kind
+        - address
+    Mail:
+      description: A specific kind of mail
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/MailKind'
+        address:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        description:
+          type: string
+      required:
+        - kind
+        - address
+        - createdAt
+    MailKind:
+      type: string
+      enum:
+        - CONTACT_EMAIL
     ExternalId:
       properties:
         origin:
@@ -576,8 +615,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/TenantFeature'
+        mails:
+          type: array
+          items:
+            $ref: '#/components/schemas/MailSeed'
       required:
         - features
+        - mails
   securitySchemes:
     bearerAuth:
       type: http

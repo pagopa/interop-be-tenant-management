@@ -52,7 +52,8 @@ trait SpecHelper {
       features = TenantFeature(Certifier("foo").some) :: Nil,
       attributes = attr :: Nil,
       createdAt = offsetDateTime,
-      updatedAt = None
+      updatedAt = None,
+      mails = Nil
     )
 
     (tenant, tenantSeed)

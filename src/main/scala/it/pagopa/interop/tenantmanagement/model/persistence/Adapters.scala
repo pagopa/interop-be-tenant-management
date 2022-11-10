@@ -6,10 +6,11 @@ import it.pagopa.interop.tenantmanagement.model._
 import it.pagopa.interop.tenantmanagement.error.InternalErrors
 import java.util.UUID
 import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
-import it.pagopa.interop.commons.utils.TypeConversions.StringOps
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentVerificationRenewal.AUTOMATIC_RENEWAL
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentVerificationRenewal.REVOKE_ON_EXPIRATION
 import java.time.OffsetDateTime
+import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantMailKind.ContactEmail
+import it.pagopa.interop.tenantmanagement.model.MailKind.CONTACT_EMAIL
 
 object Adapters {
 
@@ -29,10 +30,34 @@ object Adapters {
   }
 
   implicit class PersistentTenantDeltaObjectWrapper(private val p: PersistentTenantDelta.type) extends AnyVal {
-    def fromAPI(tenantId: String, td: TenantDelta): Either[Throwable, PersistentTenantDelta] = for {
-      uuid     <- tenantId.toUUID.toEither
+    def fromAPI(
+      tenant: PersistentTenant,
+      td: TenantDelta,
+      timeSupplier: OffsetDateTimeSupplier
+    ): Either[Throwable, PersistentTenantDelta] = for {
       features <- td.features.toList.traverse(PersistentTenantFeature.fromAPI)
-    } yield PersistentTenantDelta(id = uuid, selfcareId = td.selfcareId, features = features)
+      actualMails    = tenant.mails.map(_.toApi)
+      mailsToPersist = calculateMailsToKeep(timeSupplier)(actualMails, td.mails.toList)
+    } yield PersistentTenantDelta(
+      id = tenant.id,
+      selfcareId = td.selfcareId,
+      features = features,
+      mails = mailsToPersist.map(PersistentTenantMail.fromApi)
+    )
+
+    private def calculateMailsToKeep(
+      timeSupplier: OffsetDateTimeSupplier
+    )(actualMails: List[Mail], tenantDeltaMails: List[MailSeed]): List[Mail] = tenantDeltaMails.map(ms =>
+      actualMails
+        .find(m => m.address == ms.address && m.kind == ms.kind)
+        .getOrElse(ms.toModel(timeSupplier.get()))
+        .copy(description = ms.description)
+    )
+  }
+
+  implicit class MailSeedWrapper(private val ms: MailSeed) extends AnyVal {
+    def toModel(createdAt: OffsetDateTime): Mail =
+      Mail(kind = ms.kind, address = ms.address, createdAt = createdAt, description = ms.description)
   }
 
   implicit class PersistentVerificationTenantVerifierWrapper(private val p: PersistentTenantVerifier) extends AnyVal {
@@ -136,6 +161,36 @@ object Adapters {
     }
   }
 
+  implicit class PersistentTenantMailKindWrapper(private val ptmk: PersistentTenantMailKind) extends AnyVal {
+    def toApi: MailKind = ptmk match {
+      case ContactEmail => MailKind.CONTACT_EMAIL
+    }
+  }
+
+  implicit class PersistentTenantMailKindObjectWrapper(private val p: PersistentTenantMailKind.type) extends AnyVal {
+    def fromApi(mailKind: MailKind): PersistentTenantMailKind = mailKind match {
+      case CONTACT_EMAIL => ContactEmail
+    }
+  }
+
+  implicit class PersistentTenantMailWrapper(private val ptm: PersistentTenantMail) extends AnyVal {
+    def toApi: Mail = Mail(
+      kind = ptm.kind.toApi,
+      address = ptm.address,
+      createdAt = ptm.createdAt,
+      description = ptm.description.map(_.trim).filter(_.nonEmpty)
+    )
+  }
+
+  implicit class PersistentTenantMailObjectWrapper(private val p: PersistentTenantMail.type) extends AnyVal {
+    def fromApi(mail: Mail): PersistentTenantMail = PersistentTenantMail(
+      kind = PersistentTenantMailKind.fromApi(mail.kind),
+      address = mail.address.trim(),
+      createdAt = mail.createdAt,
+      description = mail.description.map(_.trim).filterNot(_.isEmpty)
+    )
+  }
+
   implicit class PersistentTenantWrapper(private val p: PersistentTenant) extends AnyVal {
     def toAPI: Tenant = Tenant(
       id = p.id,
@@ -144,11 +199,12 @@ object Adapters {
       attributes = p.attributes.map(_.toAPI),
       externalId = p.externalId.toAPI,
       createdAt = p.createdAt,
-      updatedAt = p.updatedAt
+      updatedAt = p.updatedAt,
+      mails = p.mails.map(_.toApi)
     )
 
     def update(ptd: PersistentTenantDelta): PersistentTenant =
-      p.copy(selfcareId = ptd.selfcareId, features = ptd.features)
+      p.copy(selfcareId = ptd.selfcareId, features = ptd.features, mails = ptd.mails)
 
     def getAttribute(id: UUID): Option[PersistentTenantAttribute] = p.attributes.find(_.id == id)
 
@@ -172,9 +228,8 @@ object Adapters {
       features = features,
       attributes = attributes,
       createdAt = supplier.get(),
-      updatedAt = None
+      updatedAt = None,
+      mails = Nil
     )
-
   }
-
 }

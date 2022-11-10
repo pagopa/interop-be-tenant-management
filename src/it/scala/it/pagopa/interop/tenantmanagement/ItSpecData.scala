@@ -15,6 +15,7 @@ object ItSpecData {
     features = List.empty,
     attributes = List.empty,
     createdAt = timestamp,
-    updatedAt = None
+    updatedAt = None,
+    mails = Nil
   )
 }

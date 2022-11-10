@@ -22,7 +22,12 @@ class CqrsProjectionSpec extends ScalaTestWithActorTestKit(ItSpecConfiguration.c
     "succeed for event TenantUpdated" in {
       val tenant    = createTenant(persistentTenant.copy(id = UUID.randomUUID()))
       val expected  = updateTenant(
-        PersistentTenantDelta(id = tenant.id, selfcareId = Some(UUID.randomUUID().toString), features = List.empty)
+        PersistentTenantDelta(
+          id = tenant.id,
+          selfcareId = Some(UUID.randomUUID().toString),
+          features = List.empty,
+          mails = Nil
+        )
       )
       val persisted = findOne[PersistentTenant](expected.id.toString).futureValue
 

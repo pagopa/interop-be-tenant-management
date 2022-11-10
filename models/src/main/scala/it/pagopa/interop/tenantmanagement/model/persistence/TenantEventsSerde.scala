@@ -117,8 +117,20 @@ object TenantEventsSerde {
     }
   }
 
+  private implicit val ptmkFormat: RootJsonFormat[PersistentTenantMailKind] =
+    new RootJsonFormat[PersistentTenantMailKind] {
+      override def read(json: JsValue): PersistentTenantMailKind = json match {
+        case JsString("CONTACT_EMAIL") => PersistentTenantMailKind.ContactEmail
+        case x => throw new DeserializationException(s"Unable to deserialize PersistentTenantKind: unmapped kind $x")
+      }
+      override def write(obj: PersistentTenantMailKind): JsValue = obj match {
+        case PersistentTenantMailKind.ContactEmail => JsString("CONTACT_EMAIL")
+      }
+    }
+
+  private implicit val ptmFormat: RootJsonFormat[PersistentTenantMail]    = jsonFormat4(PersistentTenantMail.apply)
   private implicit val pexFormat: RootJsonFormat[PersistentExternalId]    = jsonFormat2(PersistentExternalId.apply)
-  private implicit val ptFormat: RootJsonFormat[PersistentTenant]         = jsonFormat7(PersistentTenant.apply)
+  private implicit val ptFormat: RootJsonFormat[PersistentTenant]         = jsonFormat8(PersistentTenant.apply)
   private implicit val tcFormat: RootJsonFormat[TenantCreated]            = jsonFormat1(TenantCreated.apply)
   private implicit val tuFormat: RootJsonFormat[TenantUpdated]            = jsonFormat1(TenantUpdated.apply)
   private implicit val scmcFormat: RootJsonFormat[SelfcareMappingCreated] = jsonFormat2(SelfcareMappingCreated.apply)

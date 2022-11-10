@@ -17,6 +17,18 @@ message TenantV1 {
   repeated TenantAttributeV1 attributes = 5;
   required int64 createdAt = 6;
   optional int64 updatedAt = 7;
+  repeated TenantMailV1 mails = 8;
+}
+
+message TenantMailV1 {
+  required TenantMailKindV1 kind = 1;
+  required string address = 2;
+  required int64 createdAt = 3;
+  optional string description = 4;
+}
+
+enum TenantMailKindV1 {
+  CONTACT_EMAIL = 1;
 }
 
 message TenantFeatureV1 {
