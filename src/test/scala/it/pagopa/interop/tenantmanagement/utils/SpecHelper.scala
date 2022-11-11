@@ -42,7 +42,9 @@ trait SpecHelper {
       id = tenantId.some,
       externalId = externalId,
       features = TenantFeature(Certifier("foo").some) :: Nil,
-      attributes = attr :: Nil
+      attributes = attr :: Nil,
+      name = "test_name",
+      description = None
     )
 
     val tenant: Tenant = Tenant(
@@ -53,7 +55,9 @@ trait SpecHelper {
       attributes = attr :: Nil,
       createdAt = offsetDateTime,
       updatedAt = None,
-      mails = Nil
+      mails = Nil,
+      name = "test_name",
+      description = None
     )
 
     (tenant, tenantSeed)

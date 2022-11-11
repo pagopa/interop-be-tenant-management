@@ -32,7 +32,9 @@ class TenantApiServiceAuthzSpec extends ClusteredMUnitRouteTest {
     features = Nil,
     attributes = TenantAttribute(certified =
       CertifiedTenantAttribute(id = UUID.randomUUID, assignmentTimestamp = OffsetDateTime.now()).some
-    ) :: Nil
+    ) :: Nil,
+    name = "test_name",
+    description = None
   )
 
   val fakeAttribute: TenantAttribute = TenantAttribute(certified =
