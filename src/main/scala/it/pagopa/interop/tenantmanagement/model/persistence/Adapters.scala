@@ -201,8 +201,7 @@ object Adapters {
       createdAt = p.createdAt,
       updatedAt = p.updatedAt,
       mails = p.mails.map(_.toApi),
-      name = p.name,
-      description = p.description
+      name = p.name
     )
 
     def update(ptd: PersistentTenantDelta): PersistentTenant =
@@ -232,8 +231,7 @@ object Adapters {
       createdAt = supplier.get(),
       updatedAt = None,
       mails = Nil,
-      name = seed.name,
-      description = seed.description
+      name = seed.name
     )
   }
 }

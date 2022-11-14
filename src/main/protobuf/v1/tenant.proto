@@ -19,7 +19,6 @@ message TenantV1 {
   optional int64 updatedAt = 7;
   repeated TenantMailV1 mails = 8;
   required string name = 9;
-  optional string description = 10;
 }
 
 message TenantMailV1 {

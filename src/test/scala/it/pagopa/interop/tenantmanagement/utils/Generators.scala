@@ -135,7 +135,6 @@ object Generators {
     (updatedAt, updatedAtV1)                         <- Gen.option(offsetDatetimeGen).map(_.separate)
     (mails, protoMails)                              <- listOf(mailGenerator).map(_.separate)
     name                                             <- stringGen
-    description                                      <- Gen.option(stringGen)
   } yield (
     PersistentTenant(
       id,
@@ -146,8 +145,7 @@ object Generators {
       createdAt,
       updatedAt,
       mails,
-      name,
-      description
+      name
     ),
     TenantV1(
       id.toString(),
@@ -158,8 +156,7 @@ object Generators {
       createdAtV1,
       updatedAtV1,
       protoMails,
-      name,
-      description
+      name
     )
   )
 
