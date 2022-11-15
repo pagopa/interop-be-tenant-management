@@ -13,6 +13,8 @@ import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantMailKind.
 
 object protobufUtils {
 
+  private val emptyName: String = ""
+
   def toPersistentTenantFeature(protobufTenantFeature: TenantFeatureV1): Either[Throwable, PersistentTenantFeature] =
     protobufTenantFeature match {
       case TenantFeatureV1.Empty    =>
@@ -46,7 +48,7 @@ object protobufUtils {
     createdAt = createdAt,
     updatedAt = updatedAt,
     mails = mails,
-    name = protobufTenant.name
+    name = protobufTenant.name.getOrElse(emptyName)
   )
 
   def toProtobufTenant(persistentTenant: PersistentTenant): Either[Throwable, TenantV1] = for {
@@ -60,7 +62,7 @@ object protobufUtils {
     createdAt = persistentTenant.createdAt.toMillis,
     updatedAt = persistentTenant.updatedAt.map(_.toMillis),
     mails = persistentTenant.mails.map(toProtobufTenantMail),
-    name = persistentTenant.name
+    name = persistentTenant.name.some
   )
 
   def toPersistentTenantMail(protobufTenantMail: TenantMailV1): Either[Throwable, PersistentTenantMail] = for {

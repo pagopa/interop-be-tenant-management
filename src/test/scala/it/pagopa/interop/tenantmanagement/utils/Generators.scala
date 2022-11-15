@@ -156,7 +156,7 @@ object Generators {
       createdAtV1,
       updatedAtV1,
       protoMails,
-      name
+      name.some
     )
   )
 
