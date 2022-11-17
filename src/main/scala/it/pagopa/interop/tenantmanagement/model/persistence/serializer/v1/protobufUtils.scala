@@ -45,7 +45,8 @@ object protobufUtils {
     attributes = attributes,
     createdAt = createdAt,
     updatedAt = updatedAt,
-    mails = mails
+    mails = mails,
+    name = protobufTenant.name.getOrElse("")
   )
 
   def toProtobufTenant(persistentTenant: PersistentTenant): Either[Throwable, TenantV1] = for {
@@ -58,7 +59,8 @@ object protobufUtils {
     attributes = persistentTenant.attributes.map(toProtobufTenantAttribute),
     createdAt = persistentTenant.createdAt.toMillis,
     updatedAt = persistentTenant.updatedAt.map(_.toMillis),
-    mails = persistentTenant.mails.map(toProtobufTenantMail)
+    mails = persistentTenant.mails.map(toProtobufTenantMail),
+    name = persistentTenant.name.some
   )
 
   def toPersistentTenantMail(protobufTenantMail: TenantMailV1): Either[Throwable, PersistentTenantMail] = for {

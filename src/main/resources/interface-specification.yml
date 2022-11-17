@@ -533,6 +533,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Mail'
+        name:
+          type: string
       required:
         - id
         - certifier
@@ -541,6 +543,7 @@ components:
         - attributes
         - createdAt
         - mails
+        - name
     MailSeed:
       description: A specific kind of mail
       type: object
@@ -601,10 +604,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/TenantAttribute'
+        name:
+          type: string
       required:
         - externalId
         - features
         - attributes
+        - name
     TenantDelta:
       description: Tenant Delta model
       type: object
