@@ -11,7 +11,6 @@ import com.typesafe.scalalogging.Logger
 import it.pagopa.interop.commons.jwt._
 import it.pagopa.interop.commons.logging._
 import it.pagopa.interop.commons.utils.AkkaUtils.getShard
-import it.pagopa.interop.commons.utils.TypeConversions._
 import it.pagopa.interop.commons.utils.errors.GenericComponentErrors._
 import it.pagopa.interop.tenantmanagement.api.TenantApiService
 import it.pagopa.interop.tenantmanagement.error.InternalErrors._
@@ -60,8 +59,8 @@ class TenantApiServiceImpl(
     .toList
     .map(sharding.entityRefFor(TenantPersistentBehavior.TypeKey, _))
 
-  private def addMapping(selfcareId: String, tenantUUID: UUID): Future[Unit] =
-    commanderForSelfcareId(selfcareId).askWithStatus(AddSelfcareIdTenantMapping(selfcareId, tenantUUID, _))
+//  private def addMapping(selfcareId: String, tenantUUID: UUID): Future[Unit] =
+//    commanderForSelfcareId(selfcareId).askWithStatus(AddSelfcareIdTenantMapping(selfcareId, tenantUUID, _))
 
   private def getTenantIdBySelfcareId(selfcareId: String): Future[UUID] =
     commanderForSelfcareId(selfcareId).askWithStatus(GetTenantBySelfcareId(selfcareId, _))
@@ -155,11 +154,12 @@ class TenantApiServiceImpl(
   ): Route = authorize(ADMIN_ROLE, API_ROLE, M2M_ROLE, SECURITY_ROLE, INTERNAL_ROLE) {
 
     val result: Future[PersistentTenant] = for {
-      tenantUUID <- tenantId.toFutureUUID
-      tenant     <- commanderForTenantId(tenantId).askWithStatus(r => GetTenant(tenantId, r))
-      delta      <- PersistentTenantDelta.fromAPI(tenant, tenantDelta, offsetDateTimeSupplier).toFuture
-      result     <- commanderForTenantId(tenantId).askWithStatus(r => UpdateTenant(delta, r))
-      _          <- delta.selfcareId.fold(Future.unit)(addMapping(_, tenantUUID))
+//      tenantUUID <- tenantId.toFutureUUID
+      tenant <- commanderForTenantId(tenantId).askWithStatus(r => GetTenant(tenantId, r))
+      delta  <- PersistentTenantDelta.fromAPI(tenant, tenantDelta).toFuture
+//      delta      <- PersistentTenantDelta.fromAPI(tenant, tenantDelta, offsetDateTimeSupplier).toFuture
+      result <- commanderForTenantId(tenantId).askWithStatus(r => UpdateTenant(delta, r))
+//      _          <- delta.selfcareId.fold(Future.unit)(addMapping(_, tenantUUID))
     } yield result
 
     onComplete(result) {
