@@ -615,19 +615,10 @@ components:
       description: Tenant Delta model
       type: object
       properties:
-        selfcareId:
+        name:
           type: string
-        features:
-          type: array
-          items:
-            $ref: '#/components/schemas/TenantFeature'
-        mails:
-          type: array
-          items:
-            $ref: '#/components/schemas/MailSeed'
       required:
-        - features
-        - mails
+        - name
   securitySchemes:
     bearerAuth:
       type: http

@@ -30,28 +30,8 @@ object Adapters {
   }
 
   implicit class PersistentTenantDeltaObjectWrapper(private val p: PersistentTenantDelta.type) extends AnyVal {
-    def fromAPI(
-      tenant: PersistentTenant,
-      td: TenantDelta,
-      timeSupplier: OffsetDateTimeSupplier
-    ): Either[Throwable, PersistentTenantDelta] = for {
-      features <- td.features.toList.traverse(PersistentTenantFeature.fromAPI)
-      actualMails    = tenant.mails.map(_.toApi)
-      mailsToPersist = calculateMailsToKeep(timeSupplier)(actualMails, td.mails.toList)
-    } yield PersistentTenantDelta(
-      id = tenant.id,
-      selfcareId = td.selfcareId,
-      features = features,
-      mails = mailsToPersist.map(PersistentTenantMail.fromApi)
-    )
-
-    private def calculateMailsToKeep(
-      timeSupplier: OffsetDateTimeSupplier
-    )(actualMails: List[Mail], tenantDeltaMails: List[MailSeed]): List[Mail] = tenantDeltaMails.map(ms =>
-      actualMails
-        .find(m => m.address == ms.address && m.kind == ms.kind)
-        .getOrElse(ms.toModel(timeSupplier.get()))
-        .copy(description = ms.description)
+    def fromAPI(tenant: PersistentTenant, td: TenantDelta): Either[Throwable, PersistentTenantDelta] = Right(
+      PersistentTenantDelta(id = tenant.id, name = td.name)
     )
   }
 
@@ -205,7 +185,7 @@ object Adapters {
     )
 
     def update(ptd: PersistentTenantDelta): PersistentTenant =
-      p.copy(selfcareId = ptd.selfcareId, features = ptd.features, mails = ptd.mails)
+      p.copy(name = ptd.name)
 
     def getAttribute(id: UUID): Option[PersistentTenantAttribute] = p.attributes.find(_.id == id)
 
