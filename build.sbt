@@ -4,12 +4,13 @@ import com.typesafe.sbt.packager.docker.Cmd
 ThisBuild / scalaVersion      := "2.13.10"
 ThisBuild / organization      := "it.pagopa"
 ThisBuild / organizationName  := "Pagopa S.p.A."
+Global / onChangedBuildSource := ReloadOnSourceChanges
 ThisBuild / dependencyOverrides ++= Dependencies.Jars.overrides
 ThisBuild / version           := ComputeVersion.version
-Global / onChangedBuildSource := ReloadOnSourceChanges
 
-ThisBuild / resolvers += "Pagopa Nexus Snapshots" at s"https://${System.getenv("MAVEN_REPO")}/nexus/repository/maven-snapshots/"
-ThisBuild / resolvers += "Pagopa Nexus Releases" at s"https://${System.getenv("MAVEN_REPO")}/nexus/repository/maven-releases/"
+ThisBuild / githubOwner      := "pagopa"
+ThisBuild / githubRepository := "interop-be-tenant-management"
+ThisBuild / resolvers += Resolver.githubPackages("pagopa")
 
 lazy val generateCode = taskKey[Unit]("A task for generating the code starting from the swagger definition")
 
@@ -65,8 +66,6 @@ cleanFiles += baseDirectory.value / "client" / "src"
 
 cleanFiles += baseDirectory.value / "client" / "target"
 
-ThisBuild / credentials += Credentials(Path.userHome / ".sbt" / ".credentials")
-
 val runStandalone = inputKey[Unit]("Run the app using standalone configuration")
 runStandalone := {
   task(System.setProperty("config.file", "src/main/resources/application-standalone.conf")).value
@@ -81,7 +80,10 @@ lazy val generated = project
     scalacOptions       := Seq(),
     libraryDependencies := Dependencies.Jars.generated,
     scalafmtOnCompile   := true,
-    publish / skip      := true
+    publish / skip      := true,
+    publish             := (()),
+    publishLocal        := (()),
+    publishTo           := None
   )
   .setupBuildInfo
 
@@ -91,12 +93,7 @@ lazy val models = project
     name                := "interop-be-tenant-management-models",
     libraryDependencies := Dependencies.Jars.models,
     scalafmtOnCompile   := true,
-    Docker / publish    := {},
-    publishTo           := {
-      val nexus = s"https://${System.getenv("MAVEN_REPO")}/nexus/repository/"
-      if (isSnapshot.value) Some("snapshots" at nexus + "maven-snapshots/")
-      else Some("releases" at nexus + "maven-releases/")
-    }
+    Docker / publish    := {}
   )
 
 lazy val client = project
@@ -107,12 +104,7 @@ lazy val client = project
     scalafmtOnCompile   := true,
     libraryDependencies := Dependencies.Jars.client,
     updateOptions       := updateOptions.value.withGigahorse(false),
-    Docker / publish    := {},
-    publishTo           := {
-      val nexus = s"https://${System.getenv("MAVEN_REPO")}/nexus/repository/"
-      if (isSnapshot.value) Some("snapshots" at nexus + "maven-snapshots/")
-      else Some("releases" at nexus + "maven-releases/")
-    }
+    Docker / publish    := {}
   )
 
 lazy val root = (project in file("."))
@@ -120,25 +112,26 @@ lazy val root = (project in file("."))
   .settings(Defaults.itSettings: _*)
   .settings(
     name                        := "interop-be-tenant-management",
-    Test / parallelExecution    := true,
+    Test / parallelExecution    := false,
     Test / fork                 := true,
     Test / javaOptions += "-Dconfig.file=src/test/resources/application-test.conf",
     IntegrationTest / fork      := true,
     IntegrationTest / javaOptions += "-Dconfig.file=src/it/resources/application-it.conf",
     scalafmtOnCompile           := true,
-    libraryDependencies         := Dependencies.Jars.`server`,
     dockerBuildOptions ++= Seq("--network=host"),
-    dockerRepository            := Some(System.getenv("DOCKER_REPO")),
+    dockerRepository            := Some(System.getenv("ECR_REGISTRY")),
     dockerBaseImage             := "adoptopenjdk:11-jdk-hotspot",
     daemonUser                  := "daemon",
-    Docker / version            := (ThisBuild / version).value.replace("-SNAPSHOT", "-latest").toLowerCase,
+    Docker / version            := (ThisBuild / version).value.replaceAll("-SNAPSHOT", "-latest").toLowerCase,
     Docker / packageName        := s"${name.value}",
     Docker / dockerExposedPorts := Seq(8080),
     Docker / maintainer         := "https://pagopa.it",
-    dockerCommands += Cmd("LABEL", s"org.opencontainers.image.source https://github.com/pagopa/${name.value}"),
-    publish / skip              := true
+    libraryDependencies         := Dependencies.Jars.`server`,
+    dockerCommands += Cmd("LABEL", s"org.opencontainers.image.source https://github.com/pagopa/${name.value}")
   )
   .aggregate(client, models)
   .dependsOn(generated, models)
   .enablePlugins(JavaAppPackaging)
+  .enablePlugins(DockerPlugin)
+  .enablePlugins(NoPublishPlugin)
   .setupBuildInfo
