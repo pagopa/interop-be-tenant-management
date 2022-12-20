@@ -1,16 +1,19 @@
 package it.pagopa.interop.tenantmanagement.model.persistence
 
 import cats.implicits._
-import it.pagopa.interop.tenantmanagement.model.tenant._
-import it.pagopa.interop.tenantmanagement.model._
-import it.pagopa.interop.tenantmanagement.error.InternalErrors
-import java.util.UUID
 import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
-import it.pagopa.interop.tenantmanagement.model.tenant.PersistentVerificationRenewal.AUTOMATIC_RENEWAL
-import it.pagopa.interop.tenantmanagement.model.tenant.PersistentVerificationRenewal.REVOKE_ON_EXPIRATION
-import java.time.OffsetDateTime
-import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantMailKind.ContactEmail
+import it.pagopa.interop.tenantmanagement.error.TenantManagementErrors.{InvalidAttributeStructure, InvalidFeature}
 import it.pagopa.interop.tenantmanagement.model.MailKind.CONTACT_EMAIL
+import it.pagopa.interop.tenantmanagement.model._
+import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantMailKind.ContactEmail
+import it.pagopa.interop.tenantmanagement.model.tenant.PersistentVerificationRenewal.{
+  AUTOMATIC_RENEWAL,
+  REVOKE_ON_EXPIRATION
+}
+import it.pagopa.interop.tenantmanagement.model.tenant._
+
+import java.time.OffsetDateTime
+import java.util.UUID
 
 object Adapters {
 
@@ -135,7 +138,7 @@ object Adapters {
           verifiedBy = verified.verifiedBy.toList.map(PersistentTenantVerifier.fromAPI),
           revokedBy = verified.revokedBy.toList.map(PersistentTenantRevoker.fromAPI)
         ).asRight
-      case _                                            => InternalErrors.InvalidAttribute.asLeft
+      case _                                            => InvalidAttributeStructure.asLeft
     }
   }
 
@@ -157,7 +160,7 @@ object Adapters {
     def fromAPI(e: TenantFeature): Either[Throwable, PersistentTenantFeature] = e match {
       case TenantFeature(Some(Certifier(certifierId))) =>
         PersistentTenantFeature.PersistentCertifier(certifierId).asRight[Throwable]
-      case _                                           => InternalErrors.InvalidFeature.asLeft[PersistentTenantFeature]
+      case _                                           => InvalidFeature.asLeft[PersistentTenantFeature]
     }
   }
 

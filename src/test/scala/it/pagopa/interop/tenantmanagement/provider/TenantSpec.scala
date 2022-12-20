@@ -158,7 +158,7 @@ class TenantSpec extends BaseIntegrationSpec {
 
     getTenantByExternalId[Problem]("fakeOrigin", "fakeValue").map { result =>
       assertEquals(result.status, 404)
-      assertEquals(result.errors.map(_.code), Seq("018-0004"))
+      assertEquals(result.errors.map(_.code), Seq("018-0008"))
     }
   }
 
@@ -226,7 +226,7 @@ class TenantSpec extends BaseIntegrationSpec {
       UUID.randomUUID().toString()
     ).map { result =>
       assertEquals(result.status, 404)
-      assertEquals(result.errors.map(_.code).toList, List("018-0004"))
+      assertEquals(result.errors.map(_.code).toList, List("018-0010"))
     }
   }
 

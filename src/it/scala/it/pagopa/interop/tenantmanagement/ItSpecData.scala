@@ -16,6 +16,7 @@ object ItSpecData {
     attributes = List.empty,
     createdAt = timestamp,
     updatedAt = None,
-    mails = Nil
+    mails = Nil,
+    name = "name"
   )
 }

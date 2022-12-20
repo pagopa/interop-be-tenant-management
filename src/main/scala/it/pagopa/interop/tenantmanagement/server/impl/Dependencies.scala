@@ -27,6 +27,8 @@ import slick.jdbc.JdbcProfile
 
 import scala.concurrent.{ExecutionContext, Future}
 import it.pagopa.interop.commons.cqrs.model.MongoDbConfig
+import it.pagopa.interop.commons.utils.errors.{Problem => CommonProblem}
+import it.pagopa.interop.tenantmanagement.api.impl.serviceCode
 
 trait Dependencies {
 
@@ -74,18 +76,24 @@ trait Dependencies {
 
   val validationExceptionToRoute: ValidationReport => Route = report => {
     val error =
-      problemOf(StatusCodes.BadRequest, OpenapiUtils.errorFromRequestValidationReport(report))
-    complete(error.status, error)(entityMarshallerProblem)
+      CommonProblem(StatusCodes.BadRequest, OpenapiUtils.errorFromRequestValidationReport(report), serviceCode)
+    complete(error.status, error)
   }
 
-  def tenantApi(sharding: ClusterSharding, jwtReader: JWTReader)(implicit actorSystem: ActorSystem[_]) =
+  def tenantApi(sharding: ClusterSharding, jwtReader: JWTReader)(implicit
+    actorSystem: ActorSystem[_],
+    ec: ExecutionContext
+  ) =
     new TenantApi(
       new TenantApiServiceImpl(actorSystem, sharding, tenantPersistenceEntity, OffsetDateTimeSupplier),
       TenantApiMarshallerImpl,
       jwtReader.OAuth2JWTValidatorAsContexts
     )
 
-  def attributesApi(sharding: ClusterSharding, jwtReader: JWTReader)(implicit actorSystem: ActorSystem[_]) =
+  def attributesApi(sharding: ClusterSharding, jwtReader: JWTReader)(implicit
+    actorSystem: ActorSystem[_],
+    ec: ExecutionContext
+  ) =
     new AttributesApi(
       new AttributesApiServiceImpl(actorSystem, sharding, tenantPersistenceEntity, OffsetDateTimeSupplier),
       AttributesApiMarshallerImpl,
