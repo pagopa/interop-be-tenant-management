@@ -46,7 +46,7 @@ class TenantSpec extends BaseIntegrationSpec {
 
     getTenant[Problem](UUID.randomUUID()).map { result =>
       assertEquals(result.status, 404)
-      assertEquals(result.errors.map(_.code), Seq("018-0004"))
+      assertEquals(result.errors.map(_.code), Seq("018-0002"))
     }
   }
 
@@ -58,7 +58,7 @@ class TenantSpec extends BaseIntegrationSpec {
 
     updateTenant[Problem](UUID.randomUUID(), tenantDelta).map { result =>
       assertEquals(result.status, 404)
-      assertEquals(result.errors.map(_.code), Seq("018-0004"))
+      assertEquals(result.errors.map(_.code), Seq("018-0002"))
     }
   }
 
@@ -158,7 +158,7 @@ class TenantSpec extends BaseIntegrationSpec {
 
     getTenantByExternalId[Problem]("fakeOrigin", "fakeValue").map { result =>
       assertEquals(result.status, 404)
-      assertEquals(result.errors.map(_.code), Seq("018-0008"))
+      assertEquals(result.errors.map(_.code), Seq("018-0007"))
     }
   }
 
@@ -168,7 +168,7 @@ class TenantSpec extends BaseIntegrationSpec {
 
     getTenantAttribute[Problem](UUID.randomUUID().toString, UUID.randomUUID().toString).map { result =>
       assertEquals(result.status, 404)
-      assertEquals(result.errors.map(_.code), Seq("018-0004"))
+      assertEquals(result.errors.map(_.code), Seq("018-0002"))
     }
   }
 
@@ -181,7 +181,7 @@ class TenantSpec extends BaseIntegrationSpec {
     createTenant(tenantSeed) >> getTenantAttribute[Problem](tenant.id.toString, UUID.randomUUID.toString).map {
       result =>
         assertEquals(result.status, 404)
-        assertEquals(result.errors.map(_.code), Seq("018-0007"))
+        assertEquals(result.errors.map(_.code), Seq("018-0005"))
     }
   }
 
@@ -226,7 +226,7 @@ class TenantSpec extends BaseIntegrationSpec {
       UUID.randomUUID().toString()
     ).map { result =>
       assertEquals(result.status, 404)
-      assertEquals(result.errors.map(_.code).toList, List("018-0010"))
+      assertEquals(result.errors.map(_.code).toList, List("018-0009"))
     }
   }
 
@@ -239,7 +239,7 @@ class TenantSpec extends BaseIntegrationSpec {
 
     addTenantAttribute[Problem](uuid.toString, attr).map { result =>
       assertEquals(result.status, 404)
-      assertEquals(result.errors.map(_.code), Seq("018-0004"))
+      assertEquals(result.errors.map(_.code), Seq("018-0002"))
     }
   }
 
@@ -253,7 +253,7 @@ class TenantSpec extends BaseIntegrationSpec {
 
     createTenant(tenantSeed) >> addTenantAttribute[Problem](tenant.id.toString, attr).map { result =>
       assertEquals(result.status, 409)
-      assertEquals(result.errors.map(_.code), Seq("018-0006"))
+      assertEquals(result.errors.map(_.code), Seq("018-0004"))
     }
   }
 
@@ -279,7 +279,7 @@ class TenantSpec extends BaseIntegrationSpec {
     updateTenantAttribute[Problem](UUID.randomUUID().toString, attr.certified.map(_.id.toString).get, attr).map {
       result =>
         assertEquals(result.status, 404)
-        assertEquals(result.errors.map(_.code), Seq("018-0004"))
+        assertEquals(result.errors.map(_.code), Seq("018-0002"))
     }
   }
 
@@ -298,7 +298,7 @@ class TenantSpec extends BaseIntegrationSpec {
     createTenant(tenantSeed) >> updateTenantAttribute[Problem](tenant.id.toString, attrId.toString, attr)
       .map { result =>
         assertEquals(result.status, 404)
-        assertEquals(result.errors.map(_.code), Seq("018-0007"))
+        assertEquals(result.errors.map(_.code), Seq("018-0005"))
       }
   }
 

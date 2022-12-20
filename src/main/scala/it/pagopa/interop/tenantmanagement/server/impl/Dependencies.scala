@@ -83,21 +83,19 @@ trait Dependencies {
   def tenantApi(sharding: ClusterSharding, jwtReader: JWTReader)(implicit
     actorSystem: ActorSystem[_],
     ec: ExecutionContext
-  ) =
-    new TenantApi(
-      new TenantApiServiceImpl(actorSystem, sharding, tenantPersistenceEntity, OffsetDateTimeSupplier),
-      TenantApiMarshallerImpl,
-      jwtReader.OAuth2JWTValidatorAsContexts
-    )
+  ) = new TenantApi(
+    new TenantApiServiceImpl(actorSystem, sharding, tenantPersistenceEntity, OffsetDateTimeSupplier),
+    TenantApiMarshallerImpl,
+    jwtReader.OAuth2JWTValidatorAsContexts
+  )
 
   def attributesApi(sharding: ClusterSharding, jwtReader: JWTReader)(implicit
     actorSystem: ActorSystem[_],
     ec: ExecutionContext
-  ) =
-    new AttributesApi(
-      new AttributesApiServiceImpl(actorSystem, sharding, tenantPersistenceEntity, OffsetDateTimeSupplier),
-      AttributesApiMarshallerImpl,
-      jwtReader.OAuth2JWTValidatorAsContexts
-    )
+  ) = new AttributesApi(
+    new AttributesApiServiceImpl(actorSystem, sharding, tenantPersistenceEntity, OffsetDateTimeSupplier),
+    AttributesApiMarshallerImpl,
+    jwtReader.OAuth2JWTValidatorAsContexts
+  )
 
 }
