@@ -61,7 +61,9 @@ abstract class BaseIntegrationSpec extends FunSuite with SpecHelper {
           }
 
         val attributesApi: AttributesApi = new AttributesApi(
-          new AttributesApiServiceImpl(actorTestKit.internalSystem, sharding, persistentEntity, offsetDateTimeSupplier),
+          new AttributesApiServiceImpl(actorTestKit.internalSystem, sharding, persistentEntity, offsetDateTimeSupplier)(
+            actorTestKit.system.executionContext
+          ),
           AttributesApiMarshallerImpl,
           SecurityDirectives.authenticateOAuth2(
             "SecurityRealm",
@@ -73,7 +75,9 @@ abstract class BaseIntegrationSpec extends FunSuite with SpecHelper {
         )
 
         val tenantApi: TenantApi = new TenantApi(
-          new TenantApiServiceImpl(actorTestKit.internalSystem, sharding, persistentEntity, offsetDateTimeSupplier),
+          new TenantApiServiceImpl(actorTestKit.internalSystem, sharding, persistentEntity, offsetDateTimeSupplier)(
+            actorTestKit.system.executionContext
+          ),
           TenantApiMarshallerImpl,
           SecurityDirectives.authenticateOAuth2(
             "SecurityRealm",

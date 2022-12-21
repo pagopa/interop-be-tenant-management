@@ -7,11 +7,17 @@ import akka.pattern.StatusReply
 import akka.pattern.StatusReply._
 import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior, RetentionCriteria}
-import it.pagopa.interop.tenantmanagement.error.InternalErrors._
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenant
 import it.pagopa.interop.tenantmanagement.model.persistence.Adapters._
-
 import cats.implicits._
+import it.pagopa.interop.tenantmanagement.error.TenantManagementErrors.{
+  AttributeAlreadyExists,
+  AttributeNotFound,
+  TenantBySelfcareIdNotFound,
+  TenantAlreadyExists,
+  TenantNotFound
+}
+
 import java.time.temporal.ChronoUnit
 import scala.concurrent.duration.{DurationInt, DurationLong}
 import scala.language.postfixOps
@@ -28,7 +34,7 @@ object TenantPersistentBehavior {
     command match {
       case GetTenant(tenantId, replyTo) =>
         val maybeTenant: Option[PersistentTenant] = state.tenants.get(tenantId)
-        val response = maybeTenant.fold(error[PersistentTenant](NotFoundTenant(tenantId)))(success)
+        val response = maybeTenant.fold(error[PersistentTenant](TenantNotFound(tenantId)))(success)
         Effect.reply(replyTo)(response)
 
       case GetTenantsWithExternalId(externalId, replyTo) =>
@@ -45,22 +51,22 @@ object TenantPersistentBehavior {
         val maybeTenant: Option[PersistentTenant]                     =
           state.tenants.get(tenantDelta.id.toString).map(_.update(tenantDelta))
         val success: PersistentTenant => Effect[TenantUpdated, State] = t => persistAndReply(t, TenantUpdated)(replyTo)
-        val failure: Effect[TenantUpdated, State] = fail(NotFoundTenant(tenantDelta.id.toString))(replyTo)
+        val failure: Effect[TenantUpdated, State] = fail(TenantNotFound(tenantDelta.id.toString))(replyTo)
         maybeTenant.fold(failure)(success)
 
       case AddAttribute(tenantId, attribute, dateTime, replyTo) =>
         val result: Either[Throwable, PersistentTenant] = for {
-          maybeTenant <- state.tenants.get(tenantId).toRight(NotFoundTenant(tenantId))
+          maybeTenant <- state.tenants.get(tenantId).toRight(TenantNotFound(tenantId))
           _           <- maybeTenant
             .getAttribute(attribute.id)
-            .fold(Either.unit[Throwable])(_ => AttributeAlreadyExists(attribute.id.toString).asLeft[Unit])
+            .fold(Either.unit[Throwable])(_ => AttributeAlreadyExists(attribute.id).asLeft[Unit])
         } yield maybeTenant.addAttribute(attribute, dateTime)
         result.fold(fail(_)(replyTo), t => persistAndReply(t, TenantUpdated)(replyTo))
 
       case UpdateAttribute(tenantId, attributeId, attribute, dateTime, replyTo) =>
         val result: Either[Throwable, PersistentTenant] = for {
-          tenant <- state.tenants.get(tenantId).toRight(NotFoundTenant(tenantId))
-          _      <- tenant.getAttribute(attributeId).toRight(NotFoundAttribute(attribute.id.toString))
+          tenant <- state.tenants.get(tenantId).toRight(TenantNotFound(tenantId))
+          _      <- tenant.getAttribute(attributeId).toRight(AttributeNotFound(attribute.id.toString))
         } yield tenant.updateAttribute(attribute, dateTime)
 
         result.fold(fail(_)(replyTo), t => persistAndReply(t, TenantUpdated)(replyTo))
@@ -71,7 +77,7 @@ object TenantPersistentBehavior {
       case GetTenantBySelfcareId(selfcareId, replyTo) =>
         val reply: StatusReply[UUID] = state
           .getTenantIdBySelfcareId(selfcareId)
-          .fold(error[UUID](NotFoundTenantBySelfcareId(selfcareId)))(success)
+          .fold(error[UUID](TenantBySelfcareIdNotFound(selfcareId)))(success)
         Effect.reply(replyTo)(reply)
 
       case Idle =>
