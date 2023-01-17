@@ -54,9 +54,9 @@ class AttributesApiServiceImpl(
     sharding.entityRefFor(TenantPersistentBehavior.TypeKey, getShard(id, settings.numberOfShards))
 
   override def getTenantAttribute(tenantId: String, attributeId: String)(implicit
+    contexts: Seq[(String, String)],
     toEntityMarshallerTenantAttribute: ToEntityMarshaller[TenantAttribute],
-    toEntityMarshallerProblem: ToEntityMarshaller[Problem],
-    contexts: Seq[(String, String)]
+    toEntityMarshallerProblem: ToEntityMarshaller[Problem]
   ): Route = authorize(ADMIN_ROLE, API_ROLE, SECURITY_ROLE, M2M_ROLE, INTERNAL_ROLE) {
 
     val result: Future[PersistentTenantAttribute] = for {
@@ -80,9 +80,9 @@ class AttributesApiServiceImpl(
   }
 
   override def addTenantAttribute(tenantId: String, tenantAttribute: TenantAttribute)(implicit
+    contexts: Seq[(String, String)],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
-    toEntityMarshallerTenant: ToEntityMarshaller[Tenant],
-    contexts: Seq[(String, String)]
+    toEntityMarshallerTenant: ToEntityMarshaller[Tenant]
   ): Route = authorize(ADMIN_ROLE, M2M_ROLE, INTERNAL_ROLE) {
     val result: Future[PersistentTenant] = for {
       attribute     <- PersistentTenantAttribute.fromAPI(tenantAttribute).toFuture
@@ -110,9 +110,9 @@ class AttributesApiServiceImpl(
   }
 
   override def updateTenantAttribute(tenantId: String, attributeId: String, tenantAttribute: TenantAttribute)(implicit
+    contexts: Seq[(String, String)],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
-    toEntityMarshallerTenant: ToEntityMarshaller[Tenant],
-    contexts: Seq[(String, String)]
+    toEntityMarshallerTenant: ToEntityMarshaller[Tenant]
   ): Route = authorize(ADMIN_ROLE, INTERNAL_ROLE, M2M_ROLE) {
     val result: Future[PersistentTenant] = for {
       attrId        <- attributeId.toFutureUUID

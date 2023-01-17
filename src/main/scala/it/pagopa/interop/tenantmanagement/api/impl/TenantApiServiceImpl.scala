@@ -66,9 +66,9 @@ class TenantApiServiceImpl(
     commanderForSelfcareId(selfcareId).askWithStatus(GetTenantBySelfcareId(selfcareId, _))
 
   override def createTenant(tenantSeed: TenantSeed)(implicit
+    contexts: Seq[(String, String)],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
-    toEntityMarshallerTenant: ToEntityMarshaller[Tenant],
-    contexts: Seq[(String, String)]
+    toEntityMarshallerTenant: ToEntityMarshaller[Tenant]
   ): Route = authorize(ADMIN_ROLE, API_ROLE, SECURITY_ROLE, M2M_ROLE, INTERNAL_ROLE) {
 
     logger.info(s"Creating tenant with externalId (${tenantSeed.externalId.origin},${tenantSeed.externalId.value})")
@@ -94,9 +94,9 @@ class TenantApiServiceImpl(
   }
 
   override def getTenant(tenantId: String)(implicit
+    contexts: Seq[(String, String)],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
-    toEntityMarshallerTenant: ToEntityMarshaller[Tenant],
-    contexts: Seq[(String, String)]
+    toEntityMarshallerTenant: ToEntityMarshaller[Tenant]
   ): Route = authorize(ADMIN_ROLE, INTERNAL_ROLE, API_ROLE, M2M_ROLE, SECURITY_ROLE) {
 
     val result: Future[PersistentTenant] = commanderForTenantId(tenantId).askWithStatus(ref => GetTenant(tenantId, ref))
@@ -113,9 +113,9 @@ class TenantApiServiceImpl(
   }
 
   override def getTenantByExternalId(origin: String, code: String)(implicit
+    contexts: Seq[(String, String)],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
-    toEntityMarshallerTenant: ToEntityMarshaller[Tenant],
-    contexts: Seq[(String, String)]
+    toEntityMarshallerTenant: ToEntityMarshaller[Tenant]
   ): Route = authorize(ADMIN_ROLE, API_ROLE, M2M_ROLE, SECURITY_ROLE, INTERNAL_ROLE) {
 
     val result: Future[Option[PersistentTenant]] =
@@ -148,9 +148,9 @@ class TenantApiServiceImpl(
   }
 
   override def updateTenant(tenantId: String, tenantDelta: TenantDelta)(implicit
+    contexts: Seq[(String, String)],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
-    toEntityMarshallerTenant: ToEntityMarshaller[Tenant],
-    contexts: Seq[(String, String)]
+    toEntityMarshallerTenant: ToEntityMarshaller[Tenant]
   ): Route = authorize(ADMIN_ROLE, API_ROLE, M2M_ROLE, SECURITY_ROLE, INTERNAL_ROLE) {
 
     val result: Future[PersistentTenant] = for {
@@ -174,9 +174,9 @@ class TenantApiServiceImpl(
   }
 
   override def getTenantBySelfcareId(selfcareId: String)(implicit
+    contexts: Seq[(String, String)],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
-    toEntityMarshallerTenant: ToEntityMarshaller[Tenant],
-    contexts: Seq[(String, String)]
+    toEntityMarshallerTenant: ToEntityMarshaller[Tenant]
   ): Route = authorize(ADMIN_ROLE, API_ROLE, SECURITY_ROLE, INTERNAL_ROLE) {
     val result: Future[PersistentTenant] = for {
       tenantId <- getTenantIdBySelfcareId(selfcareId).map(_.toString())
