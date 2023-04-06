@@ -19,6 +19,13 @@ message TenantV1 {
   optional int64 updatedAt = 7;
   repeated TenantMailV1 mails = 8;
   optional string name = 9;
+  optional TenantKindV1 kind = 10;
+}
+
+enum TenantKindV1 {
+  PA = 1;
+  GSP = 2;
+  PRIVATE = 3;
 }
 
 message TenantMailV1 {

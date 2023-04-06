@@ -10,6 +10,7 @@ import it.pagopa.interop.tenantmanagement.model.tenant.PersistentVerificationRen
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantFeature.PersistentCertifier
 import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.tenant.PersistentVerificationRenewalV1.Unrecognized
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantMailKind.ContactEmail
+import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantKind.{Pa, Gsp, Private}
 
 object protobufUtils {
 
@@ -32,6 +33,7 @@ object protobufUtils {
   def toPersistentTenant(protobufTenant: TenantV1): Either[Throwable, PersistentTenant] = for {
     id         <- protobufTenant.id.toUUID.toEither
     externalId <- toPersistentTenantExternalId(protobufTenant.externalId)
+    kind       <- protobufTenant.kind.traverse(toPersistentTenantKind)
     attributes <- protobufTenant.attributes.traverse(toPersistentTenantAttributes)
     features   <- protobufTenant.features.traverse(toPersistentTenantFeature)
     createdAt  <- protobufTenant.createdAt.toOffsetDateTime.toEither
@@ -39,6 +41,7 @@ object protobufUtils {
     mails      <- protobufTenant.mails.traverse(toPersistentTenantMail)
   } yield PersistentTenant(
     id = id,
+    kind = kind.getOrElse(PersistentTenantKind.calculate(externalId.origin, externalId.value)),
     selfcareId = protobufTenant.selfcareId,
     externalId = externalId,
     features = features,
@@ -53,6 +56,7 @@ object protobufUtils {
     externalId <- toProtobufTenantExternalId(persistentTenant.externalId)
   } yield TenantV1(
     id = persistentTenant.id.toString,
+    kind = toProtobufTenantKind(persistentTenant.kind).some,
     selfcareId = persistentTenant.selfcareId,
     externalId = externalId,
     features = persistentTenant.features.map(toProtobufTenantFeature),
@@ -208,4 +212,19 @@ object protobufUtils {
         )
     }
 
+  def toPersistentTenantKind(protobufTenantKind: TenantKindV1): Either[Throwable, PersistentTenantKind] =
+    protobufTenantKind match {
+      case TenantKindV1.PA                              => Pa.asRight[Throwable]
+      case TenantKindV1.GSP                             => Gsp.asRight[Throwable]
+      case TenantKindV1.PRIVATE                         => Private.asRight[Throwable]
+      case TenantKindV1.Unrecognized(unrecognizedValue) =>
+        new Exception(s"Unable to deserialize TenantKindV1 $unrecognizedValue").asLeft[PersistentTenantKind]
+    }
+
+  def toProtobufTenantKind(persistentTenantKind: PersistentTenantKind): TenantKindV1 =
+    persistentTenantKind match {
+      case Pa      => TenantKindV1.PA
+      case Gsp     => TenantKindV1.GSP
+      case Private => TenantKindV1.PRIVATE
+    }
 }

@@ -48,6 +48,7 @@ trait SpecHelper {
 
     val tenant: Tenant = Tenant(
       id = tenantId,
+      kind = TenantKind.PRIVATE,
       selfcareId = None,
       externalId = externalId,
       features = TenantFeature(Certifier("foo").some) :: Nil,

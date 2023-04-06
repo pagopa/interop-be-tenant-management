@@ -516,6 +516,8 @@ components:
         id:
           type: string
           format: uuid
+        kind:
+          $ref: '#/components/schemas/TenantKind'
         selfcareId:
           type: string
         externalId:
@@ -542,6 +544,7 @@ components:
           type: string
       required:
         - id
+        - kind
         - certifier
         - externalId
         - features
@@ -579,6 +582,12 @@ components:
         - kind
         - address
         - createdAt
+    TenantKind:
+      type: string
+      enum:
+        - PA
+        - PRIVATE
+        - GSP
     MailKind:
       type: string
       enum:
