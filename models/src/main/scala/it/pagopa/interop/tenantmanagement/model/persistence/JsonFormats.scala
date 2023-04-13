@@ -80,12 +80,6 @@ object JsonFormats {
       }
     }
 
-  private implicit val ptmFormat: RootJsonFormat[PersistentTenantMail] = jsonFormat4(PersistentTenantMail.apply)
-  implicit val ptFormat: RootJsonFormat[PersistentTenant]              = jsonFormat9(PersistentTenant.apply)
-
-  implicit val pcFormat: RootJsonFormat[TenantCreated] = jsonFormat1(TenantCreated.apply)
-  implicit val puFormat: RootJsonFormat[TenantUpdated] = jsonFormat1(TenantUpdated.apply)
-
   private implicit val ptkFormat: RootJsonFormat[PersistentTenantKind] =
     new RootJsonFormat[PersistentTenantKind] {
       override def read(json: JsValue): PersistentTenantKind = json match {
@@ -100,4 +94,10 @@ object JsonFormats {
         case PersistentTenantKind.Private => JsString("PRIVATE")
       }
     }
+
+  private implicit val ptmFormat: RootJsonFormat[PersistentTenantMail] = jsonFormat4(PersistentTenantMail.apply)
+  implicit val ptFormat: RootJsonFormat[PersistentTenant]              = jsonFormat10(PersistentTenant.apply)
+
+  implicit val pcFormat: RootJsonFormat[TenantCreated] = jsonFormat1(TenantCreated.apply)
+  implicit val puFormat: RootJsonFormat[TenantUpdated] = jsonFormat1(TenantUpdated.apply)
 }
