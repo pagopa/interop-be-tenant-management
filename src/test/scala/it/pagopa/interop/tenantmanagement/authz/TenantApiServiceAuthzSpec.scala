@@ -28,6 +28,7 @@ class TenantApiServiceAuthzSpec extends ClusteredMUnitRouteTest {
 
   val fakeSeed: TenantSeed = TenantSeed(
     id = UUID.randomUUID().some,
+    kind = TenantKind.PA.some,
     externalId = ExternalId("IPA", "pippo"),
     features = Nil,
     attributes = TenantAttribute(certified =

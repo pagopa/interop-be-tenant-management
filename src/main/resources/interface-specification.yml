@@ -544,7 +544,6 @@ components:
           type: string
       required:
         - id
-        - kind
         - certifier
         - externalId
         - features
@@ -620,6 +619,8 @@ components:
             $ref: '#/components/schemas/TenantAttribute'
         name:
           type: string
+        kind:
+          $ref: '#/components/schemas/TenantKind'
       required:
         - externalId
         - features

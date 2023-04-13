@@ -41,7 +41,7 @@ object protobufUtils {
     mails      <- protobufTenant.mails.traverse(toPersistentTenantMail)
   } yield PersistentTenant(
     id = id,
-    kind = kind.getOrElse(PersistentTenantKind.calculate(externalId.origin, externalId.value)),
+    kind = kind,
     selfcareId = protobufTenant.selfcareId,
     externalId = externalId,
     features = features,
@@ -56,7 +56,7 @@ object protobufUtils {
     externalId <- toProtobufTenantExternalId(persistentTenant.externalId)
   } yield TenantV1(
     id = persistentTenant.id.toString,
-    kind = toProtobufTenantKind(persistentTenant.kind).some,
+    kind = persistentTenant.kind.map(toProtobufTenantKind),
     selfcareId = persistentTenant.selfcareId,
     externalId = externalId,
     features = persistentTenant.features.map(toProtobufTenantFeature),

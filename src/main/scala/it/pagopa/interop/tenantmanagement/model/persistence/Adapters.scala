@@ -3,6 +3,7 @@ package it.pagopa.interop.tenantmanagement.model.persistence
 import cats.implicits._
 import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
 import it.pagopa.interop.tenantmanagement.error.TenantManagementErrors.{InvalidAttributeStructure, InvalidFeature}
+import it.pagopa.interop.tenantmanagement.model.TenantKind.{PA, GSP, PRIVATE}
 import it.pagopa.interop.tenantmanagement.model.MailKind.CONTACT_EMAIL
 import it.pagopa.interop.tenantmanagement.model._
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantMailKind.ContactEmail
@@ -151,11 +152,6 @@ object Adapters {
     def fromAPI(e: ExternalId): PersistentExternalId = PersistentExternalId(origin = e.origin, value = e.value)
   }
 
-  implicit class PersistentTenantKindObjectWrapper(private val p: PersistentTenantKind.type) extends AnyVal {
-
-    def fromAPI(origin: String, value: String): PersistentTenantKind = PersistentTenantKind.calculate(origin, value)
-  }
-
   implicit class PersistentTenantFeatureWrapper(private val p: PersistentTenantFeature) extends AnyVal {
     def toAPI: TenantFeature = p match {
       case PersistentTenantFeature.PersistentCertifier(certifierId) => TenantFeature(Certifier(certifierId).some)
@@ -203,7 +199,7 @@ object Adapters {
   implicit class PersistentTenantWrapper(private val p: PersistentTenant) extends AnyVal {
     def toAPI: Tenant = Tenant(
       id = p.id,
-      kind = p.kind.toApi,
+      kind = p.kind.map(_.toApi),
       selfcareId = p.selfcareId,
       features = p.features.map(_.toAPI),
       attributes = p.attributes.map(_.toAPI),
@@ -234,8 +230,7 @@ object Adapters {
       features   <- seed.features.toList.traverse(PersistentTenantFeature.fromAPI)
     } yield PersistentTenant(
       id = seed.id.getOrElse(UUID.randomUUID()),
-      // TODO TO BE CHANGED!!!!!!
-      kind = PersistentTenantKind.fromAPI(seed.externalId.origin, seed.externalId.value),
+      kind = seed.kind.map(_.fromApi),
       selfcareId = None,
       externalId = PersistentExternalId.fromAPI(seed.externalId),
       features = features,
@@ -247,11 +242,19 @@ object Adapters {
     )
   }
 
-  implicit class PersistentTenantKindWrapper(private val tk: PersistentTenantKind) extends AnyVal {
-    def toApi: TenantKind = tk match {
-      case Pa      => TenantKind.PA
-      case Gsp     => TenantKind.GSP
-      case Private => TenantKind.PRIVATE
+  implicit class PersistentTenantKindWrapper(private val ptk: PersistentTenantKind) extends AnyVal {
+    def toApi: TenantKind = ptk match {
+      case Pa      => PA
+      case Gsp     => GSP
+      case Private => PRIVATE
+    }
+  }
+
+  implicit class TenantKindWrapper(private val tk: TenantKind) extends AnyVal {
+    def fromApi: PersistentTenantKind = tk match {
+      case PA      => Pa
+      case GSP     => Gsp
+      case PRIVATE => Private
     }
   }
 }

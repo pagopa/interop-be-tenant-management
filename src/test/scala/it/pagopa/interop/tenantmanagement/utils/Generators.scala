@@ -147,7 +147,7 @@ object Generators {
   } yield (
     PersistentTenant(
       id,
-      kind,
+      kind.some,
       selfcareId,
       externalId,
       features,
