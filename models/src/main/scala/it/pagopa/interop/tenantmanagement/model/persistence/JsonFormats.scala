@@ -83,15 +83,15 @@ object JsonFormats {
   private implicit val ptkFormat: RootJsonFormat[PersistentTenantKind] =
     new RootJsonFormat[PersistentTenantKind] {
       override def read(json: JsValue): PersistentTenantKind = json match {
-        case JsString("PA")      => PersistentTenantKind.Pa
-        case JsString("GSP")     => PersistentTenantKind.Gsp
-        case JsString("PRIVATE") => PersistentTenantKind.Private
+        case JsString("PA")      => PersistentTenantKind.PA
+        case JsString("GSP")     => PersistentTenantKind.GSP
+        case JsString("PRIVATE") => PersistentTenantKind.PRIVATE
         case x => throw new DeserializationException(s"Unable to deserialize PersistentTenantKind: unmapped kind $x")
       }
       override def write(obj: PersistentTenantKind): JsValue = obj match {
-        case PersistentTenantKind.Pa      => JsString("PA")
-        case PersistentTenantKind.Gsp     => JsString("GSP")
-        case PersistentTenantKind.Private => JsString("PRIVATE")
+        case PersistentTenantKind.PA      => JsString("PA")
+        case PersistentTenantKind.GSP     => JsString("GSP")
+        case PersistentTenantKind.PRIVATE => JsString("PRIVATE")
       }
     }
 

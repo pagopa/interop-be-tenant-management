@@ -128,9 +128,9 @@ object Generators {
 
   val kindGenerator: Gen[(PersistentTenantKind, TenantKindV1)] =
     Gen.oneOf(
-      (PersistentTenantKind.Pa, TenantKindV1.PA),
-      (PersistentTenantKind.Private, TenantKindV1.PRIVATE),
-      (PersistentTenantKind.Gsp, TenantKindV1.GSP)
+      (PersistentTenantKind.PA, TenantKindV1.PA),
+      (PersistentTenantKind.PRIVATE, TenantKindV1.PRIVATE),
+      (PersistentTenantKind.GSP, TenantKindV1.GSP)
     )
 
   val tenantGen: Gen[(PersistentTenant, TenantV1)] = for {

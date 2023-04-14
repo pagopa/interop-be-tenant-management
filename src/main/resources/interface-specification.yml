@@ -640,6 +640,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/MailSeed'
+        kind:
+          $ref: '#/components/schemas/TenantKind'    
       required:
         - features
         - mails

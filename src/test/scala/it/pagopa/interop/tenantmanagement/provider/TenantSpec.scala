@@ -68,10 +68,10 @@ class TenantSpec extends BaseIntegrationSpec {
 
     val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, UUID.randomUUID())
 
-    val tenantDelta: TenantDelta = TenantDelta(None, Nil, Nil)
+    val tenantDelta: TenantDelta = TenantDelta(None, Nil, Nil, Option(TenantKind.PRIVATE))
 
     createTenant(tenantSeed) >> updateTenant[Tenant](tenant.id, tenantDelta).map { result =>
-      assertEquals(result, tenant.copy(selfcareId = None, features = Nil))
+      assertEquals(result, tenant.copy(selfcareId = None, features = Nil, kind = Option(TenantKind.PRIVATE)))
     }
   }
 
@@ -91,9 +91,9 @@ class TenantSpec extends BaseIntegrationSpec {
     )
 
     val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, UUID.randomUUID())
-    val expected: Tenant     = tenant.copy(selfcareId = None, features = Nil, mails = mails)
+    val expected: Tenant = tenant.copy(selfcareId = None, features = Nil, mails = mails, kind = Option(TenantKind.PA))
 
-    val tenantDelta: TenantDelta = TenantDelta(None, Nil, mailseed)
+    val tenantDelta: TenantDelta = TenantDelta(None, Nil, mailseed, Option(TenantKind.PA))
 
     createTenant(tenantSeed) >> updateTenant[Tenant](tenant.id, tenantDelta).map { result =>
       assertEquals(result, expected)
@@ -110,19 +110,24 @@ class TenantSpec extends BaseIntegrationSpec {
     val mailseed1: List[MailSeed] =
       List(MailSeed(MailKind.CONTACT_EMAIL, "foo@bar.it"))
 
-    val tenantDelta1: TenantDelta = TenantDelta(None, Nil, mailseed1)
+    val tenantDelta1: TenantDelta = TenantDelta(None, Nil, mailseed1, None)
 
     val mailseed2: List[MailSeed] = List(
       MailSeed(MailKind.CONTACT_EMAIL, "foo@bar.it", "awe".some),
       MailSeed(MailKind.CONTACT_EMAIL, "luke@theforce.com")
     )
 
-    val tenantDelta2: TenantDelta = TenantDelta(None, Nil, mailseed2)
+    val tenantDelta2: TenantDelta = TenantDelta(None, Nil, mailseed2, None)
 
     val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, UUID.randomUUID())
 
     val expected1: Tenant =
-      tenant.copy(selfcareId = None, features = Nil, mails = Mail(MailKind.CONTACT_EMAIL, "foo@bar.it", time1) :: Nil)
+      tenant.copy(
+        selfcareId = None,
+        features = Nil,
+        mails = Mail(MailKind.CONTACT_EMAIL, "foo@bar.it", time1) :: Nil,
+        kind = None
+      )
 
     val expected2: Tenant = tenant.copy(
       selfcareId = None,
@@ -130,7 +135,8 @@ class TenantSpec extends BaseIntegrationSpec {
       mails = List(
         Mail(MailKind.CONTACT_EMAIL, "foo@bar.it", time1, "awe".some),
         Mail(MailKind.CONTACT_EMAIL, "luke@theforce.com", time2)
-      )
+      ),
+      kind = None
     )
 
     createTenant(tenantSeed) >>
@@ -205,7 +211,8 @@ class TenantSpec extends BaseIntegrationSpec {
 
     val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, UUID.randomUUID())
     val selfcareId: String   = UUID.randomUUID().toString()
-    val delta: TenantDelta   = TenantDelta(selfcareId.some, TenantFeature(Certifier("foo").some) :: Nil, Nil)
+    val delta: TenantDelta   =
+      TenantDelta(selfcareId.some, TenantFeature(Certifier("foo").some) :: Nil, Nil, Option(TenantKind.PA))
 
     createTenant[Tenant](tenantSeed) >> updateTenant[Tenant](tenant.id, delta) >> getTenantBySelfcareId[Tenant](
       selfcareId

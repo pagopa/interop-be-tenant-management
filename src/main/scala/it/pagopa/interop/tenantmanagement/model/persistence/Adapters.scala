@@ -3,11 +3,10 @@ package it.pagopa.interop.tenantmanagement.model.persistence
 import cats.implicits._
 import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
 import it.pagopa.interop.tenantmanagement.error.TenantManagementErrors.{InvalidAttributeStructure, InvalidFeature}
-import it.pagopa.interop.tenantmanagement.model.TenantKind.{PA, GSP, PRIVATE}
 import it.pagopa.interop.tenantmanagement.model.MailKind.CONTACT_EMAIL
 import it.pagopa.interop.tenantmanagement.model._
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantMailKind.ContactEmail
-import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantKind.{Gsp, Private, Pa}
+import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantKind
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentVerificationRenewal.{
   AUTOMATIC_RENEWAL,
   REVOKE_ON_EXPIRATION
@@ -47,7 +46,8 @@ object Adapters {
       id = tenant.id,
       selfcareId = td.selfcareId,
       features = features,
-      mails = mailsToPersist.map(PersistentTenantMail.fromApi)
+      mails = mailsToPersist.map(PersistentTenantMail.fromApi),
+      kind = td.kind.map(PersistentTenantKind.fromApi)
     )
 
     private def calculateMailsToKeep(
@@ -211,7 +211,7 @@ object Adapters {
     )
 
     def update(ptd: PersistentTenantDelta): PersistentTenant =
-      p.copy(selfcareId = ptd.selfcareId, features = ptd.features, mails = ptd.mails)
+      p.copy(selfcareId = ptd.selfcareId, features = ptd.features, mails = ptd.mails, kind = ptd.kind)
 
     def getAttribute(id: UUID): Option[PersistentTenantAttribute] = p.attributes.find(_.id == id)
 
@@ -230,7 +230,7 @@ object Adapters {
       features   <- seed.features.toList.traverse(PersistentTenantFeature.fromAPI)
     } yield PersistentTenant(
       id = seed.id.getOrElse(UUID.randomUUID()),
-      kind = seed.kind.map(_.fromApi),
+      kind = seed.kind.map(PersistentTenantKind.fromApi),
       selfcareId = None,
       externalId = PersistentExternalId.fromAPI(seed.externalId),
       features = features,
@@ -244,17 +244,17 @@ object Adapters {
 
   implicit class PersistentTenantKindWrapper(private val ptk: PersistentTenantKind) extends AnyVal {
     def toApi: TenantKind = ptk match {
-      case Pa      => PA
-      case Gsp     => GSP
-      case Private => PRIVATE
+      case PersistentTenantKind.PA      => TenantKind.PA
+      case PersistentTenantKind.GSP     => TenantKind.GSP
+      case PersistentTenantKind.PRIVATE => TenantKind.PRIVATE
     }
   }
 
-  implicit class TenantKindWrapper(private val tk: TenantKind) extends AnyVal {
-    def fromApi: PersistentTenantKind = tk match {
-      case PA      => Pa
-      case GSP     => Gsp
-      case PRIVATE => Private
+  implicit class PersistentTenantKindObjectWrapper(private val ptk: PersistentTenantKind.type) extends AnyVal {
+    def fromApi(tenantKind: TenantKind): PersistentTenantKind = tenantKind match {
+      case TenantKind.PA      => PersistentTenantKind.PA
+      case TenantKind.GSP     => PersistentTenantKind.GSP
+      case TenantKind.PRIVATE => PersistentTenantKind.PRIVATE
     }
   }
 }

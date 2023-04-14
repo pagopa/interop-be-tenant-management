@@ -26,7 +26,8 @@ class CqrsProjectionSpec extends ScalaTestWithActorTestKit(ItSpecConfiguration.c
           id = tenant.id,
           selfcareId = Some(UUID.randomUUID().toString),
           features = List.empty,
-          mails = Nil
+          mails = Nil,
+          kind = tenant.kind
         )
       )
       val persisted = findOne[PersistentTenant](expected.id.toString).futureValue
