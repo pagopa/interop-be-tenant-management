@@ -54,7 +54,7 @@ class TenantSpec extends BaseIntegrationSpec {
     implicit val system: ActorSystem[_] = suiteState()
     implicit val ecs: ExecutionContext  = system.executionContext
 
-    val tenantDelta: TenantDelta = TenantDelta(None, Nil, Nil)
+    val tenantDelta: TenantDelta = TenantDelta(None, Nil, Nil, TenantKind.PA)
 
     updateTenant[Problem](UUID.randomUUID(), tenantDelta).map { result =>
       assertEquals(result.status, 404)
@@ -68,7 +68,7 @@ class TenantSpec extends BaseIntegrationSpec {
 
     val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, UUID.randomUUID())
 
-    val tenantDelta: TenantDelta = TenantDelta(None, Nil, Nil, Option(TenantKind.PRIVATE))
+    val tenantDelta: TenantDelta = TenantDelta(None, Nil, Nil, TenantKind.PRIVATE)
 
     createTenant(tenantSeed) >> updateTenant[Tenant](tenant.id, tenantDelta).map { result =>
       assertEquals(result, tenant.copy(selfcareId = None, features = Nil, kind = Option(TenantKind.PRIVATE)))
@@ -93,7 +93,7 @@ class TenantSpec extends BaseIntegrationSpec {
     val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, UUID.randomUUID())
     val expected: Tenant = tenant.copy(selfcareId = None, features = Nil, mails = mails, kind = Option(TenantKind.PA))
 
-    val tenantDelta: TenantDelta = TenantDelta(None, Nil, mailseed, Option(TenantKind.PA))
+    val tenantDelta: TenantDelta = TenantDelta(None, Nil, mailseed, TenantKind.PA)
 
     createTenant(tenantSeed) >> updateTenant[Tenant](tenant.id, tenantDelta).map { result =>
       assertEquals(result, expected)
@@ -110,14 +110,14 @@ class TenantSpec extends BaseIntegrationSpec {
     val mailseed1: List[MailSeed] =
       List(MailSeed(MailKind.CONTACT_EMAIL, "foo@bar.it"))
 
-    val tenantDelta1: TenantDelta = TenantDelta(None, Nil, mailseed1, None)
+    val tenantDelta1: TenantDelta = TenantDelta(None, Nil, mailseed1, TenantKind.PA)
 
     val mailseed2: List[MailSeed] = List(
       MailSeed(MailKind.CONTACT_EMAIL, "foo@bar.it", "awe".some),
       MailSeed(MailKind.CONTACT_EMAIL, "luke@theforce.com")
     )
 
-    val tenantDelta2: TenantDelta = TenantDelta(None, Nil, mailseed2, None)
+    val tenantDelta2: TenantDelta = TenantDelta(None, Nil, mailseed2, TenantKind.PA)
 
     val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, UUID.randomUUID())
 
@@ -126,7 +126,7 @@ class TenantSpec extends BaseIntegrationSpec {
         selfcareId = None,
         features = Nil,
         mails = Mail(MailKind.CONTACT_EMAIL, "foo@bar.it", time1) :: Nil,
-        kind = None
+        kind = TenantKind.PA.some
       )
 
     val expected2: Tenant = tenant.copy(
@@ -136,7 +136,7 @@ class TenantSpec extends BaseIntegrationSpec {
         Mail(MailKind.CONTACT_EMAIL, "foo@bar.it", time1, "awe".some),
         Mail(MailKind.CONTACT_EMAIL, "luke@theforce.com", time2)
       ),
-      kind = None
+      kind = TenantKind.PA.some
     )
 
     createTenant(tenantSeed) >>
@@ -212,7 +212,7 @@ class TenantSpec extends BaseIntegrationSpec {
     val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, UUID.randomUUID())
     val selfcareId: String   = UUID.randomUUID().toString()
     val delta: TenantDelta   =
-      TenantDelta(selfcareId.some, TenantFeature(Certifier("foo").some) :: Nil, Nil, Option(TenantKind.PA))
+      TenantDelta(selfcareId.some, TenantFeature(Certifier("foo").some) :: Nil, Nil, TenantKind.PA)
 
     createTenant[Tenant](tenantSeed) >> updateTenant[Tenant](tenant.id, delta) >> getTenantBySelfcareId[Tenant](
       selfcareId
@@ -227,7 +227,8 @@ class TenantSpec extends BaseIntegrationSpec {
 
     val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, UUID.randomUUID())
     val selfcareId: String   = UUID.randomUUID().toString()
-    val delta: TenantDelta   = TenantDelta(selfcareId.some, TenantFeature(Certifier("foo").some) :: Nil, Nil)
+    val delta: TenantDelta   =
+      TenantDelta(selfcareId.some, TenantFeature(Certifier("foo").some) :: Nil, Nil, TenantKind.PA)
 
     createTenant[Tenant](tenantSeed) >> updateTenant[Tenant](tenant.id, delta) >> getTenantBySelfcareId[Problem](
       UUID.randomUUID().toString()

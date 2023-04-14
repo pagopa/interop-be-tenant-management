@@ -47,7 +47,7 @@ object Adapters {
       selfcareId = td.selfcareId,
       features = features,
       mails = mailsToPersist.map(PersistentTenantMail.fromApi),
-      kind = td.kind.map(PersistentTenantKind.fromApi)
+      kind = PersistentTenantKind.fromApi(td.kind).some
     )
 
     private def calculateMailsToKeep(
@@ -230,7 +230,7 @@ object Adapters {
       features   <- seed.features.toList.traverse(PersistentTenantFeature.fromAPI)
     } yield PersistentTenant(
       id = seed.id.getOrElse(UUID.randomUUID()),
-      kind = seed.kind.map(PersistentTenantKind.fromApi),
+      kind = PersistentTenantKind.fromApi(seed.kind).some,
       selfcareId = None,
       externalId = PersistentExternalId.fromAPI(seed.externalId),
       features = features,

@@ -28,7 +28,7 @@ class TenantApiServiceAuthzSpec extends ClusteredMUnitRouteTest {
 
   val fakeSeed: TenantSeed = TenantSeed(
     id = UUID.randomUUID().some,
-    kind = TenantKind.PA.some,
+    kind = TenantKind.PA,
     externalId = ExternalId("IPA", "pippo"),
     features = Nil,
     attributes = TenantAttribute(certified =
@@ -59,7 +59,9 @@ class TenantApiServiceAuthzSpec extends ClusteredMUnitRouteTest {
   test("Tenant api operation authorization spec should accept authorized roles for updateTenant") {
     validateAuthorization(
       "updateTenant",
-      { implicit c: Seq[(String, String)] => tenantService.updateTenant("tenantId", TenantDelta(None, Nil, Nil)) }
+      { implicit c: Seq[(String, String)] =>
+        tenantService.updateTenant("tenantId", TenantDelta(None, Nil, Nil, TenantKind.PA))
+      }
     )
   }
 

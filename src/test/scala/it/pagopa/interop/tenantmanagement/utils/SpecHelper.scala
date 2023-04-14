@@ -40,7 +40,7 @@ trait SpecHelper {
 
     val tenantSeed: TenantSeed = TenantSeed(
       id = tenantId.some,
-      kind = Option(TenantKind.PA),
+      kind = TenantKind.PA,
       externalId = externalId,
       features = TenantFeature(Certifier("foo").some) :: Nil,
       attributes = attr :: Nil,
@@ -49,7 +49,7 @@ trait SpecHelper {
 
     val tenant: Tenant = Tenant(
       id = tenantId,
-      kind = Option(TenantKind.PA),
+      kind = TenantKind.PA.some,
       selfcareId = None,
       externalId = externalId,
       features = TenantFeature(Certifier("foo").some) :: Nil,
