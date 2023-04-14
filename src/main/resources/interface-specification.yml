@@ -626,6 +626,7 @@ components:
         - features
         - attributes
         - name
+        - kind
     TenantDelta:
       description: Tenant Delta model
       type: object
@@ -645,6 +646,7 @@ components:
       required:
         - features
         - mails
+        - kind
   securitySchemes:
     bearerAuth:
       type: http
