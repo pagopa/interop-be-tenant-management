@@ -71,7 +71,7 @@ class TenantSpec extends BaseIntegrationSpec {
     val tenantDelta: TenantDelta = TenantDelta(None, Nil, Nil)
 
     createTenant(tenantSeed) >> updateTenant[Tenant](tenant.id, tenantDelta).map { result =>
-      assertEquals(result, tenant.copy(selfcareId = None, features = Nil))
+      assertEquals(result, tenant.copy(selfcareId = None, features = Nil, updatedAt = result.updatedAt))
     }
   }
 
@@ -96,7 +96,7 @@ class TenantSpec extends BaseIntegrationSpec {
     val tenantDelta: TenantDelta = TenantDelta(None, Nil, mailseed)
 
     createTenant(tenantSeed) >> updateTenant[Tenant](tenant.id, tenantDelta).map { result =>
-      assertEquals(result, expected)
+      assertEquals(result, expected.copy(updatedAt = result.updatedAt))
     }
   }
 
@@ -135,9 +135,13 @@ class TenantSpec extends BaseIntegrationSpec {
 
     createTenant(tenantSeed) >>
       Future { mockedTimes = NonEmptyList.of(time1) } >>
-      updateTenant[Tenant](tenant.id, tenantDelta1).map { assertEquals(_, expected1, "first update failed") } >>
+      updateTenant[Tenant](tenant.id, tenantDelta1).map { t =>
+        assertEquals(t, expected1.copy(updatedAt = t.updatedAt), "first update failed")
+      } >>
       Future { mockedTimes = NonEmptyList.of(time2) } >>
-      updateTenant[Tenant](tenant.id, tenantDelta2).map { assertEquals(_, expected2, "second update failed") }
+      updateTenant[Tenant](tenant.id, tenantDelta2).map { t =>
+        assertEquals(t, expected2.copy(updatedAt = t.updatedAt), "second update failed")
+      }
   }
 
   test("Get of a tenant by externalId must succeed if tenant exist") {
@@ -210,7 +214,7 @@ class TenantSpec extends BaseIntegrationSpec {
     createTenant[Tenant](tenantSeed) >> updateTenant[Tenant](tenant.id, delta) >> getTenantBySelfcareId[Tenant](
       selfcareId
     ).map { result =>
-      assertEquals(result, tenant.copy(selfcareId = selfcareId.some))
+      assertEquals(result, tenant.copy(selfcareId = selfcareId.some, updatedAt = result.updatedAt))
     }
   }
 
