@@ -19,7 +19,7 @@ final case class GetTenantsWithExternalId(
 
 final case class UpdateTenant(
   tenantDelta: PersistentTenantDelta,
-  dateTime: OffsetDateTime,
+  timestamp: OffsetDateTime,
   replyTo: ActorRef[StatusReply[PersistentTenant]]
 ) extends Command
 
