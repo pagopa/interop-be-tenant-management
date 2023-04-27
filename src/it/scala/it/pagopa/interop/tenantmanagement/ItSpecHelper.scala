@@ -130,6 +130,9 @@ trait ItSpecHelper
     commander(tenant.id).ask(ref => CreateTenant(tenant, ref)).futureValue.getValue
 
   def updateTenant(tenantDelta: PersistentTenantDelta): PersistentTenant =
-    commander(tenantDelta.id).ask(ref => UpdateTenant(tenantDelta, ref)).futureValue.getValue
+    commander(tenantDelta.id)
+      .ask(ref => UpdateTenant(tenantDelta, mockDateTimeSupplier.get(), ref))
+      .futureValue
+      .getValue
 
 }
