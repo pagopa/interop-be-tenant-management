@@ -17,8 +17,11 @@ final case class GetTenantsWithExternalId(
   replyTo: ActorRef[StatusReply[List[PersistentTenant]]]
 ) extends Command
 
-final case class UpdateTenant(tenantDelta: PersistentTenantDelta, replyTo: ActorRef[StatusReply[PersistentTenant]])
-    extends Command
+final case class UpdateTenant(
+  tenantDelta: PersistentTenantDelta,
+  timestamp: OffsetDateTime,
+  replyTo: ActorRef[StatusReply[PersistentTenant]]
+) extends Command
 
 final case class AddAttribute(
   tenantId: String,

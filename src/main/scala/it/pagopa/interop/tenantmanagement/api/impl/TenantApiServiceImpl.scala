@@ -126,8 +126,8 @@ class TenantApiServiceImpl(
       tenantUUID <- tenantId.toFutureUUID
       tenant     <- commanderForTenantId(tenantId).askWithStatus(r => GetTenant(tenantId, r))
       delta      <- PersistentTenantDelta.fromAPI(tenant, tenantDelta, offsetDateTimeSupplier).toFuture
-      result     <- commanderForTenantId(tenantId).askWithStatus(r => UpdateTenant(delta, r))
-      _          <- delta.selfcareId.fold(Future.unit)(addMapping(_, tenantUUID))
+      result <- commanderForTenantId(tenantId).askWithStatus(r => UpdateTenant(delta, offsetDateTimeSupplier.get(), r))
+      _      <- delta.selfcareId.fold(Future.unit)(addMapping(_, tenantUUID))
     } yield result.toAPI
 
     onComplete(result) { updateTenantResponse[Tenant](operationLabel)(updateTenant200) }

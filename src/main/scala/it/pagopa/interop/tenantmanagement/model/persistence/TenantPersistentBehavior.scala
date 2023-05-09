@@ -47,9 +47,9 @@ object TenantPersistentBehavior {
         val failure: String => Effect[TenantCreated, State] = id => fail(TenantAlreadyExists(id))(replyTo)
         maybeTenantId.fold(success)(failure)
 
-      case UpdateTenant(tenantDelta, replyTo) =>
+      case UpdateTenant(tenantDelta, dateTime, replyTo) =>
         val maybeTenant: Option[PersistentTenant]                     =
-          state.tenants.get(tenantDelta.id.toString).map(_.update(tenantDelta))
+          state.tenants.get(tenantDelta.id.toString).map(_.update(tenantDelta, dateTime))
         val success: PersistentTenant => Effect[TenantUpdated, State] = t => persistAndReply(t, TenantUpdated)(replyTo)
         val failure: Effect[TenantUpdated, State] = fail(TenantNotFound(tenantDelta.id.toString))(replyTo)
         maybeTenant.fold(failure)(success)
