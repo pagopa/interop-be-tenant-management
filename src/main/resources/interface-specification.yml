@@ -121,6 +121,20 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+    delete:
+      tags:
+        - tenant
+      summary: Deletes a tenant
+      operationId: deleteTenant
+      responses:
+        '204':
+          description: Tenant Deleted
+        '404':
+          description: Tenant not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
   /tenants/selfcareId/{selfcareId}:
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
