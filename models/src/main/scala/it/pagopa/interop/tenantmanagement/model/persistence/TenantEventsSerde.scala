@@ -7,6 +7,7 @@ import it.pagopa.interop.commons.utils.SprayCommonFormats._
 import it.pagopa.interop.commons.queue.message.ProjectableEvent
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantFeature.PersistentCertifier
 
+import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantMailKind
 object TenantEventsSerde {
 
   val tenantToJson: PartialFunction[ProjectableEvent, JsValue] = {
@@ -128,9 +129,24 @@ object TenantEventsSerde {
       }
     }
 
+  private implicit val ptkFormat: RootJsonFormat[PersistentTenantKind] =
+    new RootJsonFormat[PersistentTenantKind] {
+      override def read(json: JsValue): PersistentTenantKind = json match {
+        case JsString("PA")      => PersistentTenantKind.PA
+        case JsString("GSP")     => PersistentTenantKind.GSP
+        case JsString("PRIVATE") => PersistentTenantKind.PRIVATE
+        case x => throw new DeserializationException(s"Unable to deserialize PersistentTenantKind: unmapped kind $x")
+      }
+      override def write(obj: PersistentTenantKind): JsValue = obj match {
+        case PersistentTenantKind.PA      => JsString("PA")
+        case PersistentTenantKind.GSP     => JsString("GSP")
+        case PersistentTenantKind.PRIVATE => JsString("PRIVATE")
+      }
+    }
+
   private implicit val ptmFormat: RootJsonFormat[PersistentTenantMail]    = jsonFormat4(PersistentTenantMail.apply)
   private implicit val pexFormat: RootJsonFormat[PersistentExternalId]    = jsonFormat2(PersistentExternalId.apply)
-  private implicit val ptFormat: RootJsonFormat[PersistentTenant]         = jsonFormat9(PersistentTenant.apply)
+  private implicit val ptFormat: RootJsonFormat[PersistentTenant]         = jsonFormat10(PersistentTenant.apply)
   private implicit val tcFormat: RootJsonFormat[TenantCreated]            = jsonFormat1(TenantCreated.apply)
   private implicit val tuFormat: RootJsonFormat[TenantUpdated]            = jsonFormat1(TenantUpdated.apply)
   private implicit val scmcFormat: RootJsonFormat[SelfcareMappingCreated] = jsonFormat2(SelfcareMappingCreated.apply)
