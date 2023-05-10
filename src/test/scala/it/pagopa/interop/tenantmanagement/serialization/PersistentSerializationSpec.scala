@@ -22,6 +22,8 @@ class PersistentSerializationSpec extends ScalaCheckSuite with DiffxAssertions {
   deserCheck[TenantCreated, TenantCreatedV1](tenantCreatedGen)
   serdeCheck[TenantUpdated, TenantUpdatedV1](tenantUpdatedGen)
   deserCheck[TenantUpdated, TenantUpdatedV1](tenantUpdatedGen)
+  serdeCheck[TenantDeleted, TenantDeletedV1](tenantDeletedGen)
+  deserCheck[TenantDeleted, TenantDeletedV1](tenantDeletedGen)
   serdeCheck[SelfcareMappingCreated, SelfcareMappingCreatedV1](selfcareMappingCreatedGen)
   deserCheck[SelfcareMappingCreated, SelfcareMappingCreatedV1](selfcareMappingCreatedGen)
 

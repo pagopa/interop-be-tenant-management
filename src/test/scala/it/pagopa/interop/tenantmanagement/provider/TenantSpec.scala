@@ -70,7 +70,7 @@ class TenantSpec extends BaseIntegrationSpec {
 
     val tenantDelta: TenantDelta = TenantDelta(None, Nil, Nil)
 
-    createTenant(tenantSeed) >> updateTenant[Tenant](tenant.id, tenantDelta).map { result =>
+    createTenant[Tenant](tenantSeed) >> updateTenant[Tenant](tenant.id, tenantDelta).map { result =>
       assertEquals(result, tenant.copy(selfcareId = None, features = Nil, updatedAt = result.updatedAt))
     }
   }
@@ -95,7 +95,7 @@ class TenantSpec extends BaseIntegrationSpec {
 
     val tenantDelta: TenantDelta = TenantDelta(None, Nil, mailseed)
 
-    createTenant(tenantSeed) >> updateTenant[Tenant](tenant.id, tenantDelta).map { result =>
+    createTenant[Tenant](tenantSeed) >> updateTenant[Tenant](tenant.id, tenantDelta).map { result =>
       assertEquals(result, expected.copy(updatedAt = result.updatedAt))
     }
   }
@@ -133,7 +133,7 @@ class TenantSpec extends BaseIntegrationSpec {
       )
     )
 
-    createTenant(tenantSeed) >>
+    createTenant[Tenant](tenantSeed) >>
       Future { mockedTimes = NonEmptyList.of(time1) } >>
       updateTenant[Tenant](tenant.id, tenantDelta1).map { t =>
         assertEquals(t, expected1.copy(updatedAt = t.updatedAt), "first update failed")
@@ -182,7 +182,7 @@ class TenantSpec extends BaseIntegrationSpec {
 
     val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, UUID.randomUUID())
 
-    createTenant(tenantSeed) >> getTenantAttribute[Problem](tenant.id.toString, UUID.randomUUID.toString).map {
+    createTenant[Tenant](tenantSeed) >> getTenantAttribute[Problem](tenant.id.toString, UUID.randomUUID.toString).map {
       result =>
         assertEquals(result.status, 404)
         assertEquals(result.errors.map(_.code), Seq("018-0005"))
@@ -196,7 +196,7 @@ class TenantSpec extends BaseIntegrationSpec {
     val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, UUID.randomUUID())
     val expected             = tenant.attributes.head
 
-    createTenant(tenantSeed) >> getTenantAttribute[TenantAttribute](
+    createTenant[Tenant](tenantSeed) >> getTenantAttribute[TenantAttribute](
       tenant.id.toString,
       tenant.attributes.head.certified.get.id.toString
     )
@@ -255,7 +255,7 @@ class TenantSpec extends BaseIntegrationSpec {
     val (tenant, tenantSeed)  = randomTenantAndSeed(mockedTime, uuid)
     val attr: TenantAttribute = attribute(mockedTime, uuid)
 
-    createTenant(tenantSeed) >> addTenantAttribute[Problem](tenant.id.toString, attr).map { result =>
+    createTenant[Tenant](tenantSeed) >> addTenantAttribute[Problem](tenant.id.toString, attr).map { result =>
       assertEquals(result.status, 409)
       assertEquals(result.errors.map(_.code), Seq("018-0004"))
     }
@@ -270,9 +270,10 @@ class TenantSpec extends BaseIntegrationSpec {
 
     val expected: Tenant = tenant.copy(attributes = attr :: Nil, updatedAt = mockedTime.some)
 
-    createTenant(tenantSeed.copy(attributes = Nil)) >> addTenantAttribute[Tenant](tenant.id.toString, attr).map {
-      result => assertEquals(result, expected)
-    }
+    createTenant[Tenant](tenantSeed.copy(attributes = Nil)) >> addTenantAttribute[Tenant](tenant.id.toString, attr)
+      .map { result =>
+        assertEquals(result, expected)
+      }
   }
 
   test("Updating an attribute must fail if tenant does not exist") {
@@ -299,7 +300,7 @@ class TenantSpec extends BaseIntegrationSpec {
       attr.copy(certified = attr.certified.map(_.copy(id = attrId)))
     }
 
-    createTenant(tenantSeed) >> updateTenantAttribute[Problem](tenant.id.toString, attrId.toString, attr)
+    createTenant[Tenant](tenantSeed) >> updateTenantAttribute[Problem](tenant.id.toString, attrId.toString, attr)
       .map { result =>
         assertEquals(result.status, 404)
         assertEquals(result.errors.map(_.code), Seq("018-0005"))
@@ -316,11 +317,41 @@ class TenantSpec extends BaseIntegrationSpec {
 
     val expected = tenant.copy(attributes = attr :: Nil, updatedAt = mockedTime.some)
 
-    createTenant(tenantSeed) >> updateTenantAttribute[Tenant](
+    createTenant[Tenant](tenantSeed) >> updateTenantAttribute[Tenant](
       tenant.id.toString,
       tenant.attributes.head.certified.get.id.toString,
       attr
     ).map { result => assertEquals(result, expected) }
+  }
+
+  test("Deletion of a new tenant must succeed if the tenant exists") {
+    implicit val system: ActorSystem[_] = suiteState()
+    implicit val ecs: ExecutionContext  = system.executionContext
+    val (_, tenantSeed)                 = randomTenantAndSeed(mockedTime, UUID.randomUUID())
+    for {
+      tenant <- createTenant[Tenant](tenantSeed)
+      tenantId = tenant.id
+      _        <- deleteTenant[Unit](tenantId)
+      response <- getTenant[Problem](tenantId)
+    } yield {
+      assertEquals(response.status, 404)
+      assertEquals(response.errors.map(_.code), Seq("018-0002"))
+    }
+  }
+
+  test("Deletion of a new tenant must fail if the tenant doesn't exist") {
+    implicit val system: ActorSystem[_] = suiteState()
+    implicit val ecs: ExecutionContext  = system.executionContext
+    val tenantId                        = UUID.randomUUID()
+    for {
+      getResponse    <- getTenant[Problem](tenantId)
+      deleteResponse <- deleteTenant[Problem](tenantId)
+    } yield {
+      assertEquals(getResponse.status, 404)
+      assertEquals(getResponse.errors.map(_.code), Seq("018-0002"))
+      assertEquals(deleteResponse.status, 404)
+      assertEquals(deleteResponse.errors.map(_.code), Seq("018-0002"))
+    }
   }
 
 }

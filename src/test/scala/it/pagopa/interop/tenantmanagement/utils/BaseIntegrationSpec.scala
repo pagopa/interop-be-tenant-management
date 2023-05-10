@@ -68,7 +68,8 @@ abstract class BaseIntegrationSpec extends FunSuite with SpecHelper {
           SecurityDirectives.authenticateOAuth2(
             "SecurityRealm",
             {
-              case Provided(identifier) => Some(Seq(BEARER -> identifier, USER_ROLES -> "admin"))
+              case Provided(identifier) =>
+                Some(Seq(BEARER -> identifier, USER_ROLES -> "admin,security,api,m2m,internal"))
               case Missing              => None
             }
           )
@@ -82,7 +83,8 @@ abstract class BaseIntegrationSpec extends FunSuite with SpecHelper {
           SecurityDirectives.authenticateOAuth2(
             "SecurityRealm",
             {
-              case Provided(identifier) => Some(Seq(BEARER -> identifier, USER_ROLES -> "admin"))
+              case Provided(identifier) =>
+                Some(Seq(BEARER -> identifier, USER_ROLES -> "admin,security,api,m2m,internal"))
               case Missing              => None
             }
           )

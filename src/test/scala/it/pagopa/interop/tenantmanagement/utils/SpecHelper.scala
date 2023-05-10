@@ -18,6 +18,7 @@ import it.pagopa.interop.tenantmanagement.api.impl._
 
 import java.net.InetAddress
 import java.time.OffsetDateTime
+import akka.stream.Materializer
 
 trait SpecHelper {
 
@@ -28,6 +29,12 @@ trait SpecHelper {
     RawHeader("X-Correlation-Id", "test-id"),
     `X-Forwarded-For`(RemoteAddress(InetAddress.getByName("127.0.0.1")))
   )
+
+  implicit val um: Unmarshaller[HttpResponse, Unit] = new Unmarshaller[HttpResponse, Unit] {
+    override def apply(value: HttpResponse)(implicit ec: ExecutionContext, materializer: Materializer): Future[Unit] = {
+      if (value.status.isSuccess) Future.unit else Future.failed(new Exception("Status != 2xx"))
+    }
+  }
 
   def attribute(offsetDateTime: OffsetDateTime, uuid: UUID): TenantAttribute =
     TenantAttribute(certified = CertifiedTenantAttribute(id = uuid, assignmentTimestamp = offsetDateTime).some)
@@ -73,6 +80,9 @@ trait SpecHelper {
 
   def getTenant[T](id: UUID)(implicit actorSystem: ActorSystem[_], um: Unmarshaller[HttpResponse, T]): Future[T] =
     performCall[T](HttpMethods.GET, s"tenants/${id.toString()}", None)
+
+  def deleteTenant[T](id: UUID)(implicit actorSystem: ActorSystem[_], um: Unmarshaller[HttpResponse, T]): Future[T] =
+    performCall[T](HttpMethods.DELETE, s"tenants/${id.toString()}", None)
 
   def getTenantByExternalId[T](origin: String, code: String)(implicit
     actorSystem: ActorSystem[_],

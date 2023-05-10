@@ -55,6 +55,13 @@
       ]
     },
     {
+      "route": "deleteTenant",
+      "verb": "DELETE",
+      "roles": [
+        "internal"
+      ]
+    },
+    {
       "route": "getTenantAttribute",
       "verb": "GET",
       "roles": [
