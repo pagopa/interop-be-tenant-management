@@ -530,6 +530,8 @@ components:
         id:
           type: string
           format: uuid
+        kind:
+          $ref: '#/components/schemas/TenantKind'
         selfcareId:
           type: string
         externalId:
@@ -593,6 +595,12 @@ components:
         - kind
         - address
         - createdAt
+    TenantKind:
+      type: string
+      enum:
+        - PA
+        - PRIVATE
+        - GSP
     MailKind:
       type: string
       enum:
@@ -625,11 +633,14 @@ components:
             $ref: '#/components/schemas/TenantAttribute'
         name:
           type: string
+        kind:
+          $ref: '#/components/schemas/TenantKind'
       required:
         - externalId
         - features
         - attributes
         - name
+        - kind
     TenantDelta:
       description: Tenant Delta model
       type: object
@@ -644,9 +655,12 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/MailSeed'
+        kind:
+          $ref: '#/components/schemas/TenantKind'    
       required:
         - features
         - mails
+        - kind
   securitySchemes:
     bearerAuth:
       type: http
