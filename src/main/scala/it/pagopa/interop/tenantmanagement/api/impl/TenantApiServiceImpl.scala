@@ -149,4 +149,16 @@ class TenantApiServiceImpl(
     onComplete(result) { getTenantBySelfcareIdResponse[Tenant](operationLabel)(getTenantBySelfcareId200) }
   }
 
+  override def deleteTenant(
+    tenantId: String
+  )(implicit toEntityMarshallerProblem: ToEntityMarshaller[Problem], contexts: Seq[(String, String)]): Route =
+    authorize(INTERNAL_ROLE) {
+      val operationLabel = s"Deleting Tenant $tenantId"
+      logger.info(operationLabel)
+
+      val result: Future[Unit] = commanderForTenantId(tenantId).askWithStatus[Unit](DeleteTenant(tenantId, _))
+
+      onComplete(result) { deleteTenantResponse[Unit](operationLabel)(_ => deleteTenant204) }
+    }
+
 }

@@ -80,6 +80,11 @@ object TenantPersistentBehavior {
           .fold(error[UUID](TenantBySelfcareIdNotFound(selfcareId)))(success)
         Effect.reply(replyTo)(reply)
 
+      case DeleteTenant(tenantId, replyTo) =>
+        if (state.tenants.contains(tenantId))
+          Effect.persist(TenantDeleted(tenantId)).thenReply(replyTo)(_ => success(()))
+        else Effect.reply(replyTo)(error[Unit](TenantNotFound(tenantId)))
+
       case Idle =>
         context.log.debug(s"Passivate shard: ${shard.path.name}")
         Effect.reply(shard)(ClusterSharding.Passivate(context.self))
@@ -97,6 +102,7 @@ object TenantPersistentBehavior {
     event match {
       case TenantCreated(tenant)                        => state.addTenant(tenant)
       case TenantUpdated(tenant)                        => state.addTenant(tenant)
+      case TenantDeleted(tenantId)                      => state.deleteTenant(tenantId)
       case SelfcareMappingCreated(selfcareId, tenantId) => state.addSelfcareMapping(selfcareId, tenantId)
     }
 

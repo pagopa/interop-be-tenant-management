@@ -10,6 +10,11 @@ final case class State(tenants: Map[String, PersistentTenant], selfcareMappings:
   def addSelfcareMapping(selfcareId: String, tenantId: UUID): State =
     copy(selfcareMappings = selfcareMappings + (selfcareId -> tenantId))
   def getTenantIdBySelfcareId(selfcareId: String): Option[UUID]     = selfcareMappings.get(selfcareId)
+
+  def deleteTenant(tenantId: String): State = State(
+    tenants - tenantId,
+    tenants.get(tenantId).flatMap(_.selfcareId).fold(selfcareMappings)(selfcareId => selfcareMappings - selfcareId)
+  )
 }
 
 object State {

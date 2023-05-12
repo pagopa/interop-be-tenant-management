@@ -72,6 +72,13 @@ class TenantApiServiceAuthzSpec extends ClusteredMUnitRouteTest {
     )
   }
 
+  test("Tenant api operation authorization spec should accept authorized roles for deleteTenant") {
+    validateAuthorization(
+      "deleteTenant",
+      { implicit c: Seq[(String, String)] => tenantService.deleteTenant("selfcareId") }
+    )
+  }
+
   test("Attributes api operation authorization spec should accept authorized roles for addTenantAttribute") {
     validateAuthorization(
       "addTenantAttribute",
