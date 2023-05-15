@@ -1,7 +1,7 @@
 package it.pagopa.interop.tenantmanagement.model.persistence.projection
 
 import akka.actor.typed.ActorSystem
-import it.pagopa.interop.commons.cqrs.model.{ActionWithBson, ActionWithDocument, MongoDbConfig, PartialMongoAction}
+import it.pagopa.interop.commons.cqrs.model._
 import it.pagopa.interop.commons.cqrs.service.CqrsProjection
 import it.pagopa.interop.commons.cqrs.service.DocumentConversions._
 import it.pagopa.interop.tenantmanagement.model.persistence.{Event, TenantCreated, TenantUpdated}
@@ -15,6 +15,7 @@ import spray.json.enrichAny
 import scala.concurrent.ExecutionContext
 import it.pagopa.interop.tenantmanagement.model.persistence.SelfcareMappingCreated
 import it.pagopa.interop.commons.cqrs.model.NoOpAction
+import it.pagopa.interop.tenantmanagement.model.persistence.TenantDeleted
 
 object TenantCqrsProjection {
   def projection(offsetDbConfig: DatabaseConfig[JdbcProfile], mongoDbConfig: MongoDbConfig, projectionId: String)(
@@ -29,6 +30,8 @@ object TenantCqrsProjection {
       ActionWithDocument(collection.insertOne, Document(s"{ data: ${t.toJson.compactPrint} }"))
     case TenantUpdated(t)             =>
       ActionWithBson(collection.updateOne(Filters.eq("data.id", t.id.toString), _), Updates.set("data", t.toDocument))
+    case TenantDeleted(tenantId)      =>
+      Action(collection.deleteOne(Filters.eq("data.id", tenantId)))
     case SelfcareMappingCreated(_, _) => NoOpAction
   }
 

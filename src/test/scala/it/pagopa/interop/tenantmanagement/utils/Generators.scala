@@ -203,6 +203,10 @@ object Generators {
     (TenantUpdated(a), TenantUpdatedV1(b))
   }
 
+  val tenantDeletedGen: Gen[(TenantDeleted, TenantDeletedV1)] = Gen.uuid.map(_.toString).map { uuid =>
+    (TenantDeleted(uuid), TenantDeletedV1(uuid))
+  }
+
   val selfcareMappingCreatedGen: Gen[(SelfcareMappingCreated, SelfcareMappingCreatedV1)] = for {
     selfcareId <- stringGen
     tenantId   <- Gen.uuid
