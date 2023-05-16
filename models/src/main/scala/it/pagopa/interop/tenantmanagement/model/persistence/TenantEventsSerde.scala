@@ -13,18 +13,21 @@ object TenantEventsSerde {
     case x: TenantCreated          => x.toJson
     case x: TenantUpdated          => x.toJson
     case x: SelfcareMappingCreated => x.toJson
+    case x: SelfcareMappingDeleted => x.toJson
   }
 
   private val tenantCreated: String          = "tenant-created"
   private val tenantUpdated: String          = "tenant-updated"
   private val tenantDeleted: String          = "tenant-deleted"
   private val selfcareMappingCreated: String = "selfcare-mapping-created"
+  private val selfcareMappingDeleted: String = "selfcare-mapping-deleted"
 
   val jsonToTenant: PartialFunction[String, JsValue => ProjectableEvent] = {
     case `tenantCreated`          => _.convertTo[TenantCreated]
     case `tenantUpdated`          => _.convertTo[TenantUpdated]
     case `tenantDeleted`          => _.convertTo[TenantDeleted]
     case `selfcareMappingCreated` => _.convertTo[SelfcareMappingCreated]
+    case `selfcareMappingDeleted` => _.convertTo[SelfcareMappingDeleted]
   }
 
   def getKind(e: Event): String = e match {
@@ -32,6 +35,7 @@ object TenantEventsSerde {
     case TenantUpdated(_)             => tenantUpdated
     case TenantDeleted(_)             => tenantDeleted
     case SelfcareMappingCreated(_, _) => selfcareMappingCreated
+    case SelfcareMappingDeleted(_)    => selfcareMappingDeleted
   }
 
   // Serdes
@@ -138,5 +142,6 @@ object TenantEventsSerde {
   private implicit val tuFormat: RootJsonFormat[TenantUpdated]            = jsonFormat1(TenantUpdated.apply)
   private implicit val tdFormat: RootJsonFormat[TenantDeleted]            = jsonFormat1(TenantDeleted.apply)
   private implicit val scmcFormat: RootJsonFormat[SelfcareMappingCreated] = jsonFormat2(SelfcareMappingCreated.apply)
+  private implicit val scmdFormat: RootJsonFormat[SelfcareMappingDeleted] = jsonFormat1(SelfcareMappingDeleted.apply)
 
 }

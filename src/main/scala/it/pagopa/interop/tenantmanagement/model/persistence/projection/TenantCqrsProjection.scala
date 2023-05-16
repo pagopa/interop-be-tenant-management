@@ -4,7 +4,14 @@ import akka.actor.typed.ActorSystem
 import it.pagopa.interop.commons.cqrs.model._
 import it.pagopa.interop.commons.cqrs.service.CqrsProjection
 import it.pagopa.interop.commons.cqrs.service.DocumentConversions._
-import it.pagopa.interop.tenantmanagement.model.persistence.{Event, TenantCreated, TenantUpdated}
+import it.pagopa.interop.tenantmanagement.model.persistence.{
+  Event,
+  SelfcareMappingCreated,
+  SelfcareMappingDeleted,
+  TenantCreated,
+  TenantDeleted,
+  TenantUpdated
+}
 import it.pagopa.interop.tenantmanagement.model.persistence.JsonFormats._
 import org.mongodb.scala.model.{Filters, Updates}
 import org.mongodb.scala.{Document, MongoCollection}
@@ -13,9 +20,7 @@ import slick.jdbc.JdbcProfile
 import spray.json.enrichAny
 
 import scala.concurrent.ExecutionContext
-import it.pagopa.interop.tenantmanagement.model.persistence.SelfcareMappingCreated
 import it.pagopa.interop.commons.cqrs.model.NoOpAction
-import it.pagopa.interop.tenantmanagement.model.persistence.TenantDeleted
 
 object TenantCqrsProjection {
   def projection(offsetDbConfig: DatabaseConfig[JdbcProfile], mongoDbConfig: MongoDbConfig, projectionId: String)(
@@ -33,6 +38,7 @@ object TenantCqrsProjection {
     case TenantDeleted(tenantId)      =>
       Action(collection.deleteOne(Filters.eq("data.id", tenantId)))
     case SelfcareMappingCreated(_, _) => NoOpAction
+    case SelfcareMappingDeleted(_)    => NoOpAction
   }
 
 }
