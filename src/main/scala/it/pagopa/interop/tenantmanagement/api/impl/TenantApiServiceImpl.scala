@@ -156,7 +156,13 @@ class TenantApiServiceImpl(
       val operationLabel = s"Deleting Tenant $tenantId"
       logger.info(operationLabel)
 
-      val result: Future[Unit] = commanderForTenantId(tenantId).askWithStatus[Unit](DeleteTenant(tenantId, _))
+      val result: Future[Unit] = for {
+        tenant <- commanderForTenantId(tenantId).askWithStatus(ref => GetTenant(tenantId, ref))
+        _      <- commanderForTenantId(tenantId).askWithStatus[Unit](DeleteTenant(tenantId, _))
+        _      <- tenant.selfcareId.fold(Future.unit)(selfcarId =>
+          commanderForSelfcareId(selfcarId).askWithStatus[Unit](DeleteSelfcareIdTenantMapping(selfcarId, _))
+        )
+      } yield ()
 
       onComplete(result) { deleteTenantResponse[Unit](operationLabel)(_ => deleteTenant204) }
     }

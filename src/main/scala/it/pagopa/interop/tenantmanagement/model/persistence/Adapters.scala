@@ -211,7 +211,13 @@ object Adapters {
     )
 
     def update(ptd: PersistentTenantDelta, time: OffsetDateTime): PersistentTenant =
-      p.copy(selfcareId = ptd.selfcareId, features = ptd.features, mails = ptd.mails, kind = ptd.kind, updatedAt = time.some)
+      p.copy(
+        selfcareId = ptd.selfcareId,
+        features = ptd.features,
+        mails = ptd.mails,
+        kind = ptd.kind,
+        updatedAt = time.some
+      )
 
     def getAttribute(id: UUID): Option[PersistentTenantAttribute] = p.attributes.find(_.id == id)
 

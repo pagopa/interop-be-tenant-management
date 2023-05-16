@@ -44,3 +44,5 @@ final case class AddSelfcareIdTenantMapping(selfcareId: String, tenantId: UUID, 
     extends Command
 
 final case class DeleteTenant(tenantId: String, replyTo: ActorRef[StatusReply[Unit]]) extends Command
+
+final case class DeleteSelfcareIdTenantMapping(selfcareId: String, replyTo: ActorRef[StatusReply[Unit]]) extends Command

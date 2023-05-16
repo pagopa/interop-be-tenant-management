@@ -71,7 +71,10 @@ class TenantSpec extends BaseIntegrationSpec {
     val tenantDelta: TenantDelta = TenantDelta(None, Nil, Nil, TenantKind.PRIVATE)
 
     createTenant[Tenant](tenantSeed) >> updateTenant[Tenant](tenant.id, tenantDelta).map { result =>
-      assertEquals(result, tenant.copy(selfcareId = None, features = Nil, kind = Option(TenantKind.PRIVATE), updatedAt = result.updatedAt))
+      assertEquals(
+        result,
+        tenant.copy(selfcareId = None, features = Nil, kind = Option(TenantKind.PRIVATE), updatedAt = result.updatedAt)
+      )
     }
   }
 

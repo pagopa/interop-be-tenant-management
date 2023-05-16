@@ -15,6 +15,8 @@ final case class State(tenants: Map[String, PersistentTenant], selfcareMappings:
     tenants - tenantId,
     tenants.get(tenantId).flatMap(_.selfcareId).fold(selfcareMappings)(selfcareId => selfcareMappings - selfcareId)
   )
+
+  def deleteSelfcareMapping(selfcareId: String): State = copy(selfcareMappings = selfcareMappings - selfcareId)
 }
 
 object State {
