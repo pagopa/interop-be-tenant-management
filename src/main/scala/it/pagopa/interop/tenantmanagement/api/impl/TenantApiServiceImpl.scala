@@ -159,8 +159,8 @@ class TenantApiServiceImpl(
       val result: Future[Unit] = for {
         tenant <- commanderForTenantId(tenantId).askWithStatus(ref => GetTenant(tenantId, ref))
         _      <- commanderForTenantId(tenantId).askWithStatus[Unit](DeleteTenant(tenantId, _))
-        _      <- tenant.selfcareId.fold(Future.unit)(selfcarId =>
-          commanderForSelfcareId(selfcarId).askWithStatus[Unit](DeleteSelfcareIdTenantMapping(selfcarId, _))
+        _      <- tenant.selfcareId.fold(Future.unit)(selfcareId =>
+          commanderForSelfcareId(selfcarId).askWithStatus[Unit](DeleteSelfcareIdTenantMapping(selfcareId, _))
         )
       } yield ()
 
