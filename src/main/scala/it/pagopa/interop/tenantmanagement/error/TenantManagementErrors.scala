@@ -29,4 +29,7 @@ object TenantManagementErrors {
 
   case object InvalidFeature extends ComponentError("0010", "Invalid feature for tenant")
 
+  final case class SelfcareIdNotMapped(selfcareId: String)
+      extends ComponentError("0011", s"SelfcareId $selfcareId not fount in selfcareMappings")
+
 }
