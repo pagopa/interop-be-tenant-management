@@ -10,3 +10,4 @@ final case class TenantCreated(tenant: PersistentTenant)                    exte
 final case class TenantUpdated(tenant: PersistentTenant)                    extends Event
 final case class TenantDeleted(tenantId: String)                            extends Event
 final case class SelfcareMappingCreated(selfcareId: String, tenantId: UUID) extends Event
+final case class SelfcareMappingDeleted(selfcareId: String)                 extends Event

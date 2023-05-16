@@ -13,8 +13,9 @@ import cats.implicits._
 import it.pagopa.interop.tenantmanagement.error.TenantManagementErrors.{
   AttributeAlreadyExists,
   AttributeNotFound,
-  TenantBySelfcareIdNotFound,
+  SelfcareIdNotMapped,
   TenantAlreadyExists,
+  TenantBySelfcareIdNotFound,
   TenantNotFound
 }
 
@@ -85,6 +86,11 @@ object TenantPersistentBehavior {
           Effect.persist(TenantDeleted(tenantId)).thenReply(replyTo)(_ => success(()))
         else Effect.reply(replyTo)(error[Unit](TenantNotFound(tenantId)))
 
+      case DeleteSelfcareIdTenantMapping(selfcareId, replyTo) =>
+        if (state.selfcareMappings.contains(selfcareId))
+          Effect.persist(SelfcareMappingDeleted(selfcareId)).thenReply(replyTo)(_ => success(()))
+        else Effect.reply(replyTo)(error[Unit](SelfcareIdNotMapped(selfcareId)))
+
       case Idle =>
         context.log.debug(s"Passivate shard: ${shard.path.name}")
         Effect.reply(shard)(ClusterSharding.Passivate(context.self))
@@ -104,6 +110,7 @@ object TenantPersistentBehavior {
       case TenantUpdated(tenant)                        => state.addTenant(tenant)
       case TenantDeleted(tenantId)                      => state.deleteTenant(tenantId)
       case SelfcareMappingCreated(selfcareId, tenantId) => state.addSelfcareMapping(selfcareId, tenantId)
+      case SelfcareMappingDeleted(selfcareId)           => state.deleteSelfcareMapping(selfcareId)
     }
 
   val TypeKey: EntityTypeKey[Command] = EntityTypeKey[Command]("interop-be-tenant-management-persistence")

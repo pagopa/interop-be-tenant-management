@@ -55,4 +55,13 @@ package object v1 {
   implicit def selfcareMappingCreatedV1PersistEventSerializer
     : PersistEventSerializer[SelfcareMappingCreated, SelfcareMappingCreatedV1] =
     event => SelfcareMappingCreatedV1(event.selfcareId, event.tenantId.toString()).asRight[Throwable]
+
+  implicit def selfcareMappingDeletedV1PersistEventSerializer
+    : PersistEventSerializer[SelfcareMappingDeleted, SelfcareMappingDeletedV1] =
+    event => SelfcareMappingDeletedV1.of(event.selfcareId).asRight[Throwable]
+
+  implicit def selfcareMappingDeletedV1PersistEventDeserializer
+    : PersistEventDeserializer[SelfcareMappingDeletedV1, SelfcareMappingDeleted] =
+    event => SelfcareMappingDeleted(event.selfcareId).asRight[Throwable]
+
 }
