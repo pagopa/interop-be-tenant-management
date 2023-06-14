@@ -49,15 +49,9 @@ message CertifierV1 {
   required string certifierId = 1;
 }
 
-enum PersistentVerificationRenewalV1 {
-  REVOKE_ON_EXPIRATION = 1;
-  AUTOMATIC_RENEWAL    = 2;
-}
-
 message TenantVerifierV1 {
   required string id = 1;
   required int64 verificationDate = 2;
-  required PersistentVerificationRenewalV1 renewal = 3;
   optional int64 expirationDate = 4;
   optional int64 extensionDate = 5;
 }
@@ -65,7 +59,6 @@ message TenantVerifierV1 {
 message TenantRevokerV1 {
   required string id = 1;
   required int64 verificationDate = 2;
-  required PersistentVerificationRenewalV1 renewal = 3;
   optional int64 expirationDate = 4;
   optional int64 extensionDate = 5;
   required int64 revocationDate = 6;

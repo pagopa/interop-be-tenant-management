@@ -7,31 +7,13 @@ import it.pagopa.interop.tenantmanagement.model.MailKind.CONTACT_EMAIL
 import it.pagopa.interop.tenantmanagement.model._
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantMailKind.ContactEmail
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantKind
-import it.pagopa.interop.tenantmanagement.model.tenant.PersistentVerificationRenewal.{
-  AUTOMATIC_RENEWAL,
-  REVOKE_ON_EXPIRATION
-}
+
 import it.pagopa.interop.tenantmanagement.model.tenant._
 
 import java.time.OffsetDateTime
 import java.util.UUID
 
 object Adapters {
-
-  implicit class PersistentVerificationRenewalWrapper(private val p: PersistentVerificationRenewal) extends AnyVal {
-    def toAPI(): VerificationRenewal = p match {
-      case AUTOMATIC_RENEWAL    => VerificationRenewal.AUTOMATIC_RENEWAL
-      case REVOKE_ON_EXPIRATION => VerificationRenewal.REVOKE_ON_EXPIRATION
-    }
-  }
-
-  implicit class PersistentVerificationRenewalObjectWrapper(private val p: PersistentVerificationRenewal.type)
-      extends AnyVal {
-    def fromAPI(p: VerificationRenewal): PersistentVerificationRenewal = p match {
-      case VerificationRenewal.AUTOMATIC_RENEWAL    => AUTOMATIC_RENEWAL
-      case VerificationRenewal.REVOKE_ON_EXPIRATION => REVOKE_ON_EXPIRATION
-    }
-  }
 
   implicit class PersistentTenantDeltaObjectWrapper(private val p: PersistentTenantDelta.type) extends AnyVal {
     def fromAPI(
@@ -69,7 +51,6 @@ object Adapters {
     def toAPI(): TenantVerifier = TenantVerifier(
       id = p.id,
       verificationDate = p.verificationDate,
-      renewal = p.renewal.toAPI(),
       expirationDate = p.expirationDate,
       extensionDate = p.expirationDate
     )
@@ -80,7 +61,6 @@ object Adapters {
     def fromAPI(p: TenantVerifier): PersistentTenantVerifier = PersistentTenantVerifier(
       id = p.id,
       verificationDate = p.verificationDate,
-      renewal = PersistentVerificationRenewal.fromAPI(p.renewal),
       expirationDate = p.expirationDate,
       extensionDate = p.expirationDate
     )
@@ -90,7 +70,6 @@ object Adapters {
     def toAPI(): TenantRevoker = TenantRevoker(
       id = p.id,
       verificationDate = p.verificationDate,
-      renewal = p.renewal.toAPI(),
       expirationDate = p.expirationDate,
       extensionDate = p.expirationDate,
       revocationDate = p.revocationDate
@@ -102,7 +81,6 @@ object Adapters {
     def fromAPI(p: TenantRevoker): PersistentTenantRevoker = PersistentTenantRevoker(
       id = p.id,
       verificationDate = p.verificationDate,
-      renewal = PersistentVerificationRenewal.fromAPI(p.renewal),
       expirationDate = p.expirationDate,
       extensionDate = p.expirationDate,
       revocationDate = p.revocationDate

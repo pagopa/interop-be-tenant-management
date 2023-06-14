@@ -459,11 +459,6 @@ components:
         - assignmentTimestamp
         - verifiedBy
         - revokedBy
-    VerificationRenewal:
-      type: string
-      enum:
-        - REVOKE_ON_EXPIRATION
-        - AUTOMATIC_RENEWAL
     TenantFeature:
       type: object
       properties:
@@ -486,8 +481,6 @@ components:
         verificationDate:
           type: string
           format: date-time
-        renewal:
-          $ref: '#/components/schemas/VerificationRenewal'
         expirationDate:
           type: string
           format: date-time
@@ -497,7 +490,6 @@ components:
       required:
         - id
         - verificationDate
-        - renewal
     TenantRevoker:
       type: object
       properties:
@@ -507,8 +499,6 @@ components:
         verificationDate:
           type: string
           format: date-time
-        renewal:
-          $ref: '#/components/schemas/VerificationRenewal'
         expirationDate:
           type: string
           format: date-time
@@ -522,7 +512,6 @@ components:
         - id
         - verificationDate
         - revocationDate
-        - renewal
     Tenant:
       description: Tenant model
       type: object

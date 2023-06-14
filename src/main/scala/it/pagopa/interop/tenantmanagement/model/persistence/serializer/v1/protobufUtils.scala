@@ -1,16 +1,13 @@
 package it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1
 
 import cats.syntax.all._
-import it.pagopa.interop.commons.utils.TypeConversions._
-import it.pagopa.interop.tenantmanagement.model.tenant._
+import it.pagopa.interop.commons.utils.TypeConversions.{LongOps, _}
 import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.tenant.TenantAttributeV1.Empty
 import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.tenant._
-import it.pagopa.interop.commons.utils.TypeConversions.LongOps
-import it.pagopa.interop.tenantmanagement.model.tenant.PersistentVerificationRenewal._
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantFeature.PersistentCertifier
-import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.tenant.PersistentVerificationRenewalV1.Unrecognized
+import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantKind.{GSP, PA, PRIVATE}
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantMailKind.ContactEmail
-import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantKind.{PA, GSP, PRIVATE}
+import it.pagopa.interop.tenantmanagement.model.tenant._
 
 object protobufUtils {
 
@@ -98,24 +95,9 @@ object protobufUtils {
       case ContactEmail => TenantMailKindV1.CONTACT_EMAIL
     }
 
-  def toProtobufRenewal(renewal: PersistentVerificationRenewal): PersistentVerificationRenewalV1 = renewal match {
-    case AUTOMATIC_RENEWAL    => PersistentVerificationRenewalV1.AUTOMATIC_RENEWAL
-    case REVOKE_ON_EXPIRATION => PersistentVerificationRenewalV1.REVOKE_ON_EXPIRATION
-  }
-
-  def toPersistentRenewal(renewal: PersistentVerificationRenewalV1): Either[Throwable, PersistentVerificationRenewal] =
-    renewal match {
-      case PersistentVerificationRenewalV1.AUTOMATIC_RENEWAL    => AUTOMATIC_RENEWAL.asRight[Throwable]
-      case PersistentVerificationRenewalV1.REVOKE_ON_EXPIRATION => REVOKE_ON_EXPIRATION.asRight[Throwable]
-      case Unrecognized(unrecognizedValue)                      =>
-        new Exception(s"Unable to deserialize VerificationRenewal $unrecognizedValue")
-          .asLeft[PersistentVerificationRenewal]
-    }
-
   def toProtobufTenantVerifier(verifier: PersistentTenantVerifier): TenantVerifierV1 = TenantVerifierV1(
     id = verifier.id.toString,
     verificationDate = verifier.verificationDate.toMillis,
-    renewal = toProtobufRenewal(verifier.renewal),
     expirationDate = verifier.expirationDate.map(_.toMillis),
     extensionDate = verifier.extensionDate.map(_.toMillis)
   )
@@ -123,13 +105,11 @@ object protobufUtils {
   def toPersistentTenantVerifier(verifier: TenantVerifierV1): Either[Throwable, PersistentTenantVerifier] = for {
     id               <- verifier.id.toUUID.toEither
     verificationDate <- verifier.verificationDate.toOffsetDateTime.toEither
-    renewal          <- toPersistentRenewal(verifier.renewal)
     expirationDate   <- verifier.expirationDate.traverse(_.toOffsetDateTime.toEither)
     extensionDate    <- verifier.extensionDate.traverse(_.toOffsetDateTime.toEither)
   } yield PersistentTenantVerifier(
     id = id,
     verificationDate = verificationDate,
-    renewal = renewal,
     expirationDate = expirationDate,
     extensionDate = extensionDate
   )
@@ -137,7 +117,6 @@ object protobufUtils {
   def toProtobufTenantRevoker(revoker: PersistentTenantRevoker): TenantRevokerV1 = TenantRevokerV1(
     id = revoker.id.toString,
     verificationDate = revoker.verificationDate.toMillis,
-    renewal = toProtobufRenewal(revoker.renewal),
     expirationDate = revoker.expirationDate.map(_.toMillis),
     extensionDate = revoker.extensionDate.map(_.toMillis),
     revocationDate = revoker.revocationDate.toMillis
@@ -146,14 +125,12 @@ object protobufUtils {
   def toPersistentTenantRevoker(verifier: TenantRevokerV1): Either[Throwable, PersistentTenantRevoker] = for {
     id               <- verifier.id.toUUID.toEither
     verificationDate <- verifier.verificationDate.toOffsetDateTime.toEither
-    renewal          <- toPersistentRenewal(verifier.renewal)
     expirationDate   <- verifier.expirationDate.traverse(_.toOffsetDateTime.toEither)
     extensionDate    <- verifier.extensionDate.traverse(_.toOffsetDateTime.toEither)
     revocationDate   <- verifier.revocationDate.toOffsetDateTime.toEither
   } yield PersistentTenantRevoker(
     id = id,
     verificationDate = verificationDate,
-    renewal = renewal,
     expirationDate = expirationDate,
     extensionDate = extensionDate,
     revocationDate = revocationDate
