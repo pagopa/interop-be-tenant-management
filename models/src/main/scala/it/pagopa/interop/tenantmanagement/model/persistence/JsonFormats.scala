@@ -10,21 +10,6 @@ object JsonFormats {
 
   implicit val peFormat: RootJsonFormat[PersistentExternalId] = jsonFormat2(PersistentExternalId.apply)
 
-  implicit val pvr: RootJsonFormat[PersistentVerificationRenewal] = new RootJsonFormat[PersistentVerificationRenewal] {
-    def write(obj: PersistentVerificationRenewal): JsValue =
-      obj match {
-        case PersistentVerificationRenewal.REVOKE_ON_EXPIRATION => JsString("REVOKE_ON_EXPIRATION")
-        case PersistentVerificationRenewal.AUTOMATIC_RENEWAL    => JsString("AUTOMATIC_RENEWAL")
-      }
-    def read(json: JsValue): PersistentVerificationRenewal =
-      json match {
-        case JsString("REVOKE_ON_EXPIRATION") => PersistentVerificationRenewal.REVOKE_ON_EXPIRATION
-        case JsString("AUTOMATIC_RENEWAL")    => PersistentVerificationRenewal.AUTOMATIC_RENEWAL
-        case unrecognized                     =>
-          deserializationError(s"PersistentTenantFeature deserialization error ${unrecognized.toString}")
-      }
-  }
-
   implicit val ptfcFormat: RootJsonFormat[PersistentCertifier] = jsonFormat1(PersistentCertifier.apply)
 
   implicit val ptfFormat: RootJsonFormat[PersistentTenantFeature] = new RootJsonFormat[PersistentTenantFeature] {
@@ -45,8 +30,8 @@ object JsonFormats {
 
   implicit val pcaFormat: RootJsonFormat[PersistentCertifiedAttribute] = jsonFormat3(PersistentCertifiedAttribute.apply)
   implicit val pdaFormat: RootJsonFormat[PersistentDeclaredAttribute]  = jsonFormat3(PersistentDeclaredAttribute.apply)
-  implicit val ptvFormat: RootJsonFormat[PersistentTenantVerifier]     = jsonFormat5(PersistentTenantVerifier.apply)
-  implicit val ptrFormat: RootJsonFormat[PersistentTenantRevoker]      = jsonFormat6(PersistentTenantRevoker.apply)
+  implicit val ptvFormat: RootJsonFormat[PersistentTenantVerifier]     = jsonFormat4(PersistentTenantVerifier.apply)
+  implicit val ptrFormat: RootJsonFormat[PersistentTenantRevoker]      = jsonFormat5(PersistentTenantRevoker.apply)
   implicit val pvaFormat: RootJsonFormat[PersistentVerifiedAttribute]  = jsonFormat4(PersistentVerifiedAttribute.apply)
 
   implicit val ptaFormat: RootJsonFormat[PersistentTenantAttribute] = new RootJsonFormat[PersistentTenantAttribute] {
