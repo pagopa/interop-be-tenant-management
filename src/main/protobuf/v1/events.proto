@@ -24,3 +24,7 @@ message SelfcareMappingCreatedV1 {
   required string selfcareId = 1;
   required string tenantId = 2;
 }
+
+message SelfcareMappingDeletedV1 {
+  required string selfcareId = 1;
+}
