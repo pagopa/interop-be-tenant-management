@@ -50,6 +50,7 @@ message CertifierV1 {
 }
 
 message TenantVerifierV1 {
+  reserved 3;
   required string id = 1;
   required int64 verificationDate = 2;
   optional int64 expirationDate = 4;
@@ -57,6 +58,7 @@ message TenantVerifierV1 {
 }
 
 message TenantRevokerV1 {
+  reserved 3;
   required string id = 1;
   required int64 verificationDate = 2;
   optional int64 expirationDate = 4;
