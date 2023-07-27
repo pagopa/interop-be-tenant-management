@@ -69,7 +69,6 @@ class CqrsProjectionSpec extends ScalaTestWithActorTestKit(ItSpecConfiguration.c
             verifiedBy = List(
               PersistentTenantVerifier(
                 id = UUID.randomUUID(),
-                renewal = PersistentVerificationRenewal.AUTOMATIC_RENEWAL,
                 verificationDate = verificationDate,
                 expirationDate = None,
                 extensionDate = None
