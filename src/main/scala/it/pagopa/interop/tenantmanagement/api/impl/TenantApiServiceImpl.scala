@@ -9,7 +9,6 @@ import akka.http.scaladsl.server.Route
 import akka.util.Timeout
 import cats.implicits._
 import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
-import it.pagopa.interop.commons.jwt._
 import it.pagopa.interop.commons.logging._
 import it.pagopa.interop.commons.utils.AkkaUtils.getShard
 import it.pagopa.interop.commons.utils.TypeConversions._
@@ -60,7 +59,7 @@ class TenantApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerTenant: ToEntityMarshaller[Tenant],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE, API_ROLE, SECURITY_ROLE, M2M_ROLE, INTERNAL_ROLE) {
+  ): Route = {
     val operationLabel =
       s"Creating tenant with externalId (${tenantSeed.externalId.origin},${tenantSeed.externalId.value})"
     logger.info(operationLabel)
@@ -77,7 +76,7 @@ class TenantApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerTenant: ToEntityMarshaller[Tenant],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE, INTERNAL_ROLE, API_ROLE, M2M_ROLE, SECURITY_ROLE) {
+  ): Route = {
     val operationLabel = s"Retrieving tenant $tenantId"
     logger.info(operationLabel)
 
@@ -91,7 +90,7 @@ class TenantApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerTenant: ToEntityMarshaller[Tenant],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE, API_ROLE, M2M_ROLE, SECURITY_ROLE, INTERNAL_ROLE) {
+  ): Route = {
     val operationLabel = s"Retrieving tenant by External Id Origin $origin Code $code"
     logger.info(operationLabel)
 
@@ -118,7 +117,7 @@ class TenantApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerTenant: ToEntityMarshaller[Tenant],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE, API_ROLE, M2M_ROLE, SECURITY_ROLE, INTERNAL_ROLE) {
+  ): Route = {
     val operationLabel = s"Updating Tenant $tenantId"
     logger.info(operationLabel)
 
@@ -137,7 +136,7 @@ class TenantApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerTenant: ToEntityMarshaller[Tenant],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE, API_ROLE, SECURITY_ROLE, INTERNAL_ROLE) {
+  ): Route = {
     val operationLabel = s"Retrieving Tenant by Selfcare Id $selfcareId"
     logger.info(operationLabel)
 
@@ -151,20 +150,19 @@ class TenantApiServiceImpl(
 
   override def deleteTenant(
     tenantId: String
-  )(implicit toEntityMarshallerProblem: ToEntityMarshaller[Problem], contexts: Seq[(String, String)]): Route =
-    authorize(INTERNAL_ROLE) {
-      val operationLabel = s"Deleting Tenant $tenantId"
-      logger.info(operationLabel)
+  )(implicit toEntityMarshallerProblem: ToEntityMarshaller[Problem], contexts: Seq[(String, String)]): Route = {
+    val operationLabel = s"Deleting Tenant $tenantId"
+    logger.info(operationLabel)
 
-      val result: Future[Unit] = for {
-        tenant <- commanderForTenantId(tenantId).askWithStatus(ref => GetTenant(tenantId, ref))
-        _      <- commanderForTenantId(tenantId).askWithStatus[Unit](DeleteTenant(tenantId, _))
-        _      <- tenant.selfcareId.fold(Future.unit)(selfcareId =>
-          commanderForSelfcareId(selfcareId).askWithStatus[Unit](DeleteSelfcareIdTenantMapping(selfcareId, _))
-        )
-      } yield ()
+    val result: Future[Unit] = for {
+      tenant <- commanderForTenantId(tenantId).askWithStatus(ref => GetTenant(tenantId, ref))
+      _      <- commanderForTenantId(tenantId).askWithStatus[Unit](DeleteTenant(tenantId, _))
+      _      <- tenant.selfcareId.fold(Future.unit)(selfcareId =>
+        commanderForSelfcareId(selfcareId).askWithStatus[Unit](DeleteSelfcareIdTenantMapping(selfcareId, _))
+      )
+    } yield ()
 
-      onComplete(result) { deleteTenantResponse[Unit](operationLabel)(_ => deleteTenant204) }
-    }
+    onComplete(result) { deleteTenantResponse[Unit](operationLabel)(_ => deleteTenant204) }
+  }
 
 }

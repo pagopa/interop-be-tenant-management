@@ -9,7 +9,6 @@ import akka.http.scaladsl.server.Route
 import akka.util.Timeout
 import cats.implicits._
 import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
-import it.pagopa.interop.commons.jwt._
 import it.pagopa.interop.commons.logging._
 import it.pagopa.interop.commons.utils.AkkaUtils.getShard
 import it.pagopa.interop.commons.utils.TypeConversions._
@@ -45,7 +44,7 @@ class AttributesApiServiceImpl(
     toEntityMarshallerTenantAttribute: ToEntityMarshaller[TenantAttribute],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE, API_ROLE, SECURITY_ROLE, M2M_ROLE, INTERNAL_ROLE) {
+  ): Route = {
     val operationLabel = s"Retrieving Attribute $attributeId for Tenant $tenantId"
     logger.info(operationLabel)
 
@@ -61,7 +60,7 @@ class AttributesApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerTenant: ToEntityMarshaller[Tenant],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE, M2M_ROLE, INTERNAL_ROLE) {
+  ): Route = {
     val operationLabel = s"Adding Attribute Tenant $tenantId"
     logger.info(operationLabel)
 
@@ -79,7 +78,7 @@ class AttributesApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerTenant: ToEntityMarshaller[Tenant],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE, INTERNAL_ROLE, M2M_ROLE) {
+  ): Route = {
     val operationLabel = s"Updating Attribute $attributeId Tenant $tenantId"
     logger.info(operationLabel)
 
