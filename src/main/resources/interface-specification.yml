@@ -25,7 +25,6 @@ paths:
   /tenants:
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
-      - $ref: '#/components/parameters/IpAddress'
     post:
       tags:
         - tenant
@@ -59,7 +58,6 @@ paths:
   /tenants/{tenantId}:
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
-      - $ref: '#/components/parameters/IpAddress'
       - name: tenantId
         in: path
         description: the tenant id
@@ -138,7 +136,6 @@ paths:
   /tenants/selfcareId/{selfcareId}:
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
-      - $ref: '#/components/parameters/IpAddress'
       - name: selfcareId
         in: path
         required: true
@@ -172,7 +169,6 @@ paths:
   /tenants/{tenantId}/attributes:
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
-      - $ref: '#/components/parameters/IpAddress'
       - name: tenantId
         in: path
         required: true
@@ -218,7 +214,6 @@ paths:
   /tenants/{tenantId}/attributes/{attributeId}:
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
-      - $ref: '#/components/parameters/IpAddress'
       - name: tenantId
         in: path
         required: true
@@ -288,7 +283,6 @@ paths:
   /tenants/origin/{origin}/code/{code}:
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
-      - $ref: '#/components/parameters/IpAddress'
       - name: origin
         in: path
         description: the origin of the external id code
@@ -331,11 +325,6 @@ components:
       in: header
       name: X-Correlation-Id
       required: true
-      schema:
-        type: string
-    IpAddress:
-      in: header
-      name: X-Forwarded-For
       schema:
         type: string
   schemas:
