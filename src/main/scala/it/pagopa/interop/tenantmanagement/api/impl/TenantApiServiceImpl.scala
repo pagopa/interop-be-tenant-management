@@ -121,9 +121,9 @@ class TenantApiServiceImpl(
     logger.info(operationLabel)
 
     val result: Future[Unit] = for {
-      tenant <- commanderForTenantId(tenantId).askWithStatus(ref => GetTenant(tenantId, ref))
-      _      <- commanderForTenantId(tenantId).askWithStatus[Unit](
-        AddTenantMail(tenant.id, PersistentTenantMail.fromAPI(mailSeed, offsetDateTimeSupplier.get()), _)
+      tenantUuid <- tenantId.toFutureUUID
+      _          <- commanderForTenantId(tenantId).askWithStatus[PersistentTenant](
+        AddTenantMail(tenantUuid, PersistentTenantMail.fromAPI(mailSeed, offsetDateTimeSupplier.get()), _)
       )
     } yield ()
 
@@ -138,8 +138,8 @@ class TenantApiServiceImpl(
     logger.info(operationLabel)
 
     val result: Future[Unit] = for {
-      tenant <- commanderForTenantId(tenantId).askWithStatus(ref => GetTenant(tenantId, ref))
-      _      <- commanderForTenantId(tenantId).askWithStatus[Unit](DeleteTenantMail(tenant.id, mailId, _))
+      tenantUuid <- tenantId.toFutureUUID
+      _          <- commanderForTenantId(tenantId).askWithStatus[Unit](DeleteTenantMail(tenantUuid, mailId, _))
     } yield ()
 
     onComplete(result) { deleteTenantResponse[Unit](operationLabel)(_ => deleteTenant204) }

@@ -1,8 +1,7 @@
 package it.pagopa.interop.tenantmanagement.model.persistence
 
-import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenant
+import it.pagopa.interop.tenantmanagement.model.tenant.{PersistentTenantMail, PersistentTenant}
 import java.util.UUID
-import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantMail
 
 final case class State(tenants: Map[String, PersistentTenant], selfcareMappings: Map[String, UUID])
     extends Persistable {
