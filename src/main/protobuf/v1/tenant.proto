@@ -34,10 +34,12 @@ message TenantMailV1 {
   required int64 createdAt = 3;
   optional string description = 4;
   optional string id = 5;
+  optional int64 activatedAt= 6;
 }
 
 enum TenantMailKindV1 {
   CONTACT_EMAIL = 1;
+  DIGITAL_ADDRESS = 2;
 }
 
 message TenantFeatureV1 {

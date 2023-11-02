@@ -7,7 +7,7 @@ import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.tenant
 import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.tenant._
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantFeature.PersistentCertifier
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantKind.{GSP, PA, PRIVATE}
-import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantMailKind.ContactEmail
+import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantMailKind.{DigitalAddress, ContactEmail}
 import it.pagopa.interop.tenantmanagement.model.tenant._
 
 object protobufUtils {
@@ -66,14 +66,16 @@ object protobufUtils {
   )
 
   def toPersistentTenantMail(protobufTenantMail: TenantMailV1): Either[Throwable, PersistentTenantMail] = for {
-    kind      <- toPersistentTenantMailKind(protobufTenantMail.kind)
-    createdAt <- protobufTenantMail.createdAt.toOffsetDateTime.toEither
+    kind        <- toPersistentTenantMailKind(protobufTenantMail.kind)
+    createdAt   <- protobufTenantMail.createdAt.toOffsetDateTime.toEither
+    activatedAt <- protobufTenantMail.activatedAt.traverse(_.toOffsetDateTime.toEither)
   } yield PersistentTenantMail(
     id = protobufTenantMail.id.getOrElse(toSha256(protobufTenantMail.address.getBytes())),
     kind = kind,
     address = protobufTenantMail.address,
     createdAt = createdAt,
-    description = protobufTenantMail.description
+    description = protobufTenantMail.description,
+    activatedAt = activatedAt
   )
 
   def toProtobufTenantMail(persistentTenantMail: PersistentTenantMail): TenantMailV1 = TenantMailV1(
@@ -81,7 +83,8 @@ object protobufUtils {
     kind = toProtobufTenantMailKind(persistentTenantMail.kind),
     address = persistentTenantMail.address,
     createdAt = persistentTenantMail.createdAt.toMillis,
-    description = persistentTenantMail.description
+    description = persistentTenantMail.description,
+    activatedAt = persistentTenantMail.activatedAt.map(_.toMillis)
   )
 
   def toPersistentTenantMailKind(
@@ -89,13 +92,15 @@ object protobufUtils {
   ): Either[Throwable, PersistentTenantMailKind] =
     protobufTenantMailKind match {
       case TenantMailKindV1.CONTACT_EMAIL                   => ContactEmail.asRight[Throwable]
+      case TenantMailKindV1.DIGITAL_ADDRESS                 => DigitalAddress.asRight[Throwable]
       case TenantMailKindV1.Unrecognized(unrecognizedValue) =>
         new Exception(s"Unable to deserialize TenantMailKindV1 $unrecognizedValue").asLeft[PersistentTenantMailKind]
     }
 
   def toProtobufTenantMailKind(persistentTenantMailKind: PersistentTenantMailKind): TenantMailKindV1 =
     persistentTenantMailKind match {
-      case ContactEmail => TenantMailKindV1.CONTACT_EMAIL
+      case ContactEmail   => TenantMailKindV1.CONTACT_EMAIL
+      case DigitalAddress => TenantMailKindV1.DIGITAL_ADDRESS
     }
 
   def toProtobufTenantVerifier(verifier: PersistentTenantVerifier): TenantVerifierV1 = TenantVerifierV1(

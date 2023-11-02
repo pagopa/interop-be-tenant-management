@@ -12,6 +12,8 @@ import it.pagopa.interop.tenantmanagement.model.tenant._
 
 import java.time.OffsetDateTime
 import java.util.UUID
+import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantMailKind.DigitalAddress
+import it.pagopa.interop.tenantmanagement.model.MailKind.DIGITAL_ADDRESS
 
 object Adapters {
 
@@ -131,13 +133,15 @@ object Adapters {
 
   implicit class PersistentTenantMailKindWrapper(private val ptmk: PersistentTenantMailKind) extends AnyVal {
     def toApi: MailKind = ptmk match {
-      case ContactEmail => MailKind.CONTACT_EMAIL
+      case ContactEmail   => MailKind.CONTACT_EMAIL
+      case DigitalAddress => MailKind.DIGITAL_ADDRESS
     }
   }
 
   implicit class PersistentTenantMailKindObjectWrapper(private val p: PersistentTenantMailKind.type) extends AnyVal {
     def fromApi(mailKind: MailKind): PersistentTenantMailKind = mailKind match {
-      case CONTACT_EMAIL => ContactEmail
+      case CONTACT_EMAIL   => ContactEmail
+      case DIGITAL_ADDRESS => DigitalAddress
     }
   }
 
@@ -157,7 +161,8 @@ object Adapters {
       kind = PersistentTenantMailKind.fromApi(ms.kind),
       address = ms.address.trim(),
       description = ms.description.map(_.trim).filterNot(_.isEmpty),
-      createdAt = createdAt
+      createdAt = createdAt,
+      activatedAt = None
     )
   }
 

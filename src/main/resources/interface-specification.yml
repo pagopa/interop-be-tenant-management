@@ -638,6 +638,9 @@ components:
         createdAt:
           type: string
           format: date-time
+        activatedAt:
+          type: string
+          format: date-time  
         description:
           type: string
       required:
@@ -655,6 +658,7 @@ components:
       type: string
       enum:
         - CONTACT_EMAIL
+        - DIGITAL_ADDRESS
     ExternalId:
       properties:
         origin:

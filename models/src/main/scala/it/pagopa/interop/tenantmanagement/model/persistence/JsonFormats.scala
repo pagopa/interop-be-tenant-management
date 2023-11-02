@@ -57,11 +57,13 @@ object JsonFormats {
   private implicit val ptmkFormat: RootJsonFormat[PersistentTenantMailKind] =
     new RootJsonFormat[PersistentTenantMailKind] {
       override def read(json: JsValue): PersistentTenantMailKind = json match {
-        case JsString("CONTACT_EMAIL") => PersistentTenantMailKind.ContactEmail
+        case JsString("CONTACT_EMAIL")   => PersistentTenantMailKind.ContactEmail
+        case JsString("DIGITAL_ADDRESS") => PersistentTenantMailKind.DigitalAddress
         case x => throw new DeserializationException(s"Unable to deserialize PersistentTenantKind: unmapped kind $x")
       }
       override def write(obj: PersistentTenantMailKind): JsValue = obj match {
-        case PersistentTenantMailKind.ContactEmail => JsString("CONTACT_EMAIL")
+        case PersistentTenantMailKind.ContactEmail   => JsString("CONTACT_EMAIL")
+        case PersistentTenantMailKind.DigitalAddress => JsString("DIGITAL_ADDRESS")
       }
     }
 
@@ -80,7 +82,7 @@ object JsonFormats {
       }
     }
 
-  implicit val ptmFormat: RootJsonFormat[PersistentTenantMail] = jsonFormat5(PersistentTenantMail.apply)
+  implicit val ptmFormat: RootJsonFormat[PersistentTenantMail] = jsonFormat6(PersistentTenantMail.apply)
   implicit val ptFormat: RootJsonFormat[PersistentTenant]      = jsonFormat10(PersistentTenant.apply)
 
   implicit val pcFormat: RootJsonFormat[TenantCreated] = jsonFormat1(TenantCreated.apply)
