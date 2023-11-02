@@ -600,6 +600,9 @@ components:
             $ref: '#/components/schemas/Mail'
         name:
           type: string
+        onboardedAt:
+          type: string
+          format: date-time  
       required:
         - id
         - certifier
@@ -638,9 +641,6 @@ components:
         createdAt:
           type: string
           format: date-time
-        activatedAt:
-          type: string
-          format: date-time  
         description:
           type: string
       required:

@@ -29,14 +29,15 @@ object protobufUtils {
     ExternalIdV1(protobufTenantExternalId.origin, protobufTenantExternalId.value).asRight[Throwable]
 
   def toPersistentTenant(protobufTenant: TenantV1): Either[Throwable, PersistentTenant] = for {
-    id         <- protobufTenant.id.toUUID.toEither
-    externalId <- toPersistentTenantExternalId(protobufTenant.externalId)
-    kind       <- protobufTenant.kind.traverse(toPersistentTenantKind)
-    attributes <- protobufTenant.attributes.traverse(toPersistentTenantAttributes)
-    features   <- protobufTenant.features.traverse(toPersistentTenantFeature)
-    createdAt  <- protobufTenant.createdAt.toOffsetDateTime.toEither
-    updatedAt  <- protobufTenant.updatedAt.traverse(_.toOffsetDateTime.toEither)
-    mails      <- protobufTenant.mails.traverse(toPersistentTenantMail)
+    id          <- protobufTenant.id.toUUID.toEither
+    externalId  <- toPersistentTenantExternalId(protobufTenant.externalId)
+    kind        <- protobufTenant.kind.traverse(toPersistentTenantKind)
+    attributes  <- protobufTenant.attributes.traverse(toPersistentTenantAttributes)
+    features    <- protobufTenant.features.traverse(toPersistentTenantFeature)
+    createdAt   <- protobufTenant.createdAt.toOffsetDateTime.toEither
+    updatedAt   <- protobufTenant.updatedAt.traverse(_.toOffsetDateTime.toEither)
+    onboardedAt <- protobufTenant.onboardedAt.traverse(_.toOffsetDateTime.toEither)
+    mails       <- protobufTenant.mails.traverse(toPersistentTenantMail)
   } yield PersistentTenant(
     id = id,
     kind = kind,
@@ -47,7 +48,8 @@ object protobufUtils {
     createdAt = createdAt,
     updatedAt = updatedAt,
     mails = mails,
-    name = protobufTenant.name.getOrElse("")
+    name = protobufTenant.name.getOrElse(""),
+    onboardedAt = onboardedAt
   )
 
   def toProtobufTenant(persistentTenant: PersistentTenant): Either[Throwable, TenantV1] = for {
@@ -62,20 +64,19 @@ object protobufUtils {
     createdAt = persistentTenant.createdAt.toMillis,
     updatedAt = persistentTenant.updatedAt.map(_.toMillis),
     mails = persistentTenant.mails.map(toProtobufTenantMail),
-    name = persistentTenant.name.some
+    name = persistentTenant.name.some,
+    onboardedAt = persistentTenant.onboardedAt.map(_.toMillis)
   )
 
   def toPersistentTenantMail(protobufTenantMail: TenantMailV1): Either[Throwable, PersistentTenantMail] = for {
-    kind        <- toPersistentTenantMailKind(protobufTenantMail.kind)
-    createdAt   <- protobufTenantMail.createdAt.toOffsetDateTime.toEither
-    activatedAt <- protobufTenantMail.activatedAt.traverse(_.toOffsetDateTime.toEither)
+    kind      <- toPersistentTenantMailKind(protobufTenantMail.kind)
+    createdAt <- protobufTenantMail.createdAt.toOffsetDateTime.toEither
   } yield PersistentTenantMail(
     id = protobufTenantMail.id.getOrElse(toSha256(protobufTenantMail.address.getBytes())),
     kind = kind,
     address = protobufTenantMail.address,
     createdAt = createdAt,
-    description = protobufTenantMail.description,
-    activatedAt = activatedAt
+    description = protobufTenantMail.description
   )
 
   def toProtobufTenantMail(persistentTenantMail: PersistentTenantMail): TenantMailV1 = TenantMailV1(
@@ -83,8 +84,7 @@ object protobufUtils {
     kind = toProtobufTenantMailKind(persistentTenantMail.kind),
     address = persistentTenantMail.address,
     createdAt = persistentTenantMail.createdAt.toMillis,
-    description = persistentTenantMail.description,
-    activatedAt = persistentTenantMail.activatedAt.map(_.toMillis)
+    description = persistentTenantMail.description
   )
 
   def toPersistentTenantMailKind(

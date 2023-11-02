@@ -7,6 +7,5 @@ final case class PersistentTenantMail(
   kind: PersistentTenantMailKind,
   address: String,
   description: Option[String],
-  createdAt: OffsetDateTime,
-  activatedAt: Option[OffsetDateTime]
+  createdAt: OffsetDateTime
 )

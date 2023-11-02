@@ -120,16 +120,14 @@ object Generators {
       kind = persistentMailKind,
       address = address,
       description = description,
-      createdAt = time,
-      activatedAt = time.plusDays(10).some
+      createdAt = time
     ),
     TenantMailV1(
       id = id.toString.some,
       kind = protoMailKind,
       address = address,
       createdAt = long,
-      description = description,
-      activatedAt = time.plusDays(10).toInstant.toEpochMilli.some
+      description = description
     )
   )
 
@@ -151,6 +149,7 @@ object Generators {
     (updatedAt, updatedAtV1)                         <- Gen.option(offsetDatetimeGen).map(_.separate)
     (mails, protoMails)                              <- listOf(mailGenerator).map(_.separate)
     name                                             <- stringGen
+    (onboardedAt, onboardedAtV1)                     <- Gen.option(offsetDatetimeGen).map(_.separate)
   } yield (
     PersistentTenant(
       id,
@@ -162,7 +161,8 @@ object Generators {
       createdAt,
       updatedAt,
       mails,
-      name
+      name,
+      onboardedAt
     ),
     TenantV1(
       id.toString(),
@@ -174,7 +174,8 @@ object Generators {
       updatedAtV1,
       protoMails,
       name.some,
-      kindV1.some
+      kindV1.some,
+      onboardedAtV1
     )
   )
 

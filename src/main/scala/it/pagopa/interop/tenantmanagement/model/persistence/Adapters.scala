@@ -161,8 +161,7 @@ object Adapters {
       kind = PersistentTenantMailKind.fromApi(ms.kind),
       address = ms.address.trim(),
       description = ms.description.map(_.trim).filterNot(_.isEmpty),
-      createdAt = createdAt,
-      activatedAt = None
+      createdAt = createdAt
     )
   }
 
@@ -177,7 +176,8 @@ object Adapters {
       createdAt = p.createdAt,
       updatedAt = p.updatedAt,
       mails = p.mails.map(_.toApi),
-      name = p.name
+      name = p.name,
+      onboardedAt = p.onboardedAt
     )
 
     def update(ptd: PersistentTenantDelta, time: OffsetDateTime): PersistentTenant =
@@ -208,7 +208,8 @@ object Adapters {
       createdAt = supplier.get(),
       updatedAt = None,
       mails = Nil,
-      name = seed.name
+      name = seed.name,
+      onboardedAt = None
     )
   }
 

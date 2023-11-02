@@ -20,6 +20,7 @@ message TenantV1 {
   repeated TenantMailV1 mails = 8;
   optional string name = 9;
   optional TenantKindV1 kind = 10;
+  optional int64 onboardedAt= 11;
 }
 
 enum TenantKindV1 {
@@ -34,7 +35,6 @@ message TenantMailV1 {
   required int64 createdAt = 3;
   optional string description = 4;
   optional string id = 5;
-  optional int64 activatedAt= 6;
 }
 
 enum TenantMailKindV1 {
