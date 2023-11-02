@@ -190,6 +190,9 @@ object Adapters {
 
     def updateAttribute(attr: PersistentTenantAttribute, time: OffsetDateTime): PersistentTenant =
       p.copy(attributes = attr :: p.attributes.filterNot(_.id == attr.id), updatedAt = time.some)
+
+    def addMail(mail: PersistentTenantMail): PersistentTenant =
+      p.copy(mails = mail :: p.mails.filterNot(_.id == mail.id))
   }
 
   implicit class PersistentTenantObjectWrapper(private val p: PersistentTenant.type) extends AnyVal {

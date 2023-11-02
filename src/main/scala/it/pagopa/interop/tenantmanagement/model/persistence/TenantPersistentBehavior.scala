@@ -97,9 +97,13 @@ object TenantPersistentBehavior {
         else Effect.reply(replyTo)(error[Unit](TenantNotFound(tenantId.toString)))
 
       case AddTenantMail(tenantId, mail, replyTo) =>
-        if (state.tenants.contains(tenantId.toString))
-          Effect.persist(TenantMailAdded(tenantId, mail)).thenReply(replyTo)(_ => success(()))
-        else Effect.reply(replyTo)(error[Unit](TenantNotFound(tenantId.toString)))
+        val result: Either[Throwable, PersistentTenant] = for {
+          tenant <- state.tenants.get(tenantId.toString).toRight(TenantNotFound(tenantId.toString))
+        } yield tenant
+        result.fold(
+          fail(_)(replyTo),
+          tenant => Effect.persist(TenantMailAdded(tenantId, mail)).thenReply(replyTo)((_: State) => success(tenant))
+        )
 
       case Idle =>
         context.log.debug(s"Passivate shard: ${shard.path.name}")
