@@ -33,6 +33,7 @@ message TenantMailV1 {
   required string address = 2;
   required int64 createdAt = 3;
   optional string description = 4;
+  optional string id = 5;
 }
 
 enum TenantMailKindV1 {

@@ -8,8 +8,6 @@ import java.util.UUID
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import it.pagopa.interop.tenantmanagement.api.impl._
-import cats.data.NonEmptyList
-import java.time.OffsetDateTime
 
 class TenantSpec extends BaseIntegrationSpec {
 
@@ -54,7 +52,7 @@ class TenantSpec extends BaseIntegrationSpec {
     implicit val system: ActorSystem[_] = suiteState()
     implicit val ecs: ExecutionContext  = system.executionContext
 
-    val tenantDelta: TenantDelta = TenantDelta(None, Nil, Nil, TenantKind.PA)
+    val tenantDelta: TenantDelta = TenantDelta(None, Nil, TenantKind.PA)
 
     updateTenant[Problem](UUID.randomUUID(), tenantDelta).map { result =>
       assertEquals(result.status, 404)
@@ -68,7 +66,7 @@ class TenantSpec extends BaseIntegrationSpec {
 
     val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, UUID.randomUUID())
 
-    val tenantDelta: TenantDelta = TenantDelta(None, Nil, Nil, TenantKind.PRIVATE)
+    val tenantDelta: TenantDelta = TenantDelta(None, Nil, TenantKind.PRIVATE)
 
     createTenant[Tenant](tenantSeed) >> updateTenant[Tenant](tenant.id, tenantDelta).map { result =>
       assertEquals(
@@ -78,78 +76,44 @@ class TenantSpec extends BaseIntegrationSpec {
     }
   }
 
-  test("Update of a tenant with mail must succeed if tenant exists") {
+  test("Adding a mail of a tenant must succeed if tenant exists") {
     implicit val system: ActorSystem[_] = suiteState()
     implicit val ecs: ExecutionContext  = system.executionContext
+    val mailId                          = UUID.randomUUID()
 
-    val mailseed: List[MailSeed] =
-      List(
-        MailSeed(MailKind.CONTACT_EMAIL, "foo@bar.it"),
-        MailSeed(MailKind.CONTACT_EMAIL, "luke@theforce.com", "use the force".some)
-      )
+    MailSeed(mailId.toString, MailKind.CONTACT_EMAIL, "foo@bar.it")
 
-    val mails: List[Mail] = List(
-      Mail(MailKind.CONTACT_EMAIL, "foo@bar.it", mockedTime),
-      Mail(MailKind.CONTACT_EMAIL, "luke@theforce.com", mockedTime, "use the force".some)
-    )
+    val seed: MailSeed =
+      MailSeed(id = "sha256", kind = MailKind.CONTACT_EMAIL, address = "foo@bar.it", description = None)
 
     val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, UUID.randomUUID())
-    val expected: Tenant = tenant.copy(selfcareId = None, features = Nil, mails = mails, kind = Option(TenantKind.PA))
-
-    val tenantDelta: TenantDelta = TenantDelta(None, Nil, mailseed, TenantKind.PA)
-
-    createTenant[Tenant](tenantSeed) >> updateTenant[Tenant](tenant.id, tenantDelta).map { result =>
-      assertEquals(result, expected.copy(updatedAt = result.updatedAt))
-    }
-  }
-
-  test("Update of a tenant with mail must not override existing mail createdAt field") {
-    implicit val system: ActorSystem[_] = suiteState()
-    implicit val ecs: ExecutionContext  = system.executionContext
-
-    val time1: OffsetDateTime = OffsetDateTime.now()
-    val time2: OffsetDateTime = time1.plusMinutes(10L)
-
-    val mailseed1: List[MailSeed] =
-      List(MailSeed(MailKind.CONTACT_EMAIL, "foo@bar.it"))
-
-    val tenantDelta1: TenantDelta = TenantDelta(None, Nil, mailseed1, TenantKind.PA)
-
-    val mailseed2: List[MailSeed] = List(
-      MailSeed(MailKind.CONTACT_EMAIL, "foo@bar.it", "awe".some),
-      MailSeed(MailKind.CONTACT_EMAIL, "luke@theforce.com")
-    )
-
-    val tenantDelta2: TenantDelta = TenantDelta(None, Nil, mailseed2, TenantKind.PA)
-
-    val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, UUID.randomUUID())
-
-    val expected1: Tenant =
-      tenant.copy(
-        selfcareId = None,
-        features = Nil,
-        mails = Mail(MailKind.CONTACT_EMAIL, "foo@bar.it", time1) :: Nil,
-        kind = TenantKind.PA.some
-      )
-
-    val expected2: Tenant = tenant.copy(
-      selfcareId = None,
-      features = Nil,
-      mails = List(
-        Mail(MailKind.CONTACT_EMAIL, "foo@bar.it", time1, "awe".some),
-        Mail(MailKind.CONTACT_EMAIL, "luke@theforce.com", time2)
-      ),
-      kind = TenantKind.PA.some
-    )
 
     createTenant[Tenant](tenantSeed) >>
-      Future { mockedTimes = NonEmptyList.of(time1) } >>
-      updateTenant[Tenant](tenant.id, tenantDelta1).map { t =>
-        assertEquals(t, expected1.copy(updatedAt = t.updatedAt), "first update failed")
-      } >>
-      Future { mockedTimes = NonEmptyList.of(time2) } >>
-      updateTenant[Tenant](tenant.id, tenantDelta2).map { t =>
-        assertEquals(t, expected2.copy(updatedAt = t.updatedAt), "second update failed")
+      addTenantMail[Unit](tenant.id, seed) >>
+      getTenant[Tenant](tenant.id).map { t =>
+        assertEquals(t.mails.size, 1)
+        assertEquals(t.mails.map(_.id), List(seed.id))
+      }
+  }
+
+  test("Deleting a mail of a Tenant") {
+
+    implicit val system: ActorSystem[_] = suiteState()
+    implicit val ecs: ExecutionContext  = system.executionContext
+    val mailId                          = UUID.randomUUID()
+
+    MailSeed(mailId.toString, MailKind.CONTACT_EMAIL, "foo@bar.it")
+
+    val seed: MailSeed =
+      MailSeed(id = "sha256", kind = MailKind.CONTACT_EMAIL, address = "foo@bar.it", description = None)
+
+    val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, UUID.randomUUID())
+
+    createTenant[Tenant](tenantSeed) >>
+      addTenantMail[Unit](tenant.id, seed) >>
+      deleteTenantMail[Unit](tenant.id, seed.id) >>
+      getTenant[Tenant](tenant.id).map { t =>
+        assertEquals(t.mails.size, 0)
       }
   }
 
@@ -219,7 +183,7 @@ class TenantSpec extends BaseIntegrationSpec {
     val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, UUID.randomUUID())
     val selfcareId: String   = UUID.randomUUID().toString()
     val delta: TenantDelta   =
-      TenantDelta(selfcareId.some, TenantFeature(Certifier("foo").some) :: Nil, Nil, TenantKind.PA)
+      TenantDelta(selfcareId.some, TenantFeature(Certifier("foo").some) :: Nil, TenantKind.PA)
 
     createTenant[Tenant](tenantSeed) >> updateTenant[Tenant](tenant.id, delta) >> getTenantBySelfcareId[Tenant](
       selfcareId
@@ -235,7 +199,7 @@ class TenantSpec extends BaseIntegrationSpec {
     val (tenant, tenantSeed) = randomTenantAndSeed(mockedTime, UUID.randomUUID())
     val selfcareId: String   = UUID.randomUUID().toString()
     val delta: TenantDelta   =
-      TenantDelta(selfcareId.some, TenantFeature(Certifier("foo").some) :: Nil, Nil, TenantKind.PA)
+      TenantDelta(selfcareId.some, TenantFeature(Certifier("foo").some) :: Nil, TenantKind.PA)
 
     createTenant[Tenant](tenantSeed) >> updateTenant[Tenant](tenant.id, delta) >> getTenantBySelfcareId[Problem](
       UUID.randomUUID().toString()

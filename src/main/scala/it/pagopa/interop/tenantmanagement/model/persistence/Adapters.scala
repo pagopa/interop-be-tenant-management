@@ -16,35 +16,20 @@ import java.util.UUID
 object Adapters {
 
   implicit class PersistentTenantDeltaObjectWrapper(private val p: PersistentTenantDelta.type) extends AnyVal {
-    def fromAPI(
-      tenant: PersistentTenant,
-      td: TenantDelta,
-      timeSupplier: OffsetDateTimeSupplier
-    ): Either[Throwable, PersistentTenantDelta] = for {
+    def fromAPI(tenant: PersistentTenant, td: TenantDelta): Either[Throwable, PersistentTenantDelta] = for {
       features <- td.features.toList.traverse(PersistentTenantFeature.fromAPI)
-      actualMails    = tenant.mails.map(_.toApi)
-      mailsToPersist = calculateMailsToKeep(timeSupplier)(actualMails, td.mails.toList)
+      actualMails = tenant.mails.map(_.toApi)
     } yield PersistentTenantDelta(
       id = tenant.id,
       selfcareId = td.selfcareId,
       features = features,
-      mails = mailsToPersist.map(PersistentTenantMail.fromApi),
       kind = PersistentTenantKind.fromApi(td.kind).some
-    )
-
-    private def calculateMailsToKeep(
-      timeSupplier: OffsetDateTimeSupplier
-    )(actualMails: List[Mail], tenantDeltaMails: List[MailSeed]): List[Mail] = tenantDeltaMails.map(ms =>
-      actualMails
-        .find(m => m.address == ms.address && m.kind == ms.kind)
-        .getOrElse(ms.toModel(timeSupplier.get()))
-        .copy(description = ms.description)
     )
   }
 
   implicit class MailSeedWrapper(private val ms: MailSeed) extends AnyVal {
     def toModel(createdAt: OffsetDateTime): Mail =
-      Mail(kind = ms.kind, address = ms.address, createdAt = createdAt, description = ms.description)
+      Mail(id = ms.id, kind = ms.kind, address = ms.address, createdAt = createdAt, description = ms.description)
   }
 
   implicit class PersistentVerificationTenantVerifierWrapper(private val p: PersistentTenantVerifier) extends AnyVal {
@@ -158,6 +143,7 @@ object Adapters {
 
   implicit class PersistentTenantMailWrapper(private val ptm: PersistentTenantMail) extends AnyVal {
     def toApi: Mail = Mail(
+      id = ptm.id,
       kind = ptm.kind.toApi,
       address = ptm.address,
       createdAt = ptm.createdAt,
@@ -166,11 +152,12 @@ object Adapters {
   }
 
   implicit class PersistentTenantMailObjectWrapper(private val p: PersistentTenantMail.type) extends AnyVal {
-    def fromApi(mail: Mail): PersistentTenantMail = PersistentTenantMail(
-      kind = PersistentTenantMailKind.fromApi(mail.kind),
-      address = mail.address.trim(),
-      createdAt = mail.createdAt,
-      description = mail.description.map(_.trim).filterNot(_.isEmpty)
+    def fromAPI(ms: MailSeed, createdAt: OffsetDateTime): PersistentTenantMail = PersistentTenantMail(
+      id = ms.id,
+      kind = PersistentTenantMailKind.fromApi(ms.kind),
+      address = ms.address.trim(),
+      description = ms.description.map(_.trim).filterNot(_.isEmpty),
+      createdAt = createdAt
     )
   }
 
@@ -189,13 +176,7 @@ object Adapters {
     )
 
     def update(ptd: PersistentTenantDelta, time: OffsetDateTime): PersistentTenant =
-      p.copy(
-        selfcareId = ptd.selfcareId,
-        features = ptd.features,
-        mails = ptd.mails,
-        kind = ptd.kind,
-        updatedAt = time.some
-      )
+      p.copy(selfcareId = ptd.selfcareId, features = ptd.features, kind = ptd.kind, updatedAt = time.some)
 
     def getAttribute(id: UUID): Option[PersistentTenantAttribute] = p.attributes.find(_.id == id)
 

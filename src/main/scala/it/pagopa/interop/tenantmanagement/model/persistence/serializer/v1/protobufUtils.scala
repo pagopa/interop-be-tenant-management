@@ -2,6 +2,7 @@ package it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1
 
 import cats.syntax.all._
 import it.pagopa.interop.commons.utils.TypeConversions.{LongOps, _}
+import it.pagopa.interop.commons.utils.Digester._
 import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.tenant.TenantAttributeV1.Empty
 import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.tenant._
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantFeature.PersistentCertifier
@@ -68,6 +69,7 @@ object protobufUtils {
     kind      <- toPersistentTenantMailKind(protobufTenantMail.kind)
     createdAt <- protobufTenantMail.createdAt.toOffsetDateTime.toEither
   } yield PersistentTenantMail(
+    id = protobufTenantMail.id.getOrElse(toSha256(protobufTenantMail.address.getBytes())),
     kind = kind,
     address = protobufTenantMail.address,
     createdAt = createdAt,
@@ -75,6 +77,7 @@ object protobufUtils {
   )
 
   def toProtobufTenantMail(persistentTenantMail: PersistentTenantMail): TenantMailV1 = TenantMailV1(
+    id = persistentTenantMail.id.some,
     kind = toProtobufTenantMailKind(persistentTenantMail.kind),
     address = persistentTenantMail.address,
     createdAt = persistentTenantMail.createdAt.toMillis,

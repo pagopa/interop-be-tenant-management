@@ -91,6 +91,16 @@ object TenantPersistentBehavior {
           Effect.persist(SelfcareMappingDeleted(selfcareId)).thenReply(replyTo)(_ => success(()))
         else Effect.reply(replyTo)(error[Unit](SelfcareIdNotMapped(selfcareId)))
 
+      case DeleteTenantMail(tenantId, mailId, replyTo) =>
+        if (state.tenants.contains(tenantId.toString))
+          Effect.persist(TenantMailDeleted(tenantId, mailId)).thenReply(replyTo)(_ => success(()))
+        else Effect.reply(replyTo)(error[Unit](TenantNotFound(tenantId.toString)))
+
+      case AddTenantMail(tenantId, mail, replyTo) =>
+        if (state.tenants.contains(tenantId.toString))
+          Effect.persist(TenantMailAdded(tenantId, mail)).thenReply(replyTo)(_ => success(()))
+        else Effect.reply(replyTo)(error[Unit](TenantNotFound(tenantId.toString)))
+
       case Idle =>
         context.log.debug(s"Passivate shard: ${shard.path.name}")
         Effect.reply(shard)(ClusterSharding.Passivate(context.self))
@@ -111,6 +121,8 @@ object TenantPersistentBehavior {
       case TenantDeleted(tenantId)                      => state.deleteTenant(tenantId)
       case SelfcareMappingCreated(selfcareId, tenantId) => state.addSelfcareMapping(selfcareId, tenantId)
       case SelfcareMappingDeleted(selfcareId)           => state.deleteSelfcareMapping(selfcareId)
+      case TenantMailAdded(tenantId, mail)              => state.addTenantMail(tenantId, mail)
+      case TenantMailDeleted(tenantId, mailId)          => state.deleteTenantMail(tenantId, mailId)
     }
 
   val TypeKey: EntityTypeKey[Command] = EntityTypeKey[Command]("interop-be-tenant-management-persistence")

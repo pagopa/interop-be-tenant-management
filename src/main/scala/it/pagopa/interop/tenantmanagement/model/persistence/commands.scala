@@ -17,6 +17,11 @@ final case class GetTenantsWithExternalId(
   replyTo: ActorRef[StatusReply[List[PersistentTenant]]]
 ) extends Command
 
+final case class AddTenantMail(tenantId: UUID, mail: PersistentTenantMail, replyTo: ActorRef[StatusReply[Unit]])
+    extends Command
+
+final case class DeleteTenantMail(tenantId: UUID, mailId: String, replyTo: ActorRef[StatusReply[Unit]]) extends Command
+
 final case class UpdateTenant(
   tenantDelta: PersistentTenantDelta,
   timestamp: OffsetDateTime,

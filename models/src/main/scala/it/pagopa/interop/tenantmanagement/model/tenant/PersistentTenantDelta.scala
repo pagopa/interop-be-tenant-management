@@ -6,6 +6,5 @@ final case class PersistentTenantDelta(
   id: UUID,
   selfcareId: Option[String],
   features: List[PersistentTenantFeature],
-  mails: List[PersistentTenantMail],
   kind: Option[PersistentTenantKind]
 )

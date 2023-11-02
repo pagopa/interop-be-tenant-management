@@ -113,6 +113,38 @@ class TenantApiServiceImpl(
     }
   }
 
+  override def addTenantMail(tenantId: String, mailSeed: MailSeed)(implicit
+    toEntityMarshallerProblem: ToEntityMarshaller[Problem],
+    contexts: Seq[(String, String)]
+  ): Route = {
+    val operationLabel = s"Adding Mail ${mailSeed.id} with address ${mailSeed.address} to Tenant $tenantId"
+    logger.info(operationLabel)
+
+    val result: Future[Unit] = for {
+      tenant <- commanderForTenantId(tenantId).askWithStatus(ref => GetTenant(tenantId, ref))
+      _      <- commanderForTenantId(tenantId).askWithStatus[Unit](
+        AddTenantMail(tenant.id, PersistentTenantMail.fromAPI(mailSeed, offsetDateTimeSupplier.get()), _)
+      )
+    } yield ()
+
+    onComplete(result) { deleteTenantResponse[Unit](operationLabel)(_ => deleteTenant204) }
+  }
+
+  override def deleteTenantMail(tenantId: String, mailId: String)(implicit
+    toEntityMarshallerProblem: ToEntityMarshaller[Problem],
+    contexts: Seq[(String, String)]
+  ): Route = {
+    val operationLabel = s"Deleting Mail $mailId from Tenant $tenantId"
+    logger.info(operationLabel)
+
+    val result: Future[Unit] = for {
+      tenant <- commanderForTenantId(tenantId).askWithStatus(ref => GetTenant(tenantId, ref))
+      _      <- commanderForTenantId(tenantId).askWithStatus[Unit](DeleteTenantMail(tenant.id, mailId, _))
+    } yield ()
+
+    onComplete(result) { deleteTenantResponse[Unit](operationLabel)(_ => deleteTenant204) }
+  }
+
   override def updateTenant(tenantId: String, tenantDelta: TenantDelta)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerTenant: ToEntityMarshaller[Tenant],
@@ -124,7 +156,7 @@ class TenantApiServiceImpl(
     val result: Future[Tenant] = for {
       tenantUUID <- tenantId.toFutureUUID
       tenant     <- commanderForTenantId(tenantId).askWithStatus(r => GetTenant(tenantId, r))
-      delta      <- PersistentTenantDelta.fromAPI(tenant, tenantDelta, offsetDateTimeSupplier).toFuture
+      delta      <- PersistentTenantDelta.fromAPI(tenant, tenantDelta).toFuture
       result <- commanderForTenantId(tenantId).askWithStatus(r => UpdateTenant(delta, offsetDateTimeSupplier.get(), r))
       _      <- delta.selfcareId.fold(Future.unit)(addMapping(_, tenantUUID))
     } yield result.toAPI

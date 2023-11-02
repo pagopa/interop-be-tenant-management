@@ -110,13 +110,26 @@ object Generators {
     Gen.const((PersistentTenantMailKind.ContactEmail, TenantMailKindV1.CONTACT_EMAIL))
 
   val mailGenerator: Gen[(PersistentTenantMail, TenantMailV1)] = for {
+    id                                  <- Gen.uuid
     (persistentMailKind, protoMailKind) <- mailKindGenerator
     address                             <- stringGen
     (time, long)                        <- offsetDatetimeGen
     description                         <- Gen.option(stringGen)
   } yield (
-    PersistentTenantMail(kind = persistentMailKind, address = address, description = description, createdAt = time),
-    TenantMailV1(kind = protoMailKind, address = address, createdAt = long, description = description)
+    PersistentTenantMail(
+      id = id.toString,
+      kind = persistentMailKind,
+      address = address,
+      description = description,
+      createdAt = time
+    ),
+    TenantMailV1(
+      id = id.toString.some,
+      kind = protoMailKind,
+      address = address,
+      createdAt = long,
+      description = description
+    )
   )
 
   val kindGenerator: Gen[(PersistentTenantKind, TenantKindV1)] =
@@ -199,6 +212,16 @@ object Generators {
   val tenantDeletedGen: Gen[(TenantDeleted, TenantDeletedV1)] = Gen.uuid.map(_.toString).map { uuid =>
     (TenantDeleted(uuid), TenantDeletedV1(uuid))
   }
+
+  val tenantMailAddedGen: Gen[(TenantMailAdded, TenantMailAddedV1)] = for {
+    uuid           <- Gen.uuid
+    (mail, mailV1) <- mailGenerator
+  } yield (TenantMailAdded(uuid, mail), TenantMailAddedV1(uuid.toString, mailV1))
+
+  val tenantMailDeletedGen: Gen[(TenantMailDeleted, TenantMailDeletedV1)] = for {
+    uuid   <- Gen.uuid
+    mailId <- Gen.alphaNumStr
+  } yield (TenantMailDeleted(uuid, mailId), TenantMailDeletedV1(uuid.toString, mailId))
 
   val selfcareMappingCreatedGen: Gen[(SelfcareMappingCreated, SelfcareMappingCreatedV1)] = for {
     selfcareId <- stringGen
