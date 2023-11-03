@@ -212,7 +212,7 @@ object Adapters {
       updatedAt = None,
       mails = Nil,
       name = seed.name,
-      onboardedAt = None
+      onboardedAt = seed.onboardedAt
     )
   }
 

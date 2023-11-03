@@ -689,6 +689,9 @@ components:
           type: string
         kind:
           $ref: '#/components/schemas/TenantKind'
+        onboardedAt:
+          type: string
+          format: date-time    
       required:
         - externalId
         - features
