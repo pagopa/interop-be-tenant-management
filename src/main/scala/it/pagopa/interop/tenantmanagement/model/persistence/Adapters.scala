@@ -18,18 +18,12 @@ object Adapters {
   implicit class PersistentTenantDeltaObjectWrapper(private val p: PersistentTenantDelta.type) extends AnyVal {
     def fromAPI(tenant: PersistentTenant, td: TenantDelta): Either[Throwable, PersistentTenantDelta] = for {
       features <- td.features.toList.traverse(PersistentTenantFeature.fromAPI)
-      actualMails = tenant.mails.map(_.toApi)
     } yield PersistentTenantDelta(
       id = tenant.id,
       selfcareId = td.selfcareId,
       features = features,
       kind = PersistentTenantKind.fromApi(td.kind).some
     )
-  }
-
-  implicit class MailSeedWrapper(private val ms: MailSeed) extends AnyVal {
-    def toModel(createdAt: OffsetDateTime): Mail =
-      Mail(id = ms.id, kind = ms.kind, address = ms.address, createdAt = createdAt, description = ms.description)
   }
 
   implicit class PersistentVerificationTenantVerifierWrapper(private val p: PersistentTenantVerifier) extends AnyVal {
@@ -185,9 +179,6 @@ object Adapters {
 
     def updateAttribute(attr: PersistentTenantAttribute, time: OffsetDateTime): PersistentTenant =
       p.copy(attributes = attr :: p.attributes.filterNot(_.id == attr.id), updatedAt = time.some)
-
-    def addMail(mail: PersistentTenantMail): PersistentTenant =
-      p.copy(mails = mail :: p.mails.filterNot(_.id == mail.id))
   }
 
   implicit class PersistentTenantObjectWrapper(private val p: PersistentTenant.type) extends AnyVal {
