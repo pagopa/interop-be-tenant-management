@@ -42,7 +42,7 @@ package object v1 {
       for {
         uuid <- Try(UUID.fromString(event.tenantId)).toEither
         mail <- protobufUtils.toPersistentTenantMail(event.mail)
-      } yield TenantMailAdded(uuid, mail)
+      } yield TenantMailAdded(uuid, mail.id, mail)
 
   implicit def tenantMailAddedV1PersistEventSerializer: PersistEventSerializer[TenantMailAdded, TenantMailAddedV1] =
     event => TenantMailAddedV1.of(event.tenantId.toString, toProtobufTenantMail(event.mail)).asRight[Throwable]

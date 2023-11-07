@@ -117,7 +117,7 @@ class TenantApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
   ): Route = {
-    val operationLabel = s"Adding Mail ${mailSeed.id} with address ${mailSeed.address} to Tenant $tenantId"
+    val operationLabel = s"Adding Mail ${mailSeed.id} to Tenant $tenantId"
     logger.info(operationLabel)
 
     val result: Future[Unit] = for {
@@ -127,7 +127,7 @@ class TenantApiServiceImpl(
       )
     } yield ()
 
-    onComplete(result) { deleteTenantResponse[Unit](operationLabel)(_ => deleteTenant204) }
+    onComplete(result) { deleteTenantResponse[Unit](operationLabel)(_ => addTenantMail204) }
   }
 
   override def deleteTenantMail(tenantId: String, mailId: String)(implicit
@@ -142,7 +142,7 @@ class TenantApiServiceImpl(
       _          <- commanderForTenantId(tenantId).askWithStatus[Unit](DeleteTenantMail(tenantUuid, mailId, _))
     } yield ()
 
-    onComplete(result) { deleteTenantResponse[Unit](operationLabel)(_ => deleteTenant204) }
+    onComplete(result) { deleteTenantResponse[Unit](operationLabel)(_ => deleteTenantMail204) }
   }
 
   override def updateTenant(tenantId: String, tenantDelta: TenantDelta)(implicit

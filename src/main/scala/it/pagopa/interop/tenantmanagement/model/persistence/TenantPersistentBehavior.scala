@@ -102,7 +102,8 @@ object TenantPersistentBehavior {
         } yield tenant
         result.fold(
           fail(_)(replyTo),
-          tenant => Effect.persist(TenantMailAdded(tenantId, mail)).thenReply(replyTo)((_: State) => success(tenant))
+          tenant =>
+            Effect.persist(TenantMailAdded(tenantId, mail.id, mail)).thenReply(replyTo)((_: State) => success(tenant))
         )
 
       case Idle =>
@@ -125,7 +126,7 @@ object TenantPersistentBehavior {
       case TenantDeleted(tenantId)                      => state.deleteTenant(tenantId)
       case SelfcareMappingCreated(selfcareId, tenantId) => state.addSelfcareMapping(selfcareId, tenantId)
       case SelfcareMappingDeleted(selfcareId)           => state.deleteSelfcareMapping(selfcareId)
-      case TenantMailAdded(tenantId, mail)              => state.addTenantMail(tenantId, mail)
+      case TenantMailAdded(tenantId, mailId, mail)      => state.addTenantMail(tenantId, mailId, mail)
       case TenantMailDeleted(tenantId, mailId)          => state.deleteTenantMail(tenantId, mailId)
     }
 
