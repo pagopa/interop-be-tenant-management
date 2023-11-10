@@ -40,12 +40,16 @@ package object v1 {
   implicit def tenantMailAddedV1PersistEventDeserializer: PersistEventDeserializer[TenantMailAddedV1, TenantMailAdded] =
     event =>
       for {
-        uuid <- Try(UUID.fromString(event.tenantId)).toEither
-        mail <- protobufUtils.toPersistentTenantMail(event.mail)
-      } yield TenantMailAdded(uuid, mail.id, mail)
+        uuid   <- Try(UUID.fromString(event.tenantId)).toEither
+        mail   <- protobufUtils.toPersistentTenantMail(event.mail)
+        tenant <- protobufUtils.toPersistentTenant(event.tenant)
+      } yield TenantMailAdded(uuid, mail, tenant)
 
   implicit def tenantMailAddedV1PersistEventSerializer: PersistEventSerializer[TenantMailAdded, TenantMailAddedV1] =
-    event => TenantMailAddedV1.of(event.tenantId.toString, toProtobufTenantMail(event.mail)).asRight[Throwable]
+    event =>
+      for {
+        tenant <- toProtobufTenant(event.tenant)
+      } yield TenantMailAddedV1.of(event.tenantId.toString, toProtobufTenantMail(event.mail), tenant)
 
   implicit def tenantMailDeletedV1PersistEventDeserializer
     : PersistEventDeserializer[TenantMailDeletedV1, TenantMailDeleted] =

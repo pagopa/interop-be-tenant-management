@@ -127,7 +127,7 @@ class TenantApiServiceImpl(
       )
     } yield ()
 
-    onComplete(result) { deleteTenantResponse[Unit](operationLabel)(_ => addTenantMail204) }
+    onComplete(result) { addTenantMailResponse[Unit](operationLabel)(_ => addTenantMail204) }
   }
 
   override def deleteTenantMail(tenantId: String, mailId: String)(implicit
@@ -142,7 +142,7 @@ class TenantApiServiceImpl(
       _          <- commanderForTenantId(tenantId).askWithStatus[Unit](DeleteTenantMail(tenantUuid, mailId, _))
     } yield ()
 
-    onComplete(result) { deleteTenantResponse[Unit](operationLabel)(_ => deleteTenantMail204) }
+    onComplete(result) { deleteTenantMailResponse[Unit](operationLabel)(_ => deleteTenantMail204) }
   }
 
   override def updateTenant(tenantId: String, tenantDelta: TenantDelta)(implicit
