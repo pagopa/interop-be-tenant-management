@@ -214,9 +214,10 @@ object Generators {
   }
 
   val tenantMailAddedGen: Gen[(TenantMailAdded, TenantMailAddedV1)] = for {
-    uuid           <- Gen.uuid
-    (mail, mailV1) <- mailGenerator
-  } yield (TenantMailAdded(uuid, mail.id, mail), TenantMailAddedV1(uuid.toString, mailV1))
+    uuid               <- Gen.uuid
+    (tenant, tenantV1) <- tenantGen
+    (mail, mailV1)     <- mailGenerator
+  } yield (TenantMailAdded(uuid, mail, tenant), TenantMailAddedV1(uuid.toString, mailV1, tenantV1))
 
   val tenantMailDeletedGen: Gen[(TenantMailDeleted, TenantMailDeletedV1)] = for {
     uuid   <- Gen.uuid
