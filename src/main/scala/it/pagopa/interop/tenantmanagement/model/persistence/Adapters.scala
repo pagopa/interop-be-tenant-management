@@ -3,18 +3,14 @@ package it.pagopa.interop.tenantmanagement.model.persistence
 import cats.implicits._
 import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
 import it.pagopa.interop.tenantmanagement.error.TenantManagementErrors.{InvalidAttributeStructure, InvalidFeature}
-import it.pagopa.interop.tenantmanagement.model.MailKind.CONTACT_EMAIL
+import it.pagopa.interop.tenantmanagement.model.MailKind.{DIGITAL_ADDRESS, CONTACT_EMAIL}
 import it.pagopa.interop.tenantmanagement.model._
-import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantMailKind.ContactEmail
+import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantMailKind.{DigitalAddress, ContactEmail}
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantKind
-
 import it.pagopa.interop.tenantmanagement.model.tenant._
 
 import java.time.OffsetDateTime
 import java.util.UUID
-import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantMailKind.DigitalAddress
-import it.pagopa.interop.tenantmanagement.model.MailKind.DIGITAL_ADDRESS
-
 object Adapters {
 
   implicit class PersistentTenantDeltaObjectWrapper(private val p: PersistentTenantDelta.type) extends AnyVal {
