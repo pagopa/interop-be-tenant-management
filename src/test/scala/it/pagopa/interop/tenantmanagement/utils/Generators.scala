@@ -131,6 +131,9 @@ object Generators {
     )
   )
 
+  val unitTypeGenerator: Gen[(PersistentTenantUnitType, TenantUnitTypeV1)] =
+    Gen.oneOf((PersistentTenantUnitType.Aoo, TenantUnitTypeV1.AOO), (PersistentTenantUnitType.Uo, TenantUnitTypeV1.UO))
+
   val kindGenerator: Gen[(PersistentTenantKind, TenantKindV1)] =
     Gen.oneOf(
       (PersistentTenantKind.PA, TenantKindV1.PA),
@@ -150,6 +153,7 @@ object Generators {
     (mails, protoMails)                              <- listOf(mailGenerator).map(_.separate)
     name                                             <- stringGen
     (onboardedAt, onboardedAtV1)                     <- Gen.option(offsetDatetimeGen).map(_.separate)
+    (unitType, unitTypeV1)                           <- unitTypeGenerator
   } yield (
     PersistentTenant(
       id,
@@ -162,7 +166,8 @@ object Generators {
       updatedAt,
       mails,
       name,
-      onboardedAt
+      onboardedAt,
+      unitType.some
     ),
     TenantV1(
       id.toString(),
@@ -175,7 +180,8 @@ object Generators {
       protoMails,
       name.some,
       kindV1.some,
-      onboardedAtV1
+      onboardedAtV1,
+      unitTypeV1.some
     )
   )
 

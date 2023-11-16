@@ -602,7 +602,9 @@ components:
           type: string
         onboardedAt:
           type: string
-          format: date-time  
+          format: date-time
+        subUnitType:
+          $ref: '#/components/schemas/TenantUnitType'  
       required:
         - id
         - certifier
@@ -648,6 +650,11 @@ components:
         - kind
         - address
         - createdAt
+    TenantUnitType:
+      type: string
+      enum:
+        - AOO
+        - UO
     TenantKind:
       type: string
       enum:
@@ -691,7 +698,9 @@ components:
           $ref: '#/components/schemas/TenantKind'
         onboardedAt:
           type: string
-          format: date-time    
+          format: date-time
+        subUnitType:
+          $ref: '#/components/schemas/TenantUnitType'    
       required:
         - externalId
         - features
