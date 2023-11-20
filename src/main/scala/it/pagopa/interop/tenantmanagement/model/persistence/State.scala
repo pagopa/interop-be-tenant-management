@@ -1,6 +1,6 @@
 package it.pagopa.interop.tenantmanagement.model.persistence
 
-import it.pagopa.interop.tenantmanagement.model.tenant.{PersistentTenantMail, PersistentTenant}
+import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenant
 import java.util.UUID
 
 final case class State(tenants: Map[String, PersistentTenant], selfcareMappings: Map[String, UUID])
@@ -18,15 +18,7 @@ final case class State(tenants: Map[String, PersistentTenant], selfcareMappings:
 
   def deleteSelfcareMapping(selfcareId: String): State = copy(selfcareMappings = selfcareMappings - selfcareId)
 
-  def addTenantMail(tenantId: UUID, mail: PersistentTenantMail): State = {
-    tenants.get(tenantId.toString) match {
-      case Some(tenant) => {
-        val updatedTenant = tenant.copy(mails = tenant.mails.filterNot(_.id == mail.id) :+ mail)
-        copy(tenants = tenants + (tenant.id.toString -> updatedTenant))
-      }
-      case None         => this
-    }
-  }
+  def addTenantMail(tenant: PersistentTenant): State = copy(tenants = tenants + (tenant.id.toString -> tenant))
 
   def deleteTenantMail(tenantId: UUID, mailId: String): State = {
     tenants.get(tenantId.toString) match {

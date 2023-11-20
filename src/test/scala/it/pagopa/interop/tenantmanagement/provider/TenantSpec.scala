@@ -343,4 +343,18 @@ class TenantSpec extends BaseIntegrationSpec {
     }
   }
 
+  test("Deletion of a new tenant must fail if the tenant mail doesn't exist") {
+    implicit val system: ActorSystem[_] = suiteState()
+    implicit val ecs: ExecutionContext  = system.executionContext
+    val (_, tenantSeed)                 = randomTenantAndSeed(mockedTime, UUID.randomUUID())
+    val fakeMailId                      = "fakeMailId"
+    for {
+      tenant         <- createTenant[Tenant](tenantSeed)
+      deleteResponse <- deleteTenantMail[Problem](tenant.id, fakeMailId)
+    } yield {
+      assertEquals(deleteResponse.status, 404)
+      assertEquals(deleteResponse.errors.map(_.code), Seq("018-0012"))
+    }
+  }
+
 }

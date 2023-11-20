@@ -16,7 +16,8 @@ import it.pagopa.interop.tenantmanagement.error.TenantManagementErrors.{
   SelfcareIdNotMapped,
   TenantAlreadyExists,
   TenantBySelfcareIdNotFound,
-  TenantNotFound
+  TenantNotFound,
+  TenantMailNotFound
 }
 
 import java.time.temporal.ChronoUnit
@@ -92,18 +93,24 @@ object TenantPersistentBehavior {
         else Effect.reply(replyTo)(error[Unit](SelfcareIdNotMapped(selfcareId)))
 
       case DeleteTenantMail(tenantId, mailId, replyTo) =>
-        if (state.tenants.contains(tenantId.toString))
-          Effect.persist(TenantMailDeleted(tenantId, mailId)).thenReply(replyTo)(_ => success(()))
-        else Effect.reply(replyTo)(error[Unit](TenantNotFound(tenantId.toString)))
+        val result: Either[Throwable, PersistentTenant] = for {
+          tenant <- state.tenants.get(tenantId.toString).toRight(TenantNotFound(tenantId.toString))
+          _      <- tenant.mails.find(_.id == mailId).toRight(TenantMailNotFound(tenantId.toString, mailId))
+        } yield tenant
+
+        result.fold(
+          ex => Effect.reply(replyTo)(error[Unit](ex)),
+          tenant => (Effect.persist(TenantMailDeleted(tenant.id, mailId, tenant)).thenReply(replyTo)(_ => success(())))
+        )
 
       case AddTenantMail(tenantId, mail, replyTo) =>
         val result: Either[Throwable, PersistentTenant] = for {
           tenant <- state.tenants.get(tenantId.toString).toRight(TenantNotFound(tenantId.toString))
-        } yield tenant
+        } yield tenant.addMail(mail)
+
         result.fold(
-          fail(_)(replyTo),
-          tenant =>
-            Effect.persist(TenantMailAdded(tenantId, mail, tenant)).thenReply(replyTo)((_: State) => success(tenant))
+          ex => Effect.reply(replyTo)(error[Unit](ex)),
+          tenant => (Effect.persist(TenantMailAdded(tenant.id, mail.id, tenant)).thenReply(replyTo)(_ => success(())))
         )
 
       case Idle =>
@@ -126,8 +133,8 @@ object TenantPersistentBehavior {
       case TenantDeleted(tenantId)                      => state.deleteTenant(tenantId)
       case SelfcareMappingCreated(selfcareId, tenantId) => state.addSelfcareMapping(selfcareId, tenantId)
       case SelfcareMappingDeleted(selfcareId)           => state.deleteSelfcareMapping(selfcareId)
-      case TenantMailAdded(tenantId, mail, _)           => state.addTenantMail(tenantId, mail)
-      case TenantMailDeleted(tenantId, mailId)          => state.deleteTenantMail(tenantId, mailId)
+      case TenantMailDeleted(tenantId, mailId, _)       => state.deleteTenantMail(tenantId, mailId)
+      case TenantMailAdded(_, _, tenant)                => state.addTenantMail(tenant)
     }
 
   val TypeKey: EntityTypeKey[Command] = EntityTypeKey[Command]("interop-be-tenant-management-persistence")

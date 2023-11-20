@@ -23,20 +23,20 @@ object TenantCqrsProjection {
     CqrsProjection[Event](offsetDbConfig, mongoDbConfig, projectionId = projectionId, eventHandler)
 
   private def eventHandler(collection: MongoCollection[Document], event: Event): PartialMongoAction = event match {
-    case TenantCreated(t)                    =>
+    case TenantCreated(t)                       =>
       ActionWithDocument(collection.insertOne, Document(s"{ data: ${t.toJson.compactPrint} }"))
-    case TenantUpdated(t)                    =>
+    case TenantUpdated(t)                       =>
       ActionWithBson(collection.updateOne(Filters.eq("data.id", t.id.toString), _), Updates.set("data", t.toDocument))
-    case TenantDeleted(tenantId)             =>
+    case TenantDeleted(tenantId)                =>
       Action(collection.deleteOne(Filters.eq("data.id", tenantId)))
-    case SelfcareMappingCreated(_, _)        => NoOpAction
-    case SelfcareMappingDeleted(_)           => NoOpAction
-    case TenantMailAdded(tenantId, _, mail)  =>
+    case SelfcareMappingCreated(_, _)           => NoOpAction
+    case SelfcareMappingDeleted(_)              => NoOpAction
+    case TenantMailAdded(tenantId, _, mail)     =>
       ActionWithBson(
         collection.updateOne(Filters.eq("data.id", tenantId.toString), _),
         Updates.push("data.mails", mail.toDocument)
       )
-    case TenantMailDeleted(tenantId, mailId) =>
+    case TenantMailDeleted(tenantId, mailId, _) =>
       ActionWithBson(
         collection.updateOne(Filters.eq("data.id", tenantId.toString), _),
         Updates.pull("data.mails", Document(s"{ id : \"$mailId\" }"))
