@@ -32,7 +32,7 @@ object TenantManagementErrors {
   final case class SelfcareIdNotMapped(selfcareId: String)
       extends ComponentError("0011", s"SelfcareId $selfcareId not fount in selfcareMappings")
 
-  final case class TenantMailNotFound(tenantId: String, mailId: String)
+  final case class MailNotFound(tenantId: String, mailId: String)
       extends ComponentError("0012", s"Mail $mailId in Tenant $tenantId not found")
 
 }

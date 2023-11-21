@@ -17,7 +17,7 @@ import it.pagopa.interop.tenantmanagement.error.TenantManagementErrors.{
   TenantAlreadyExists,
   TenantBySelfcareIdNotFound,
   TenantNotFound,
-  TenantMailNotFound
+  MailNotFound
 }
 
 import java.time.temporal.ChronoUnit
@@ -95,7 +95,7 @@ object TenantPersistentBehavior {
       case DeleteTenantMail(tenantId, mailId, replyTo) =>
         val result: Either[Throwable, PersistentTenant] = for {
           tenant <- state.tenants.get(tenantId.toString).toRight(TenantNotFound(tenantId.toString))
-          _      <- tenant.mails.find(_.id == mailId).toRight(TenantMailNotFound(tenantId.toString, mailId))
+          _      <- tenant.mails.find(_.id == mailId).toRight(MailNotFound(tenantId.toString, mailId))
         } yield tenant
 
         result.fold(
