@@ -31,11 +31,12 @@ message SelfcareMappingDeletedV1 {
 
 message TenantMailAddedV1 {
   required string tenantId = 1;
-  required TenantMailV1 mail = 2;
+  required string mailId = 2;
   required TenantV1 tenant = 3;  
 }
 
 message TenantMailDeletedV1 {
   required string tenantId = 1;
   required string mailId = 2;
+  required TenantV1 tenant = 3;  
 }

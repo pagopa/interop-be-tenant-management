@@ -43,7 +43,7 @@ object TenantEventsSerde {
     case SelfcareMappingCreated(_, _) => selfcareMappingCreated
     case SelfcareMappingDeleted(_)    => selfcareMappingDeleted
     case TenantMailAdded(_, _, _)     => tenantMailAdded
-    case TenantMailDeleted(_, _)      => tenantMailDeleted
+    case TenantMailDeleted(_, _, _)   => tenantMailDeleted
   }
 
   // Serdes
@@ -156,6 +156,6 @@ object TenantEventsSerde {
   private implicit val scmcFormat: RootJsonFormat[SelfcareMappingCreated] = jsonFormat2(SelfcareMappingCreated.apply)
   private implicit val scmdFormat: RootJsonFormat[SelfcareMappingDeleted] = jsonFormat1(SelfcareMappingDeleted.apply)
   private implicit val tmaFormat: RootJsonFormat[TenantMailAdded]         = jsonFormat3(TenantMailAdded.apply)
-  private implicit val tmdFormat: RootJsonFormat[TenantMailDeleted]       = jsonFormat2(TenantMailDeleted.apply)
+  private implicit val tmdFormat: RootJsonFormat[TenantMailDeleted]       = jsonFormat3(TenantMailDeleted.apply)
 
 }
