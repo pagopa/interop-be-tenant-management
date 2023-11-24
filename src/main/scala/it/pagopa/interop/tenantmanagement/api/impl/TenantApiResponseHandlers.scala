@@ -80,6 +80,7 @@ object TenantApiResponseHandlers extends AkkaResponses {
     result match {
       case Success(s)                  => success(s)
       case Failure(ex: TenantNotFound) => notFound(ex, logMessage)
+      case Failure(ex: MailNotFound)   => notFound(ex, logMessage)
       case Failure(ex)                 => internalServerError(ex, logMessage)
     }
 

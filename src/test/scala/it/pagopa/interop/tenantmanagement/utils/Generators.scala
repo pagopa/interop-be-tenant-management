@@ -224,13 +224,16 @@ object Generators {
   val tenantMailAddedGen: Gen[(TenantMailAdded, TenantMailAddedV1)] = for {
     uuid               <- Gen.uuid
     (tenant, tenantV1) <- tenantGen
-    (mail, mailV1)     <- mailGenerator
-  } yield (TenantMailAdded(uuid, mail, tenant), TenantMailAddedV1(uuid.toString, mailV1, tenantV1))
+    mailId             <- Gen.alphaNumStr
+  } yield (TenantMailAdded(uuid, mailId, tenant), TenantMailAddedV1(uuid.toString, mailId, tenantV1))
 
   val tenantMailDeletedGen: Gen[(TenantMailDeleted, TenantMailDeletedV1)] = for {
-    uuid   <- Gen.uuid
-    mailId <- Gen.alphaNumStr
-  } yield (TenantMailDeleted(uuid, mailId), TenantMailDeletedV1(uuid.toString, mailId))
+    (tenant, tenantV1)         <- tenantGen
+    (tenantMail, tenantMailV1) <- mailGenerator
+  } yield (
+    TenantMailDeleted(tenant.id, tenantMail.id, tenant.copy(mails = List(tenantMail))),
+    TenantMailDeletedV1(tenantV1.id.toString, tenantMailV1.id.get, tenantV1.copy(mails = List(tenantMailV1)))
+  )
 
   val selfcareMappingCreatedGen: Gen[(SelfcareMappingCreated, SelfcareMappingCreatedV1)] = for {
     selfcareId <- stringGen

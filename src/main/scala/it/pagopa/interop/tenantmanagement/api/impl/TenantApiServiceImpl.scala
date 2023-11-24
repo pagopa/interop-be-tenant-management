@@ -122,7 +122,7 @@ class TenantApiServiceImpl(
 
     val result: Future[Unit] = for {
       tenantUuid <- tenantId.toFutureUUID
-      _          <- commanderForTenantId(tenantId).askWithStatus[PersistentTenant](
+      _          <- commanderForTenantId(tenantId).askWithStatus[Unit](
         AddTenantMail(tenantUuid, PersistentTenantMail.fromAPI(mailSeed, offsetDateTimeSupplier.get()), _)
       )
     } yield ()
