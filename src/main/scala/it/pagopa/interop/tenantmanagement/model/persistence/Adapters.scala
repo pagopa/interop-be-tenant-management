@@ -13,7 +13,6 @@ import it.pagopa.interop.tenantmanagement.model.tenant._
 
 import java.time.OffsetDateTime
 import java.util.UUID
-
 object Adapters {
 
   implicit class PersistentTenantDeltaObjectWrapper(private val p: PersistentTenantDelta.type) extends AnyVal {
