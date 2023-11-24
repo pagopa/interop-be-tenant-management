@@ -11,7 +11,6 @@ import org.scalacheck.Gen
 import java.time.{OffsetDateTime, ZoneOffset}
 import java.util.UUID
 
-import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantMailKind
 object Generators {
 
   val stringGen: Gen[String] = for {
@@ -150,6 +149,7 @@ object Generators {
     (updatedAt, updatedAtV1)                         <- Gen.option(offsetDatetimeGen).map(_.separate)
     (mails, protoMails)                              <- listOf(mailGenerator).map(_.separate)
     name                                             <- stringGen
+    (onboardedAt, onboardedAtV1)                     <- Gen.option(offsetDatetimeGen).map(_.separate)
   } yield (
     PersistentTenant(
       id,
@@ -161,7 +161,8 @@ object Generators {
       createdAt,
       updatedAt,
       mails,
-      name
+      name,
+      onboardedAt
     ),
     TenantV1(
       id.toString(),
@@ -173,7 +174,8 @@ object Generators {
       updatedAtV1,
       protoMails,
       name.some,
-      kindV1.some
+      kindV1.some,
+      onboardedAtV1
     )
   )
 

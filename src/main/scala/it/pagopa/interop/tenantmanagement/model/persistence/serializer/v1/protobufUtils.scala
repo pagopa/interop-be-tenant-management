@@ -7,7 +7,7 @@ import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.tenant
 import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.tenant._
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantFeature.PersistentCertifier
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantKind.{GSP, PA, PRIVATE}
-import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantMailKind.ContactEmail
+import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantMailKind.{DigitalAddress, ContactEmail}
 import it.pagopa.interop.tenantmanagement.model.tenant._
 
 object protobufUtils {
@@ -29,14 +29,15 @@ object protobufUtils {
     ExternalIdV1(protobufTenantExternalId.origin, protobufTenantExternalId.value).asRight[Throwable]
 
   def toPersistentTenant(protobufTenant: TenantV1): Either[Throwable, PersistentTenant] = for {
-    id         <- protobufTenant.id.toUUID.toEither
-    externalId <- toPersistentTenantExternalId(protobufTenant.externalId)
-    kind       <- protobufTenant.kind.traverse(toPersistentTenantKind)
-    attributes <- protobufTenant.attributes.traverse(toPersistentTenantAttributes)
-    features   <- protobufTenant.features.traverse(toPersistentTenantFeature)
-    createdAt  <- protobufTenant.createdAt.toOffsetDateTime.toEither
-    updatedAt  <- protobufTenant.updatedAt.traverse(_.toOffsetDateTime.toEither)
-    mails      <- protobufTenant.mails.traverse(toPersistentTenantMail)
+    id          <- protobufTenant.id.toUUID.toEither
+    externalId  <- toPersistentTenantExternalId(protobufTenant.externalId)
+    kind        <- protobufTenant.kind.traverse(toPersistentTenantKind)
+    attributes  <- protobufTenant.attributes.traverse(toPersistentTenantAttributes)
+    features    <- protobufTenant.features.traverse(toPersistentTenantFeature)
+    createdAt   <- protobufTenant.createdAt.toOffsetDateTime.toEither
+    updatedAt   <- protobufTenant.updatedAt.traverse(_.toOffsetDateTime.toEither)
+    onboardedAt <- protobufTenant.onboardedAt.traverse(_.toOffsetDateTime.toEither)
+    mails       <- protobufTenant.mails.traverse(toPersistentTenantMail)
   } yield PersistentTenant(
     id = id,
     kind = kind,
@@ -47,7 +48,8 @@ object protobufUtils {
     createdAt = createdAt,
     updatedAt = updatedAt,
     mails = mails,
-    name = protobufTenant.name.getOrElse("")
+    name = protobufTenant.name.getOrElse(""),
+    onboardedAt = onboardedAt
   )
 
   def toProtobufTenant(persistentTenant: PersistentTenant): Either[Throwable, TenantV1] = for {
@@ -62,7 +64,8 @@ object protobufUtils {
     createdAt = persistentTenant.createdAt.toMillis,
     updatedAt = persistentTenant.updatedAt.map(_.toMillis),
     mails = persistentTenant.mails.map(toProtobufTenantMail),
-    name = persistentTenant.name.some
+    name = persistentTenant.name.some,
+    onboardedAt = persistentTenant.onboardedAt.map(_.toMillis)
   )
 
   def toPersistentTenantMail(protobufTenantMail: TenantMailV1): Either[Throwable, PersistentTenantMail] = for {
@@ -89,13 +92,15 @@ object protobufUtils {
   ): Either[Throwable, PersistentTenantMailKind] =
     protobufTenantMailKind match {
       case TenantMailKindV1.CONTACT_EMAIL                   => ContactEmail.asRight[Throwable]
+      case TenantMailKindV1.DIGITAL_ADDRESS                 => DigitalAddress.asRight[Throwable]
       case TenantMailKindV1.Unrecognized(unrecognizedValue) =>
         new Exception(s"Unable to deserialize TenantMailKindV1 $unrecognizedValue").asLeft[PersistentTenantMailKind]
     }
 
   def toProtobufTenantMailKind(persistentTenantMailKind: PersistentTenantMailKind): TenantMailKindV1 =
     persistentTenantMailKind match {
-      case ContactEmail => TenantMailKindV1.CONTACT_EMAIL
+      case ContactEmail   => TenantMailKindV1.CONTACT_EMAIL
+      case DigitalAddress => TenantMailKindV1.DIGITAL_ADDRESS
     }
 
   def toProtobufTenantVerifier(verifier: PersistentTenantVerifier): TenantVerifierV1 = TenantVerifierV1(

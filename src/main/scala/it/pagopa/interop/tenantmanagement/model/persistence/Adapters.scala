@@ -3,16 +3,14 @@ package it.pagopa.interop.tenantmanagement.model.persistence
 import cats.implicits._
 import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
 import it.pagopa.interop.tenantmanagement.error.TenantManagementErrors.{InvalidAttributeStructure, InvalidFeature}
-import it.pagopa.interop.tenantmanagement.model.MailKind.CONTACT_EMAIL
+import it.pagopa.interop.tenantmanagement.model.MailKind.{DIGITAL_ADDRESS, CONTACT_EMAIL}
 import it.pagopa.interop.tenantmanagement.model._
-import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantMailKind.ContactEmail
+import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantMailKind.{DigitalAddress, ContactEmail}
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantKind
-
 import it.pagopa.interop.tenantmanagement.model.tenant._
 
 import java.time.OffsetDateTime
 import java.util.UUID
-
 object Adapters {
 
   implicit class PersistentTenantDeltaObjectWrapper(private val p: PersistentTenantDelta.type) extends AnyVal {
@@ -125,13 +123,15 @@ object Adapters {
 
   implicit class PersistentTenantMailKindWrapper(private val ptmk: PersistentTenantMailKind) extends AnyVal {
     def toApi: MailKind = ptmk match {
-      case ContactEmail => MailKind.CONTACT_EMAIL
+      case ContactEmail   => MailKind.CONTACT_EMAIL
+      case DigitalAddress => MailKind.DIGITAL_ADDRESS
     }
   }
 
   implicit class PersistentTenantMailKindObjectWrapper(private val p: PersistentTenantMailKind.type) extends AnyVal {
     def fromApi(mailKind: MailKind): PersistentTenantMailKind = mailKind match {
-      case CONTACT_EMAIL => ContactEmail
+      case CONTACT_EMAIL   => ContactEmail
+      case DIGITAL_ADDRESS => DigitalAddress
     }
   }
 
@@ -166,7 +166,8 @@ object Adapters {
       createdAt = p.createdAt,
       updatedAt = p.updatedAt,
       mails = p.mails.map(_.toApi),
-      name = p.name
+      name = p.name,
+      onboardedAt = p.onboardedAt
     )
 
     def update(ptd: PersistentTenantDelta, time: OffsetDateTime): PersistentTenant =
@@ -200,7 +201,8 @@ object Adapters {
       createdAt = supplier.get(),
       updatedAt = None,
       mails = Nil,
-      name = seed.name
+      name = seed.name,
+      onboardedAt = seed.onboardedAt
     )
   }
 
