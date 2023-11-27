@@ -3,9 +3,11 @@ package it.pagopa.interop.tenantmanagement.model.persistence
 import cats.implicits._
 import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
 import it.pagopa.interop.tenantmanagement.error.TenantManagementErrors.{InvalidAttributeStructure, InvalidFeature}
-import it.pagopa.interop.tenantmanagement.model.MailKind.{DIGITAL_ADDRESS, CONTACT_EMAIL}
+import it.pagopa.interop.tenantmanagement.model.MailKind.{CONTACT_EMAIL, DIGITAL_ADDRESS}
+import it.pagopa.interop.tenantmanagement.model.TenantUnitType.{AOO, UO}
 import it.pagopa.interop.tenantmanagement.model._
-import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantMailKind.{DigitalAddress, ContactEmail}
+import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantMailKind.{ContactEmail, DigitalAddress}
+import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantUnitType.{Aoo, Uo}
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantKind
 import it.pagopa.interop.tenantmanagement.model.tenant._
 
@@ -145,6 +147,20 @@ object Adapters {
     )
   }
 
+  implicit class PersistentTenantUnitTypeWrapper(private val ptut: PersistentTenantUnitType) extends AnyVal {
+    def toApi: TenantUnitType = ptut match {
+      case Aoo => TenantUnitType.AOO
+      case Uo  => TenantUnitType.UO
+    }
+  }
+
+  implicit class PersistentTenantUnitTypeObjectWrapper(private val p: PersistentTenantUnitType.type) extends AnyVal {
+    def fromApi(subUnitType: TenantUnitType): PersistentTenantUnitType = subUnitType match {
+      case AOO => Aoo
+      case UO  => Uo
+    }
+  }
+
   implicit class PersistentTenantMailObjectWrapper(private val p: PersistentTenantMail.type) extends AnyVal {
     def fromAPI(ms: MailSeed, createdAt: OffsetDateTime): PersistentTenantMail = PersistentTenantMail(
       id = ms.id,
@@ -167,7 +183,8 @@ object Adapters {
       updatedAt = p.updatedAt,
       mails = p.mails.map(_.toApi),
       name = p.name,
-      onboardedAt = p.onboardedAt
+      onboardedAt = p.onboardedAt,
+      subUnitType = p.subUnitType.map(_.toApi)
     )
 
     def update(ptd: PersistentTenantDelta, time: OffsetDateTime): PersistentTenant =
@@ -202,7 +219,8 @@ object Adapters {
       updatedAt = None,
       mails = Nil,
       name = seed.name,
-      onboardedAt = seed.onboardedAt
+      onboardedAt = seed.onboardedAt,
+      subUnitType = seed.subUnitType.map(PersistentTenantUnitType.fromApi)
     )
   }
 

@@ -147,9 +147,23 @@ object TenantEventsSerde {
       }
     }
 
+  private implicit val ptutFormat: RootJsonFormat[PersistentTenantUnitType] =
+    new RootJsonFormat[PersistentTenantUnitType] {
+      override def read(json: JsValue): PersistentTenantUnitType = json match {
+        case JsString("AOO") => PersistentTenantUnitType.Aoo
+        case JsString("UO")  => PersistentTenantUnitType.Uo
+        case x               =>
+          throw new DeserializationException(s"Unable to deserialize PersistentTenantUnitType: unmapped type $x")
+      }
+      override def write(obj: PersistentTenantUnitType): JsValue = obj match {
+        case PersistentTenantUnitType.Aoo => JsString("AOO")
+        case PersistentTenantUnitType.Uo  => JsString("UO")
+      }
+    }
+
   private implicit val ptmFormat: RootJsonFormat[PersistentTenantMail]    = jsonFormat5(PersistentTenantMail.apply)
   private implicit val pexFormat: RootJsonFormat[PersistentExternalId]    = jsonFormat2(PersistentExternalId.apply)
-  private implicit val ptFormat: RootJsonFormat[PersistentTenant]         = jsonFormat11(PersistentTenant.apply)
+  private implicit val ptFormat: RootJsonFormat[PersistentTenant]         = jsonFormat12(PersistentTenant.apply)
   private implicit val tcFormat: RootJsonFormat[TenantCreated]            = jsonFormat1(TenantCreated.apply)
   private implicit val tuFormat: RootJsonFormat[TenantUpdated]            = jsonFormat1(TenantUpdated.apply)
   private implicit val tdFormat: RootJsonFormat[TenantDeleted]            = jsonFormat1(TenantDeleted.apply)

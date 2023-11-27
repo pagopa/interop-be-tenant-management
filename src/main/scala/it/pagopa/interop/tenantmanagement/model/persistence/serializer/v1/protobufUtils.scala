@@ -8,6 +8,7 @@ import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.tenant
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantFeature.PersistentCertifier
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantKind.{GSP, PA, PRIVATE}
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantMailKind.{DigitalAddress, ContactEmail}
+import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantUnitType.{Aoo, Uo}
 import it.pagopa.interop.tenantmanagement.model.tenant._
 
 object protobufUtils {
@@ -38,6 +39,7 @@ object protobufUtils {
     updatedAt   <- protobufTenant.updatedAt.traverse(_.toOffsetDateTime.toEither)
     onboardedAt <- protobufTenant.onboardedAt.traverse(_.toOffsetDateTime.toEither)
     mails       <- protobufTenant.mails.traverse(toPersistentTenantMail)
+    subUnitType <- protobufTenant.subUnitType.traverse(toPersistentTenantUnitType)
   } yield PersistentTenant(
     id = id,
     kind = kind,
@@ -49,7 +51,8 @@ object protobufUtils {
     updatedAt = updatedAt,
     mails = mails,
     name = protobufTenant.name.getOrElse(""),
-    onboardedAt = onboardedAt
+    onboardedAt = onboardedAt,
+    subUnitType = subUnitType
   )
 
   def toProtobufTenant(persistentTenant: PersistentTenant): Either[Throwable, TenantV1] = for {
@@ -65,7 +68,8 @@ object protobufUtils {
     updatedAt = persistentTenant.updatedAt.map(_.toMillis),
     mails = persistentTenant.mails.map(toProtobufTenantMail),
     name = persistentTenant.name.some,
-    onboardedAt = persistentTenant.onboardedAt.map(_.toMillis)
+    onboardedAt = persistentTenant.onboardedAt.map(_.toMillis),
+    subUnitType = persistentTenant.subUnitType.map(toProtobufTenantUnitType)
   )
 
   def toPersistentTenantMail(protobufTenantMail: TenantMailV1): Either[Throwable, PersistentTenantMail] = for {
@@ -211,5 +215,21 @@ object protobufUtils {
       case PA      => TenantKindV1.PA
       case GSP     => TenantKindV1.GSP
       case PRIVATE => TenantKindV1.PRIVATE
+    }
+
+  def toPersistentTenantUnitType(
+    protobufTenantUnitType: TenantUnitTypeV1
+  ): Either[Throwable, PersistentTenantUnitType] =
+    protobufTenantUnitType match {
+      case TenantUnitTypeV1.AOO                             => Aoo.asRight[Throwable]
+      case TenantUnitTypeV1.UO                              => Uo.asRight[Throwable]
+      case TenantUnitTypeV1.Unrecognized(unrecognizedValue) =>
+        new Exception(s"Unable to deserialize TenantUnitTypeV1 $unrecognizedValue").asLeft[PersistentTenantUnitType]
+    }
+
+  def toProtobufTenantUnitType(persistentTenantUnitType: PersistentTenantUnitType): TenantUnitTypeV1 =
+    persistentTenantUnitType match {
+      case Aoo => TenantUnitTypeV1.AOO
+      case Uo  => TenantUnitTypeV1.UO
     }
 }
