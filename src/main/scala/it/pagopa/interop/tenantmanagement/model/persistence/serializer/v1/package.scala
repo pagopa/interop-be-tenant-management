@@ -36,6 +36,33 @@ package object v1 {
   implicit def tenantCreatedV1PersistEventSerializer: PersistEventSerializer[TenantCreated, TenantCreatedV1] =
     event => toProtobufTenant(event.tenant).map(TenantCreatedV1.of)
 
+  implicit def tenantMailAddedV1PersistEventDeserializer: PersistEventDeserializer[TenantMailAddedV1, TenantMailAdded] =
+    event =>
+      for {
+        uuid   <- Try(UUID.fromString(event.tenantId)).toEither
+        tenant <- protobufUtils.toPersistentTenant(event.tenant)
+      } yield TenantMailAdded(uuid, event.mailId, tenant)
+
+  implicit def tenantMailAddedV1PersistEventSerializer: PersistEventSerializer[TenantMailAdded, TenantMailAddedV1] =
+    event =>
+      for {
+        tenant <- toProtobufTenant(event.tenant)
+      } yield TenantMailAddedV1.of(event.tenantId.toString, event.mailId, tenant)
+
+  implicit def tenantMailDeletedV1PersistEventDeserializer
+    : PersistEventDeserializer[TenantMailDeletedV1, TenantMailDeleted] =
+    event =>
+      for {
+        tenant <- toPersistentTenant(event.tenant)
+      } yield TenantMailDeleted(tenant.id, event.mailId, tenant)
+
+  implicit def tenantMailDeletedV1PersistEventSerializer
+    : PersistEventSerializer[TenantMailDeleted, TenantMailDeletedV1] =
+    event =>
+      for {
+        tenant <- toProtobufTenant(event.tenant)
+      } yield TenantMailDeletedV1.of(tenant.id, event.mailId, tenant)
+
   implicit def tenantUpdatedV1PersistEventDeserializer: PersistEventDeserializer[TenantUpdatedV1, TenantUpdated] =
     event => toPersistentTenant(event.tenant).map(TenantUpdated)
 

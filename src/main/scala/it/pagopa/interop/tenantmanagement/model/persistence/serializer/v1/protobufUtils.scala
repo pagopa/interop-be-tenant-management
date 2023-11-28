@@ -2,11 +2,13 @@ package it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1
 
 import cats.syntax.all._
 import it.pagopa.interop.commons.utils.TypeConversions.{LongOps, _}
+import it.pagopa.interop.commons.utils.Digester._
 import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.tenant.TenantAttributeV1.Empty
 import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.tenant._
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantFeature.PersistentCertifier
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantKind.{GSP, PA, PRIVATE}
-import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantMailKind.ContactEmail
+import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantMailKind.{DigitalAddress, ContactEmail}
+import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantUnitType.{Aoo, Uo}
 import it.pagopa.interop.tenantmanagement.model.tenant._
 
 object protobufUtils {
@@ -28,14 +30,16 @@ object protobufUtils {
     ExternalIdV1(protobufTenantExternalId.origin, protobufTenantExternalId.value).asRight[Throwable]
 
   def toPersistentTenant(protobufTenant: TenantV1): Either[Throwable, PersistentTenant] = for {
-    id         <- protobufTenant.id.toUUID.toEither
-    externalId <- toPersistentTenantExternalId(protobufTenant.externalId)
-    kind       <- protobufTenant.kind.traverse(toPersistentTenantKind)
-    attributes <- protobufTenant.attributes.traverse(toPersistentTenantAttributes)
-    features   <- protobufTenant.features.traverse(toPersistentTenantFeature)
-    createdAt  <- protobufTenant.createdAt.toOffsetDateTime.toEither
-    updatedAt  <- protobufTenant.updatedAt.traverse(_.toOffsetDateTime.toEither)
-    mails      <- protobufTenant.mails.traverse(toPersistentTenantMail)
+    id          <- protobufTenant.id.toUUID.toEither
+    externalId  <- toPersistentTenantExternalId(protobufTenant.externalId)
+    kind        <- protobufTenant.kind.traverse(toPersistentTenantKind)
+    attributes  <- protobufTenant.attributes.traverse(toPersistentTenantAttributes)
+    features    <- protobufTenant.features.traverse(toPersistentTenantFeature)
+    createdAt   <- protobufTenant.createdAt.toOffsetDateTime.toEither
+    updatedAt   <- protobufTenant.updatedAt.traverse(_.toOffsetDateTime.toEither)
+    onboardedAt <- protobufTenant.onboardedAt.traverse(_.toOffsetDateTime.toEither)
+    mails       <- protobufTenant.mails.traverse(toPersistentTenantMail)
+    subUnitType <- protobufTenant.subUnitType.traverse(toPersistentTenantUnitType)
   } yield PersistentTenant(
     id = id,
     kind = kind,
@@ -46,7 +50,9 @@ object protobufUtils {
     createdAt = createdAt,
     updatedAt = updatedAt,
     mails = mails,
-    name = protobufTenant.name.getOrElse("")
+    name = protobufTenant.name.getOrElse(""),
+    onboardedAt = onboardedAt,
+    subUnitType = subUnitType
   )
 
   def toProtobufTenant(persistentTenant: PersistentTenant): Either[Throwable, TenantV1] = for {
@@ -61,13 +67,16 @@ object protobufUtils {
     createdAt = persistentTenant.createdAt.toMillis,
     updatedAt = persistentTenant.updatedAt.map(_.toMillis),
     mails = persistentTenant.mails.map(toProtobufTenantMail),
-    name = persistentTenant.name.some
+    name = persistentTenant.name.some,
+    onboardedAt = persistentTenant.onboardedAt.map(_.toMillis),
+    subUnitType = persistentTenant.subUnitType.map(toProtobufTenantUnitType)
   )
 
   def toPersistentTenantMail(protobufTenantMail: TenantMailV1): Either[Throwable, PersistentTenantMail] = for {
     kind      <- toPersistentTenantMailKind(protobufTenantMail.kind)
     createdAt <- protobufTenantMail.createdAt.toOffsetDateTime.toEither
   } yield PersistentTenantMail(
+    id = protobufTenantMail.id.getOrElse(toSha256(protobufTenantMail.address.getBytes())),
     kind = kind,
     address = protobufTenantMail.address,
     createdAt = createdAt,
@@ -75,6 +84,7 @@ object protobufUtils {
   )
 
   def toProtobufTenantMail(persistentTenantMail: PersistentTenantMail): TenantMailV1 = TenantMailV1(
+    id = persistentTenantMail.id.some,
     kind = toProtobufTenantMailKind(persistentTenantMail.kind),
     address = persistentTenantMail.address,
     createdAt = persistentTenantMail.createdAt.toMillis,
@@ -86,13 +96,15 @@ object protobufUtils {
   ): Either[Throwable, PersistentTenantMailKind] =
     protobufTenantMailKind match {
       case TenantMailKindV1.CONTACT_EMAIL                   => ContactEmail.asRight[Throwable]
+      case TenantMailKindV1.DIGITAL_ADDRESS                 => DigitalAddress.asRight[Throwable]
       case TenantMailKindV1.Unrecognized(unrecognizedValue) =>
         new Exception(s"Unable to deserialize TenantMailKindV1 $unrecognizedValue").asLeft[PersistentTenantMailKind]
     }
 
   def toProtobufTenantMailKind(persistentTenantMailKind: PersistentTenantMailKind): TenantMailKindV1 =
     persistentTenantMailKind match {
-      case ContactEmail => TenantMailKindV1.CONTACT_EMAIL
+      case ContactEmail   => TenantMailKindV1.CONTACT_EMAIL
+      case DigitalAddress => TenantMailKindV1.DIGITAL_ADDRESS
     }
 
   def toProtobufTenantVerifier(verifier: PersistentTenantVerifier): TenantVerifierV1 = TenantVerifierV1(
@@ -203,5 +215,21 @@ object protobufUtils {
       case PA      => TenantKindV1.PA
       case GSP     => TenantKindV1.GSP
       case PRIVATE => TenantKindV1.PRIVATE
+    }
+
+  def toPersistentTenantUnitType(
+    protobufTenantUnitType: TenantUnitTypeV1
+  ): Either[Throwable, PersistentTenantUnitType] =
+    protobufTenantUnitType match {
+      case TenantUnitTypeV1.AOO                             => Aoo.asRight[Throwable]
+      case TenantUnitTypeV1.UO                              => Uo.asRight[Throwable]
+      case TenantUnitTypeV1.Unrecognized(unrecognizedValue) =>
+        new Exception(s"Unable to deserialize TenantUnitTypeV1 $unrecognizedValue").asLeft[PersistentTenantUnitType]
+    }
+
+  def toProtobufTenantUnitType(persistentTenantUnitType: PersistentTenantUnitType): TenantUnitTypeV1 =
+    persistentTenantUnitType match {
+      case Aoo => TenantUnitTypeV1.AOO
+      case Uo  => TenantUnitTypeV1.UO
     }
 }

@@ -80,6 +80,23 @@ trait SpecHelper {
     } yield result
   }
 
+  def addTenantMail[T](tenantId: UUID, seed: MailSeed)(implicit
+    actorSystem: ActorSystem[_],
+    um: Unmarshaller[HttpResponse, T]
+  ): Future[T] = {
+    implicit val ec: ExecutionContext = actorSystem.executionContext
+    for {
+      data   <- Marshal(seed).to[MessageEntity].map(_.dataBytes)
+      result <- performCall[T](HttpMethods.POST, s"tenants/${tenantId.toString()}/mails", data.some)
+    } yield result
+  }
+
+  def deleteTenantMail[T](tenantId: UUID, mailId: String)(implicit
+    actorSystem: ActorSystem[_],
+    um: Unmarshaller[HttpResponse, T]
+  ): Future[T] =
+    performCall[T](HttpMethods.DELETE, s"tenants/${tenantId.toString()}/mails/$mailId", None)
+
   def getTenant[T](id: UUID)(implicit actorSystem: ActorSystem[_], um: Unmarshaller[HttpResponse, T]): Future[T] =
     performCall[T](HttpMethods.GET, s"tenants/${id.toString()}", None)
 

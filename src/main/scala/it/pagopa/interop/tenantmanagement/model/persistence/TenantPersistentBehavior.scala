@@ -16,7 +16,8 @@ import it.pagopa.interop.tenantmanagement.error.TenantManagementErrors.{
   SelfcareIdNotMapped,
   TenantAlreadyExists,
   TenantBySelfcareIdNotFound,
-  TenantNotFound
+  TenantNotFound,
+  MailNotFound
 }
 
 import java.time.temporal.ChronoUnit
@@ -91,6 +92,27 @@ object TenantPersistentBehavior {
           Effect.persist(SelfcareMappingDeleted(selfcareId)).thenReply(replyTo)(_ => success(()))
         else Effect.reply(replyTo)(error[Unit](SelfcareIdNotMapped(selfcareId)))
 
+      case DeleteTenantMail(tenantId, mailId, replyTo) =>
+        val result: Either[Throwable, PersistentTenant] = for {
+          tenant <- state.tenants.get(tenantId.toString).toRight(TenantNotFound(tenantId.toString))
+          _      <- tenant.mails.find(_.id == mailId).toRight(MailNotFound(tenantId.toString, mailId))
+        } yield tenant
+
+        result.fold(
+          ex => Effect.reply(replyTo)(error[Unit](ex)),
+          tenant => (Effect.persist(TenantMailDeleted(tenant.id, mailId, tenant)).thenReply(replyTo)(_ => success(())))
+        )
+
+      case AddTenantMail(tenantId, mail, replyTo) =>
+        val result: Either[Throwable, PersistentTenant] = for {
+          tenant <- state.tenants.get(tenantId.toString).toRight(TenantNotFound(tenantId.toString))
+        } yield tenant.addMail(mail)
+
+        result.fold(
+          ex => Effect.reply(replyTo)(error[Unit](ex)),
+          tenant => (Effect.persist(TenantMailAdded(tenant.id, mail.id, tenant)).thenReply(replyTo)(_ => success(())))
+        )
+
       case Idle =>
         context.log.debug(s"Passivate shard: ${shard.path.name}")
         Effect.reply(shard)(ClusterSharding.Passivate(context.self))
@@ -111,6 +133,8 @@ object TenantPersistentBehavior {
       case TenantDeleted(tenantId)                      => state.deleteTenant(tenantId)
       case SelfcareMappingCreated(selfcareId, tenantId) => state.addSelfcareMapping(selfcareId, tenantId)
       case SelfcareMappingDeleted(selfcareId)           => state.deleteSelfcareMapping(selfcareId)
+      case TenantMailDeleted(tenantId, mailId, _)       => state.deleteTenantMail(tenantId, mailId)
+      case TenantMailAdded(_, _, tenant)                => state.addTenantMail(tenant)
     }
 
   val TypeKey: EntityTypeKey[Command] = EntityTypeKey[Command]("interop-be-tenant-management-persistence")

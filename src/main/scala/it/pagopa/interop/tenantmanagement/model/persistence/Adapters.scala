@@ -3,48 +3,27 @@ package it.pagopa.interop.tenantmanagement.model.persistence
 import cats.implicits._
 import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
 import it.pagopa.interop.tenantmanagement.error.TenantManagementErrors.{InvalidAttributeStructure, InvalidFeature}
-import it.pagopa.interop.tenantmanagement.model.MailKind.CONTACT_EMAIL
+import it.pagopa.interop.tenantmanagement.model.MailKind.{CONTACT_EMAIL, DIGITAL_ADDRESS}
+import it.pagopa.interop.tenantmanagement.model.TenantUnitType.{AOO, UO}
 import it.pagopa.interop.tenantmanagement.model._
-import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantMailKind.ContactEmail
+import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantMailKind.{ContactEmail, DigitalAddress}
+import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantUnitType.{Aoo, Uo}
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantKind
-
 import it.pagopa.interop.tenantmanagement.model.tenant._
 
 import java.time.OffsetDateTime
 import java.util.UUID
-
 object Adapters {
 
   implicit class PersistentTenantDeltaObjectWrapper(private val p: PersistentTenantDelta.type) extends AnyVal {
-    def fromAPI(
-      tenant: PersistentTenant,
-      td: TenantDelta,
-      timeSupplier: OffsetDateTimeSupplier
-    ): Either[Throwable, PersistentTenantDelta] = for {
+    def fromAPI(tenant: PersistentTenant, td: TenantDelta): Either[Throwable, PersistentTenantDelta] = for {
       features <- td.features.toList.traverse(PersistentTenantFeature.fromAPI)
-      actualMails    = tenant.mails.map(_.toApi)
-      mailsToPersist = calculateMailsToKeep(timeSupplier)(actualMails, td.mails.toList)
     } yield PersistentTenantDelta(
       id = tenant.id,
       selfcareId = td.selfcareId,
       features = features,
-      mails = mailsToPersist.map(PersistentTenantMail.fromApi),
       kind = PersistentTenantKind.fromApi(td.kind).some
     )
-
-    private def calculateMailsToKeep(
-      timeSupplier: OffsetDateTimeSupplier
-    )(actualMails: List[Mail], tenantDeltaMails: List[MailSeed]): List[Mail] = tenantDeltaMails.map(ms =>
-      actualMails
-        .find(m => m.address == ms.address && m.kind == ms.kind)
-        .getOrElse(ms.toModel(timeSupplier.get()))
-        .copy(description = ms.description)
-    )
-  }
-
-  implicit class MailSeedWrapper(private val ms: MailSeed) extends AnyVal {
-    def toModel(createdAt: OffsetDateTime): Mail =
-      Mail(kind = ms.kind, address = ms.address, createdAt = createdAt, description = ms.description)
   }
 
   implicit class PersistentVerificationTenantVerifierWrapper(private val p: PersistentTenantVerifier) extends AnyVal {
@@ -146,18 +125,21 @@ object Adapters {
 
   implicit class PersistentTenantMailKindWrapper(private val ptmk: PersistentTenantMailKind) extends AnyVal {
     def toApi: MailKind = ptmk match {
-      case ContactEmail => MailKind.CONTACT_EMAIL
+      case ContactEmail   => MailKind.CONTACT_EMAIL
+      case DigitalAddress => MailKind.DIGITAL_ADDRESS
     }
   }
 
   implicit class PersistentTenantMailKindObjectWrapper(private val p: PersistentTenantMailKind.type) extends AnyVal {
     def fromApi(mailKind: MailKind): PersistentTenantMailKind = mailKind match {
-      case CONTACT_EMAIL => ContactEmail
+      case CONTACT_EMAIL   => ContactEmail
+      case DIGITAL_ADDRESS => DigitalAddress
     }
   }
 
   implicit class PersistentTenantMailWrapper(private val ptm: PersistentTenantMail) extends AnyVal {
     def toApi: Mail = Mail(
+      id = ptm.id,
       kind = ptm.kind.toApi,
       address = ptm.address,
       createdAt = ptm.createdAt,
@@ -165,12 +147,27 @@ object Adapters {
     )
   }
 
+  implicit class PersistentTenantUnitTypeWrapper(private val ptut: PersistentTenantUnitType) extends AnyVal {
+    def toApi: TenantUnitType = ptut match {
+      case Aoo => TenantUnitType.AOO
+      case Uo  => TenantUnitType.UO
+    }
+  }
+
+  implicit class PersistentTenantUnitTypeObjectWrapper(private val p: PersistentTenantUnitType.type) extends AnyVal {
+    def fromApi(subUnitType: TenantUnitType): PersistentTenantUnitType = subUnitType match {
+      case AOO => Aoo
+      case UO  => Uo
+    }
+  }
+
   implicit class PersistentTenantMailObjectWrapper(private val p: PersistentTenantMail.type) extends AnyVal {
-    def fromApi(mail: Mail): PersistentTenantMail = PersistentTenantMail(
-      kind = PersistentTenantMailKind.fromApi(mail.kind),
-      address = mail.address.trim(),
-      createdAt = mail.createdAt,
-      description = mail.description.map(_.trim).filterNot(_.isEmpty)
+    def fromAPI(ms: MailSeed, createdAt: OffsetDateTime): PersistentTenantMail = PersistentTenantMail(
+      id = ms.id,
+      kind = PersistentTenantMailKind.fromApi(ms.kind),
+      address = ms.address.trim(),
+      description = ms.description.map(_.trim).filterNot(_.isEmpty),
+      createdAt = createdAt
     )
   }
 
@@ -185,17 +182,13 @@ object Adapters {
       createdAt = p.createdAt,
       updatedAt = p.updatedAt,
       mails = p.mails.map(_.toApi),
-      name = p.name
+      name = p.name,
+      onboardedAt = p.onboardedAt,
+      subUnitType = p.subUnitType.map(_.toApi)
     )
 
     def update(ptd: PersistentTenantDelta, time: OffsetDateTime): PersistentTenant =
-      p.copy(
-        selfcareId = ptd.selfcareId,
-        features = ptd.features,
-        mails = ptd.mails,
-        kind = ptd.kind,
-        updatedAt = time.some
-      )
+      p.copy(selfcareId = ptd.selfcareId, features = ptd.features, kind = ptd.kind, updatedAt = time.some)
 
     def getAttribute(id: UUID): Option[PersistentTenantAttribute] = p.attributes.find(_.id == id)
 
@@ -204,6 +197,9 @@ object Adapters {
 
     def updateAttribute(attr: PersistentTenantAttribute, time: OffsetDateTime): PersistentTenant =
       p.copy(attributes = attr :: p.attributes.filterNot(_.id == attr.id), updatedAt = time.some)
+
+    def addMail(mail: PersistentTenantMail): PersistentTenant =
+      p.copy(mails = mail :: p.mails)
   }
 
   implicit class PersistentTenantObjectWrapper(private val p: PersistentTenant.type) extends AnyVal {
@@ -222,7 +218,9 @@ object Adapters {
       createdAt = supplier.get(),
       updatedAt = None,
       mails = Nil,
-      name = seed.name
+      name = seed.name,
+      onboardedAt = seed.onboardedAt,
+      subUnitType = seed.subUnitType.map(PersistentTenantUnitType.fromApi)
     )
   }
 

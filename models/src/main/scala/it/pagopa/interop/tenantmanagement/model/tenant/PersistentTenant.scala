@@ -13,5 +13,7 @@ final case class PersistentTenant(
   createdAt: OffsetDateTime,
   updatedAt: Option[OffsetDateTime],
   mails: List[PersistentTenantMail],
-  name: String
+  name: String,
+  onboardedAt: Option[OffsetDateTime],
+  subUnitType: Option[PersistentTenantUnitType]
 )

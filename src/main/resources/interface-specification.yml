@@ -133,6 +133,72 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+  /tenants/{tenantId}/mails:
+    parameters:
+      - $ref: '#/components/parameters/CorrelationIdHeader'
+      - name: tenantId
+        in: path
+        description: the tenant id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      tags:
+        - tenant
+      summary: Add a tenant mail
+      operationId: addTenantMail
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MailSeed'
+      responses:
+        '204':
+          description: Tenant Mail Added
+        '400':
+          description: Invalid input
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Tenant not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /tenants/{tenantId}/mails/{mailId}:
+    parameters:
+      - $ref: '#/components/parameters/CorrelationIdHeader'
+      - name: tenantId
+        in: path
+        description: the tenant id
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: mailId
+        in: path
+        description: the mail id
+        required: true
+        schema:
+          type: string
+    delete:
+      tags:
+        - tenant
+      summary: Delete a tenant mail
+      operationId: deleteTenantMail
+      responses:
+        '204':
+          description: Tenant Mail Deleted
+        '404':
+          description: Tenant not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
   /tenants/selfcareId/{selfcareId}:
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
@@ -534,6 +600,11 @@ components:
             $ref: '#/components/schemas/Mail'
         name:
           type: string
+        onboardedAt:
+          type: string
+          format: date-time
+        subUnitType:
+          $ref: '#/components/schemas/TenantUnitType'  
       required:
         - id
         - certifier
@@ -547,6 +618,8 @@ components:
       description: A specific kind of mail
       type: object
       properties:
+        id:
+          type: string
         kind:
           $ref: '#/components/schemas/MailKind'
         address:
@@ -554,12 +627,15 @@ components:
         description:
           type: string
       required:
+        - id
         - kind
         - address
     Mail:
       description: A specific kind of mail
       type: object
       properties:
+        id:
+          type: string
         kind:
           $ref: '#/components/schemas/MailKind'
         address:
@@ -570,9 +646,15 @@ components:
         description:
           type: string
       required:
+        - id
         - kind
         - address
         - createdAt
+    TenantUnitType:
+      type: string
+      enum:
+        - AOO
+        - UO
     TenantKind:
       type: string
       enum:
@@ -583,6 +665,7 @@ components:
       type: string
       enum:
         - CONTACT_EMAIL
+        - DIGITAL_ADDRESS
     ExternalId:
       properties:
         origin:
@@ -613,6 +696,11 @@ components:
           type: string
         kind:
           $ref: '#/components/schemas/TenantKind'
+        onboardedAt:
+          type: string
+          format: date-time
+        subUnitType:
+          $ref: '#/components/schemas/TenantUnitType'    
       required:
         - externalId
         - features
@@ -629,15 +717,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/TenantFeature'
-        mails:
-          type: array
-          items:
-            $ref: '#/components/schemas/MailSeed'
         kind:
           $ref: '#/components/schemas/TenantKind'    
       required:
         - features
-        - mails
         - kind
   securitySchemes:
     bearerAuth:

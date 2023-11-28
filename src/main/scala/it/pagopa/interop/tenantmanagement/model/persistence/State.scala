@@ -17,6 +17,18 @@ final case class State(tenants: Map[String, PersistentTenant], selfcareMappings:
   )
 
   def deleteSelfcareMapping(selfcareId: String): State = copy(selfcareMappings = selfcareMappings - selfcareId)
+
+  def addTenantMail(tenant: PersistentTenant): State = copy(tenants = tenants + (tenant.id.toString -> tenant))
+
+  def deleteTenantMail(tenantId: UUID, mailId: String): State = {
+    tenants.get(tenantId.toString) match {
+      case Some(tenant) => {
+        val updatedTenant = tenant.copy(mails = tenant.mails.filterNot(_.id == mailId))
+        copy(tenants = tenants + (tenant.id.toString -> updatedTenant))
+      }
+      case None         => this
+    }
+  }
 }
 
 object State {
