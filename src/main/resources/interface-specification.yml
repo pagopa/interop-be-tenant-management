@@ -718,7 +718,12 @@ components:
           items:
             $ref: '#/components/schemas/TenantFeature'
         kind:
-          $ref: '#/components/schemas/TenantKind'    
+          $ref: '#/components/schemas/TenantKind'
+        onboardedAt:
+          type: string
+          format: date-time
+        subUnitType:
+          $ref: '#/components/schemas/TenantUnitType'
       required:
         - features
         - kind
