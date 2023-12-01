@@ -22,7 +22,9 @@ object Adapters {
       id = tenant.id,
       selfcareId = td.selfcareId,
       features = features,
-      kind = PersistentTenantKind.fromApi(td.kind).some
+      kind = PersistentTenantKind.fromApi(td.kind).some,
+      onboardedAt = td.onboardedAt,
+      subUnitType = td.subUnitType.map(PersistentTenantUnitType.fromApi)
     )
   }
 
@@ -188,7 +190,14 @@ object Adapters {
     )
 
     def update(ptd: PersistentTenantDelta, time: OffsetDateTime): PersistentTenant =
-      p.copy(selfcareId = ptd.selfcareId, features = ptd.features, kind = ptd.kind, updatedAt = time.some)
+      p.copy(
+        selfcareId = ptd.selfcareId,
+        features = ptd.features,
+        kind = ptd.kind,
+        updatedAt = time.some,
+        onboardedAt = ptd.onboardedAt,
+        subUnitType = ptd.subUnitType
+      )
 
     def getAttribute(id: UUID): Option[PersistentTenantAttribute] = p.attributes.find(_.id == id)
 
