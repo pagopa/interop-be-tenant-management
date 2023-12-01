@@ -31,10 +31,10 @@ object TenantCqrsProjection {
       Action(collection.deleteOne(Filters.eq("data.id", tenantId)))
     case SelfcareMappingCreated(_, _)           => NoOpAction
     case SelfcareMappingDeleted(_)              => NoOpAction
-    case TenantMailAdded(tenantId, _, mail)     =>
+    case TenantMailAdded(tenantId, _, tenant)   =>
       ActionWithBson(
         collection.updateOne(Filters.eq("data.id", tenantId.toString), _),
-        Updates.push("data.mails", mail.toDocument)
+        Updates.set("data", tenant.toDocument)
       )
     case TenantMailDeleted(tenantId, mailId, _) =>
       ActionWithBson(
