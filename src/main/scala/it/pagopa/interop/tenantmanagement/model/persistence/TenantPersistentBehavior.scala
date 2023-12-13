@@ -44,17 +44,17 @@ object TenantPersistentBehavior {
         Effect.reply(replyTo)(success(matchingTenants))
 
       case CreateTenant(newTenant, replyTo) =>
-        val maybeTenantId: Option[String]         = state.tenants.get(newTenant.id.toString).map(_.id.toString())
-        val success: Effect[TenantCreated, State] = persistAndReply(newTenant, TenantCreated)(replyTo)
-        val failure: String => Effect[TenantCreated, State] = id => fail(TenantAlreadyExists(id))(replyTo)
-        maybeTenantId.fold(success)(failure)
+        val maybeTenantId: Option[String] = state.tenants.get(newTenant.id.toString).map(_.id.toString())
+        maybeTenantId.fold(persistAndReply(newTenant, TenantCreated)(replyTo))(id =>
+          fail(TenantAlreadyExists(id))(replyTo)
+        )
 
       case UpdateTenant(tenantDelta, dateTime, replyTo) =>
-        val maybeTenant: Option[PersistentTenant]                     =
+        val maybeTenant: Option[PersistentTenant] =
           state.tenants.get(tenantDelta.id.toString).map(_.update(tenantDelta, dateTime))
-        val success: PersistentTenant => Effect[TenantUpdated, State] = t => persistAndReply(t, TenantUpdated)(replyTo)
-        val failure: Effect[TenantUpdated, State] = fail(TenantNotFound(tenantDelta.id.toString))(replyTo)
-        maybeTenant.fold(failure)(success)
+        maybeTenant.fold[Effect[TenantUpdated, State]](fail(TenantNotFound(tenantDelta.id.toString))(replyTo))(t =>
+          persistAndReply(t, TenantUpdated)(replyTo)
+        )
 
       case AddAttribute(tenantId, attribute, dateTime, replyTo) =>
         val result: Either[Throwable, PersistentTenant] = for {
@@ -100,7 +100,7 @@ object TenantPersistentBehavior {
 
         result.fold(
           ex => Effect.reply(replyTo)(error[Unit](ex)),
-          tenant => (Effect.persist(TenantMailDeleted(tenant.id, mailId, tenant)).thenReply(replyTo)(_ => success(())))
+          tenant => Effect.persist(TenantMailDeleted(tenant.id, mailId, tenant)).thenReply(replyTo)(_ => success(()))
         )
 
       case AddTenantMail(tenantId, mail, replyTo) =>
@@ -110,7 +110,7 @@ object TenantPersistentBehavior {
 
         result.fold(
           ex => Effect.reply(replyTo)(error[Unit](ex)),
-          tenant => (Effect.persist(TenantMailAdded(tenant.id, mail.id, tenant)).thenReply(replyTo)(_ => success(())))
+          tenant => Effect.persist(TenantMailAdded(tenant.id, mail.id, tenant)).thenReply(replyTo)(_ => success(()))
         )
 
       case Idle =>
