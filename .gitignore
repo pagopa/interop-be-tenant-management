@@ -12,4 +12,5 @@ metals.sbt
 generated/src
 client/src
 client/project/build.properties
+client/docs/
 .env

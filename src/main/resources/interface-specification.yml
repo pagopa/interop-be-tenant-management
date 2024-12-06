@@ -661,6 +661,7 @@ components:
         - PA
         - PRIVATE
         - GSP
+        - SCP
     MailKind:
       type: string
       enum:
