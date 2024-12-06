@@ -6,4 +6,5 @@ object PersistentTenantKind {
   case object PA      extends PersistentTenantKind
   case object GSP     extends PersistentTenantKind
   case object PRIVATE extends PersistentTenantKind
+  case object SCP     extends PersistentTenantKind
 }

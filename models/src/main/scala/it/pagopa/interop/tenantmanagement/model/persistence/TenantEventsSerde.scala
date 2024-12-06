@@ -138,12 +138,14 @@ object TenantEventsSerde {
         case JsString("PA")      => PersistentTenantKind.PA
         case JsString("GSP")     => PersistentTenantKind.GSP
         case JsString("PRIVATE") => PersistentTenantKind.PRIVATE
+        case JsString("SCP")     => PersistentTenantKind.SCP
         case x => throw new DeserializationException(s"Unable to deserialize PersistentTenantKind: unmapped kind $x")
       }
       override def write(obj: PersistentTenantKind): JsValue = obj match {
         case PersistentTenantKind.PA      => JsString("PA")
         case PersistentTenantKind.GSP     => JsString("GSP")
         case PersistentTenantKind.PRIVATE => JsString("PRIVATE")
+        case PersistentTenantKind.SCP     => JsString("SCP")
       }
     }
 

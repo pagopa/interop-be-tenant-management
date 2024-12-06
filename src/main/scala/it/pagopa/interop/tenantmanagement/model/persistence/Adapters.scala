@@ -238,6 +238,7 @@ object Adapters {
       case PersistentTenantKind.PA      => TenantKind.PA
       case PersistentTenantKind.GSP     => TenantKind.GSP
       case PersistentTenantKind.PRIVATE => TenantKind.PRIVATE
+      case PersistentTenantKind.SCP     => TenantKind.SCP
     }
   }
 
@@ -246,6 +247,7 @@ object Adapters {
       case TenantKind.PA      => PersistentTenantKind.PA
       case TenantKind.GSP     => PersistentTenantKind.GSP
       case TenantKind.PRIVATE => PersistentTenantKind.PRIVATE
+      case TenantKind.SCP     => PersistentTenantKind.SCP
     }
   }
 }

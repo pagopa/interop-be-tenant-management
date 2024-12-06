@@ -6,7 +6,7 @@ import it.pagopa.interop.commons.utils.Digester._
 import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.tenant.TenantAttributeV1.Empty
 import it.pagopa.interop.tenantmanagement.model.persistence.serializer.v1.tenant._
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantFeature.PersistentCertifier
-import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantKind.{GSP, PA, PRIVATE}
+import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantKind.{GSP, PA, PRIVATE, SCP}
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantMailKind.{DigitalAddress, ContactEmail}
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenantUnitType.{Aoo, Uo}
 import it.pagopa.interop.tenantmanagement.model.tenant._
@@ -206,6 +206,7 @@ object protobufUtils {
       case TenantKindV1.PA                              => PA.asRight[Throwable]
       case TenantKindV1.GSP                             => GSP.asRight[Throwable]
       case TenantKindV1.PRIVATE                         => PRIVATE.asRight[Throwable]
+      case TenantKindV1.SCP                             => SCP.asRight[Throwable]
       case TenantKindV1.Unrecognized(unrecognizedValue) =>
         new Exception(s"Unable to deserialize TenantKindV1 $unrecognizedValue").asLeft[PersistentTenantKind]
     }
@@ -215,6 +216,7 @@ object protobufUtils {
       case PA      => TenantKindV1.PA
       case GSP     => TenantKindV1.GSP
       case PRIVATE => TenantKindV1.PRIVATE
+      case SCP     => TenantKindV1.SCP
     }
 
   def toPersistentTenantUnitType(
